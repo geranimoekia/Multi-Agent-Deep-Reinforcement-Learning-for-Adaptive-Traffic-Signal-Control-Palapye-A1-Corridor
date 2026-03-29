@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<additional>
+    <tlLogic id="6073919354" type="static" programID="0" offset="0">
+        <phase duration="36" state="rrrGGgrrGg" />
+        <phase duration="4" state="rrryygrryg" />
+        <phase duration="6" state="rrrrrGrrrG" />
+        <phase duration="4" state="rrrrryrrry" />
+        <phase duration="36" state="GGgrrrGgrr" />
+        <phase duration="4" state="yyyrrryyrr" />
+    </tlLogic>
+    <tlLogic id="6073919354_B" type="static" programID="0" offset="0">
+        <phase duration="36" state="rrrGGgrrGg" />
+        <phase duration="4" state="rrryygrryg" />
+        <phase duration="6" state="rrrrrGrrrG" />
+        <phase duration="4" state="rrrrryrrry" />
+        <phase duration="36" state="GGgrrrGgrr" />
+        <phase duration="4" state="yyyrrryyrr" />
+    </tlLogic>
+</additional>
