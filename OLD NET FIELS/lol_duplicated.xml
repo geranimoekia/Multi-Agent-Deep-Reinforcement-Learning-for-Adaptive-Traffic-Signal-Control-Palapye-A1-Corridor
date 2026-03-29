@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<net version="1.9">
+
+    <!-- ================= NODES ================= -->
+
+    <!-- Original intersection -->
+    <junction id="J0" x="0.00" y="0.00" type="traffic_light"/>
+    <junction id="J1" x="0.00" y="100.00" type="priority"/>
+    <junction id="J2" x="100.00" y="0.00" type="priority"/>
+    <junction id="J3" x="0.00" y="-100.00" type="priority"/>
+    <junction id="J4" x="-100.00" y="0.00" type="priority"/>
+
+    <!-- Duplicate intersection -->
+    <junction id="J0_B" x="300.00" y="0.00" type="traffic_light"/>
+    <junction id="J1_B" x="300.00" y="100.00" type="priority"/>
+    <junction id="J2_B" x="400.00" y="0.00" type="priority"/>
+    <junction id="J3_B" x="300.00" y="-100.00" type="priority"/>
+    <junction id="J4_B" x="200.00" y="0.00" type="priority"/>
+
+    <!-- ================= EDGES ================= -->
+
+    <!-- Original intersection edges -->
+    <edge id="N0" from="J1" to="J0" priority="1">
+        <lane id="N0_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="S0" from="J3" to="J0" priority="1">
+        <lane id="S0_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="E0" from="J2" to="J0" priority="1">
+        <lane id="E0_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="W0" from="J4" to="J0" priority="1">
+        <lane id="W0_0" index="0" speed="13.9" length="100"/>
+    </edge>
+
+    <!-- Outgoing -->
+    <edge id="0N" from="J0" to="J1" priority="1">
+        <lane id="0N_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="0S" from="J0" to="J3" priority="1">
+        <lane id="0S_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="0E" from="J0" to="J2" priority="1">
+        <lane id="0E_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="0W" from="J0" to="J4" priority="1">
+        <lane id="0W_0" index="0" speed="13.9" length="100"/>
+    </edge>
+
+    <!-- Duplicate intersection edges -->
+    <edge id="N0_B" from="J1_B" to="J0_B" priority="1">
+        <lane id="N0_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="S0_B" from="J3_B" to="J0_B" priority="1">
+        <lane id="S0_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="E0_B" from="J2_B" to="J0_B" priority="1">
+        <lane id="E0_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="W0_B" from="J4_B" to="J0_B" priority="1">
+        <lane id="W0_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+
+    <!-- Outgoing duplicate -->
+    <edge id="0N_B" from="J0_B" to="J1_B" priority="1">
+        <lane id="0N_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="0S_B" from="J0_B" to="J3_B" priority="1">
+        <lane id="0S_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="0E_B" from="J0_B" to="J2_B" priority="1">
+        <lane id="0E_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+    <edge id="0W_B" from="J0_B" to="J4_B" priority="1">
+        <lane id="0W_B_0" index="0" speed="13.9" length="100"/>
+    </edge>
+
+    <!-- ================= BRIDGE (IMPORTANT) ================= -->
+
+    <!-- Connect the two intersections -->
+    <edge id="bridge_AB" from="J2" to="J4_B" priority="2">
+        <lane id="bridge_AB_0" index="0" speed="13.9" length="200"/>
+    </edge>
+
+    <edge id="bridge_BA" from="J4_B" to="J2" priority="2">
+        <lane id="bridge_BA_0" index="0" speed="13.9" length="200"/>
+    </edge>
+
+</net>

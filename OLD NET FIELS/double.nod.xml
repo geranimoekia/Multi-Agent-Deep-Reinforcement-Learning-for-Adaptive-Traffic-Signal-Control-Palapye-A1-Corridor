@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<nodes>
+    <node id="1420333935" x="510825.89" y="-2492852.72" type="dead_end" />
+    <node id="4557655746" x="509133.62" y="-2492443.22" type="unregulated" />
+    <node id="4557655751" x="509134.26" y="-2492430.31" type="priority" />
+    <node id="4557655752" x="509126.74" y="-2492440.57" type="unregulated" />
+    <node id="4649671177" x="508842.46" y="-2492325.40" type="dead_end" />
+    <node id="6073363232" x="509271.33" y="-2492017.05" type="dead_end" />
+    <node id="6073919354" x="509143.49" y="-2492404.01" type="traffic_light" tl="6073919354" />
+    <node id="6145489304" x="509168.64" y="-2492338.65" type="unregulated" />
+    <node id="6145489310" x="509112.24" y="-2492394.47" type="unregulated" />
+    <node id="J0" x="509069.77" y="-2492550.03" type="dead_end" />
+    <node id="J1" x="509148.10" y="-2492391.35" type="unregulated" />
+    <node id="J10" x="509226.77" y="-2492431.35" type="dead_end" />
+    <node id="J9" x="509078.58" y="-2492554.03" type="dead_end" />
+    <node id="1420333935_B" x="510928.58" y="-2492531.12" type="dead_end" />
+    <node id="4557655746_B" x="509236.31" y="-2492121.62" type="unregulated" />
+    <node id="4557655751_B" x="509236.95" y="-2492108.71" type="priority" />
+    <node id="4557655752_B" x="509229.43" y="-2492118.97" type="unregulated" />
+    <node id="4649671177_B" x="508945.15" y="-2492003.80" type="dead_end" />
+    <node id="6073919354_B" x="509246.18" y="-2492082.41" type="traffic_light" tl="6073919354_B" />
+    <node id="6145489304_B" x="509271.33" y="-2492017.05" type="unregulated" />
+    <node id="6145489310_B" x="509214.93" y="-2492072.87" type="unregulated" />
+    <node id="J0_B" x="509172.46" y="-2492228.43" type="dead_end" />
+    <node id="J1_B" x="509250.79" y="-2492069.75" type="unregulated" />
+    <node id="J10_B" x="509329.46" y="-2492109.75" type="dead_end" />
+    <node id="J9_B" x="509181.27" y="-2492232.43" type="dead_end" />
+</nodes>

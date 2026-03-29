@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nodes>
+    <!-- Intersection A -->
+    <node id="J0"   x="0.00"   y="0.00"   type="traffic_light"/>
+    <node id="J1"   x="0.00"   y="100.00" type="priority"/>
+    <node id="J2"   x="100.00" y="0.00"   type="priority"/>
+    <node id="J3"   x="0.00"   y="-100.00" type="priority"/>
+    <node id="J4"   x="-100.00" y="0.00"  type="priority"/>
+
+    <!-- Bridge midpoint -->
+    <node id="J_mid" x="150.00" y="0.00"  type="priority"/>
+
+    <!-- Intersection B -->
+    <node id="J0_B"  x="300.00"  y="0.00"   type="traffic_light"/>
+    <node id="J1_B"  x="300.00"  y="100.00" type="priority"/>
+    <node id="J2_B"  x="400.00"  y="0.00"   type="priority"/>
+    <node id="J3_B"  x="300.00"  y="-100.00" type="priority"/>
+    <node id="J4_B"  x="200.00"  y="0.00"   type="priority"/>
+</nodes>

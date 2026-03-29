@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edges>
+    <!-- Intersection A incoming -->
+    <edge id="N0" from="J1"  to="J0"  numLanes="1" speed="13.9"/>
+    <edge id="S0" from="J3"  to="J0"  numLanes="1" speed="13.9"/>
+    <edge id="E0" from="J2"  to="J0"  numLanes="1" speed="13.9"/>
+    <edge id="W0" from="J4"  to="J0"  numLanes="1" speed="13.9"/>
+    <!-- Intersection A outgoing -->
+    <edge id="0N" from="J0"  to="J1"  numLanes="1" speed="13.9"/>
+    <edge id="0S" from="J0"  to="J3"  numLanes="1" speed="13.9"/>
+    <edge id="0E" from="J0"  to="J2"  numLanes="1" speed="13.9"/>
+    <edge id="0W" from="J0"  to="J4"  numLanes="1" speed="13.9"/>
+
+    <!-- Bridge (bidirectional through midpoint) -->
+    <edge id="bridge_A_mid" from="J0"   to="J_mid" numLanes="1" speed="13.9"/>
+    <edge id="bridge_mid_B" from="J_mid" to="J0_B" numLanes="1" speed="13.9"/>
+    <edge id="bridge_B_mid" from="J0_B" to="J_mid" numLanes="1" speed="13.9"/>
+    <edge id="bridge_mid_A" from="J_mid" to="J0"   numLanes="1" speed="13.9"/>
+
+    <!-- Intersection B incoming -->
+    <edge id="N0_B" from="J1_B" to="J0_B" numLanes="1" speed="13.9"/>
+    <edge id="S0_B" from="J3_B" to="J0_B" numLanes="1" speed="13.9"/>
+    <edge id="E0_B" from="J2_B" to="J0_B" numLanes="1" speed="13.9"/>
+    <edge id="W0_B" from="J4_B" to="J0_B" numLanes="1" speed="13.9"/>
+    <!-- Intersection B outgoing -->
+    <edge id="0N_B" from="J0_B" to="J1_B" numLanes="1" speed="13.9"/>
+    <edge id="0S_B" from="J0_B" to="J3_B" numLanes="1" speed="13.9"/>
+    <edge id="0E_B" from="J0_B" to="J2_B" numLanes="1" speed="13.9"/>
+    <edge id="0W_B" from="J0_B" to="J4_B" numLanes="1" speed="13.9"/>
+</edges>
