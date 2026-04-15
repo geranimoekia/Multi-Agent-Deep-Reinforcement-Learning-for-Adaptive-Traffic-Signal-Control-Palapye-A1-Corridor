@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SUMO Web3D Roads</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+const scene = new THREE.Scene();
+
+// ===== CAMERA =====
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
+camera.position.set(0, -200, 200);
+camera.lookAt(0, 0, 0);
+
+// ===== RENDERER =====
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// ===== CONTROLS =====
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.set(0,0,0);
+controls.update();
+
+// ===== LIGHT =====
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+dirLight.position.set(100, -100, 200);
+scene.add(dirLight);
+
+// ===== LOAD SUMO NETWORK =====
+fetch("network_tripled.net.xml")
+.then(res => res.text())
+.then(xmlText => {
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(xmlText, "text/xml");
+
+    const lanes = xml.getElementsByTagName("lane");
+
+    for (let lane of lanes) {
+        const shape = lane.getAttribute("shape");
+        if (!shape) continue;
+
+        const points = shape.split(" ").map(p => {
+            const [x,y] = p.split(",").map(Number);
+            return new THREE.Vector3(x/5, y/5, 0); // scale down by 5
+        });
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ color: 0xffff00 });
+        const line = new THREE.Line(geometry, material);
+
+        scene.add(line);
+    }
+});
+
+// ===== VEHICLES =====
+const vehicles = {};
+const socket = new WebSocket("ws://localhost:8765");
+
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    data.forEach(v => {
+        if (!vehicles[v.id]) {
+            const geo = new THREE.BoxGeometry(2,1,1);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const mesh = new THREE.Mesh(geo, mat);
+
+            scene.add(mesh);
+            vehicles[v.id] = mesh;
+        }
+
+        vehicles[v.id].position.x = v.x / 5;
+        vehicles[v.id].position.y = v.y / 5;
+        vehicles[v.id].position.z = 0.5;
+    });
+};
+
+// ===== RENDER LOOP =====
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+
+animate();
+
+// ===== HANDLE WINDOW RESIZE =====
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

@@ -1,479 +1,498 @@
 """
-compare_fixed_ppo.py - SEQUENTIAL VERSION
-Runs PPO simulation FIRST, then Fixed timing simulation SECOND
-Avoids all port and TraCI conflicts by running them one after another
-
-Why sequential?
-- Your env.py manages SUMO startup and port allocation
-- Running both parallel causes TraCI socket conflicts
-- Sequential: collect PPO data → close cleanly → collect Fixed data
+SUMO Multi-Intersection Dashboard with PPO vs Fixed Metrics
+Run with: streamlit run dashboard.py
 """
 
-import os
-import time
-import subprocess
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import streamlit as st
 import traci
-from stable_baselines3 import PPO
+import threading
+import time
+import pandas as pd
+import plotly.graph_objs as go
+from collections import deque
+import os
+import numpy as np
 from datetime import datetime
 
-# ==================== CONFIG ====================
-MODEL_PATH = "ppo_traffic_final.zip"
-SUMO_BINARY = "sumo"
-SUMO_GUI_BINARY = "sumo-gui"
+# ===== CONFIGURATION =====
+SUMO_CFG = "triple.sumocfg"
+USE_GUI = True
+MAX_HISTORY = 200  # Increased for better trend analysis
 
-PLOT_UPDATE_INTERVAL = 0.6
-MAX_STEPS = 9000  # 9000 steps = 900 seconds simulation time
+# Traffic light IDs
+TL_IDS = [
+    "6073919354",
+    "6073919354_B", 
+    "6073919354_C"
+]
 
-# Traffic flow monitoring lanes
+# Lane mappings for traffic flow monitoring (from your comparison script)
 INCOMING_LANES = [
     "-E5_0", "-465932558#1.34_0", "-465932558#1.34_1",
     "-465932558#1.34_2", "470773638#1_0", "465932558#0_0", "465932558#0_1",
 ]
+
 OUTGOING_LANES = [
     "E5_0", "-465932558#0_0", "-465932558#0_1",
     "-470773638#1_0", "465932558#1_0",
 ]
 
-# ==================== METRIC COLLECTION ====================
-ppo_metrics = {k: [] for k in ["delay", "queue", "throughput", "stops", "pressure"]}
-fixed_metrics = {k: [] for k in ["delay", "queue", "throughput", "stops", "pressure"]}
+# Lane mappings per intersection (for detailed view)
+LANES = {
+    "6073919354": INCOMING_LANES,  # Using same lanes for now
+    "6073919354_B": [
+        "-E5_B_0",
+        "-465932558#1.34_B_0",
+        "-465932558#1.34_B_1",
+        "-465932558#1.34_B_2", 
+        "470773638#1_B_0",
+        "465932558#0_B_0",
+        "465932558#0_B_1",
+    ],
+    "6073919354_C": [
+        "-465932558#2_C_0",
+        "470773638#1_C_0",
+        "E0_C_0",
+    ]
+}
 
-def collect_metrics_from_env(info, which_dict):
-    """Collect metrics from SumoEnv info dict"""
-    m = info.get("metrics", {})
-    
-    which_dict["delay"].append(m.get("avg_delay", 0))
-    which_dict["queue"].append(m.get("avg_queue", 0))
-    which_dict["throughput"].append(m.get("throughput_total", 0))
-    which_dict["stops"].append(m.get("stop_ratio", 0))
-    
-    inc = sum(m.get("queues", [])) if m.get("queues") else 0
-    which_dict["pressure"].append(inc)
+# ===== DATA STORAGE CLASS WITH METRICS =====
+class SumoDataStore:
+    def __init__(self):
+        self.time_history = deque(maxlen=MAX_HISTORY)
+        
+        # Global metrics
+        self.global_metrics = {
+            "delay": deque(maxlen=MAX_HISTORY),
+            "queue": deque(maxlen=MAX_HISTORY),
+            "throughput": deque(maxlen=MAX_HISTORY),
+            "stops": deque(maxlen=MAX_HISTORY),
+            "pressure": deque(maxlen=MAX_HISTORY)
+        }
+        
+        # Per-intersection metrics
+        self.intersections = {}
+        for tl in TL_IDS:
+            self.intersections[tl] = {
+                "delay": deque(maxlen=MAX_HISTORY),
+                "queue": deque(maxlen=MAX_HISTORY),
+                "throughput": deque(maxlen=MAX_HISTORY),
+                "stops": deque(maxlen=MAX_HISTORY),
+                "pressure": deque(maxlen=MAX_HISTORY),
+                "phase": deque(maxlen=MAX_HISTORY),
+                "occupancy": deque(maxlen=MAX_HISTORY)
+            }
+        
+        self.running = True
+        self.current_step = 0
+        
+    def collect_metrics_from_traci(self, tr):
+        """Collect the 5 key metrics using direct TraCI calls"""
+        self.current_step += 1
+        self.time_history.append(self.current_step)
+        
+        # === 1. DELAY METRIC ===
+        veh_ids = tr.vehicle.getIDList()
+        delays = []
+        for vid in veh_ids:
+            try:
+                v = tr.vehicle.getSpeed(vid)
+                allowed = tr.vehicle.getAllowedSpeed(vid)
+                if allowed > 0:
+                    d = 1 - (v / allowed)
+                    delays.append(np.clip(d, 0, 1))
+            except:
+                pass
+        avg_delay = np.mean(delays) if delays else 0
+        
+        # === 2. QUEUE METRIC ===
+        queues = []
+        for lane in INCOMING_LANES:
+            try:
+                q = tr.lane.getLastStepHaltingNumber(lane)
+                queues.append(q)
+            except:
+                queues.append(0)
+        avg_queue = np.mean(queues) if queues else 0
+        
+        # === 3. THROUGHPUT METRIC ===
+        throughput = 0
+        for lane in OUTGOING_LANES:
+            try:
+                throughput += tr.lane.getLastStepVehicleNumber(lane)
+            except:
+                pass
+        
+        # === 4. STOPS METRIC ===
+        stops = 0
+        total = 0
+        for lane in INCOMING_LANES:
+            try:
+                vids = tr.lane.getLastStepVehicleIDs(lane)
+                for vid in vids:
+                    total += 1
+                    if tr.vehicle.getSpeed(vid) < 0.1:
+                        stops += 1
+            except:
+                pass
+        stop_ratio = (stops / total) if total > 0 else 0
+        
+        # === 5. PRESSURE METRIC ===
+        incoming_sum = sum(tr.lane.getLastStepVehicleNumber(l) for l in INCOMING_LANES if l)
+        outgoing_sum = sum(tr.lane.getLastStepVehicleNumber(l) for l in OUTGOING_LANES if l)
+        pressure = incoming_sum - outgoing_sum
+        
+        # Update global metrics
+        self.global_metrics["delay"].append(avg_delay)
+        self.global_metrics["queue"].append(avg_queue)
+        self.global_metrics["throughput"].append(throughput)
+        self.global_metrics["stops"].append(stop_ratio)
+        self.global_metrics["pressure"].append(pressure)
+        
+        # Update per-intersection metrics (simplified - using same values for now)
+        # In production, you'd want to separate metrics per intersection
+        for tl in TL_IDS:
+            self.intersections[tl]["delay"].append(avg_delay)
+            self.intersections[tl]["queue"].append(avg_queue)
+            self.intersections[tl]["throughput"].append(throughput)
+            self.intersections[tl]["stops"].append(stop_ratio)
+            self.intersections[tl]["pressure"].append(pressure)
+            
+            # Get traffic light phase
+            try:
+                phase = tr.trafficlight.getPhase(tl)
+                self.intersections[tl]["phase"].append(phase)
+            except:
+                self.intersections[tl]["phase"].append(0)
+            
+            # Calculate occupancy for this intersection's lanes
+            tl_lanes = LANES.get(tl, [])
+            occ_sum = 0
+            occ_count = 0
+            for lane in tl_lanes:
+                try:
+                    occ_sum += tr.lane.getLastStepOccupancy(lane)
+                    occ_count += 1
+                except:
+                    pass
+            avg_occ = occ_sum / occ_count if occ_count > 0 else 0
+            self.intersections[tl]["occupancy"].append(avg_occ)
 
-def collect_metrics_from_traci(tr, which_dict):
-    """Collect metrics using direct TraCI"""
-    veh_ids = tr.vehicle.getIDList()
-    
-    # Delay
-    delays = []
-    for vid in veh_ids:
-        try:
-            v = tr.vehicle.getSpeed(vid)
-            allowed = tr.vehicle.getAllowedSpeed(vid)
-            d = 1 - (v / allowed) if allowed > 0 else 0
-            delays.append(np.clip(d, 0, 1))
-        except:
-            pass
-    which_dict["delay"].append(np.mean(delays) if delays else 0)
-    
-    # Queue
-    q = [tr.lane.getLastStepHaltingNumber(l) for l in INCOMING_LANES]
-    which_dict["queue"].append(float(np.mean(q)))
-    
-    # Throughput
-    tp = sum(tr.lane.getLastStepVehicleNumber(l) for l in OUTGOING_LANES)
-    which_dict["throughput"].append(float(tp))
-    
-    # Stops
-    stops = 0
-    total = 0
-    for lane in INCOMING_LANES:
-        vids = tr.lane.getLastStepVehicleIDs(lane)
-        for vid in vids:
-            total += 1
-            if tr.vehicle.getSpeed(vid) < 0.1:
-                stops += 1
-    which_dict["stops"].append((stops / total) if total > 0 else 0)
-    
-    # Pressure
-    inc = sum(tr.lane.getLastStepVehicleNumber(l) for l in INCOMING_LANES)
-    out = sum(tr.lane.getLastStepVehicleNumber(l) for l in OUTGOING_LANES)
-    which_dict["pressure"].append(float(inc - out))
+# ===== SUMO SIMULATION THREAD =====
+def run_sumo():
+    """Run SUMO simulation in background thread"""
+    try:
+        cmd = ["sumo-gui" if USE_GUI else "sumo", "-c", SUMO_CFG]
+        traci.start(cmd)
+        st.session_state['sumo_running'] = True
+        
+        while st.session_state.get('sumo_continue', True):
+            traci.simulationStep()
+            data_store.collect_metrics_from_traci(traci)
+            time.sleep(0.1)
+            
+        traci.close()
+        st.session_state['sumo_running'] = False
+    except Exception as e:
+        print(f"SUMO Error: {e}")
+        st.session_state['sumo_running'] = False
 
-def export_metrics(filename=None):
-    """Export metrics to CSV"""
-    if filename is None:
-        filename = f"comparison_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    
-    max_len = max(len(ppo_metrics["delay"]), len(fixed_metrics["delay"]))
-    
-    # Pad with NaN
-    for key in ppo_metrics:
-        if len(ppo_metrics[key]) < max_len:
-            ppo_metrics[key].extend([np.nan] * (max_len - len(ppo_metrics[key])))
-    
-    for key in fixed_metrics:
-        if len(fixed_metrics[key]) < max_len:
-            fixed_metrics[key].extend([np.nan] * (max_len - len(fixed_metrics[key])))
-    
-    data = {}
-    for key in ppo_metrics:
-        data[f"ppo_{key}"] = ppo_metrics[key]
-        data[f"fixed_{key}"] = fixed_metrics[key]
-    
-    df = pd.DataFrame(data)
-    df.to_csv(filename, index=False)
-    print(f"\n✓ Metrics exported to {filename}")
+# ===== INITIALIZE SESSION STATE =====
+if 'sumo_started' not in st.session_state:
+    st.session_state['sumo_started'] = False
+    st.session_state['sumo_continue'] = True
+    st.session_state['sumo_running'] = False
 
-def print_comparison_report():
-    """Print detailed statistical comparison - one metric per section"""
-    print("\n" + "="*100)
-    print(" "*35 + "DETAILED METRICS REPORT")
-    print("="*100)
-    
-    # DELAY
-    print("\n" + "="*100)
-    print(" "*35 + "1. DELAY METRIC")
-    print("="*100)
-    print("(Lower = Better | 0=Full Speed, 1=Stopped)\n")
-    
-    delay_fixed = np.array(fixed_metrics["delay"])
-    delay_ppo = np.array(ppo_metrics["delay"])
-    
-    print(f"{'Statistic':<20} {'FIXED TIMING':<35} {'PPO MODEL':<35}")
-    print("-"*100)
-    print(f"{'Mean':<20} {np.mean(delay_fixed):>20.4f}               {np.mean(delay_ppo):>20.4f}")
-    print(f"{'Median':<20} {np.median(delay_fixed):>20.4f}               {np.median(delay_ppo):>20.4f}")
-    print(f"{'Std Deviation':<20} {np.std(delay_fixed):>20.4f}               {np.std(delay_ppo):>20.4f}")
-    print(f"{'Min':<20} {np.min(delay_fixed):>20.4f}               {np.min(delay_ppo):>20.4f}")
-    print(f"{'Max':<20} {np.max(delay_fixed):>20.4f}               {np.max(delay_ppo):>20.4f}")
-    delay_imp = ((np.mean(delay_fixed) - np.mean(delay_ppo)) / np.mean(delay_fixed) * 100) if np.mean(delay_fixed) > 0 else 0
-    print("-"*100)
-    print(f"{'✅ PPO Better By':<20} {delay_imp:>45.2f}%")
-    print("="*100)
-    
-    # QUEUE
-    print("\n" + "="*100)
-    print(" "*35 + "2. QUEUE METRIC")
-    print("="*100)
-    print("(Lower = Better | Halting vehicles on incoming lanes)\n")
-    
-    queue_fixed = np.array(fixed_metrics["queue"])
-    queue_ppo = np.array(ppo_metrics["queue"])
-    
-    print(f"{'Statistic':<20} {'FIXED TIMING':<35} {'PPO MODEL':<35}")
-    print("-"*100)
-    print(f"{'Mean':<20} {np.mean(queue_fixed):>20.4f}               {np.mean(queue_ppo):>20.4f}")
-    print(f"{'Median':<20} {np.median(queue_fixed):>20.4f}               {np.median(queue_ppo):>20.4f}")
-    print(f"{'Std Deviation':<20} {np.std(queue_fixed):>20.4f}               {np.std(queue_ppo):>20.4f}")
-    print(f"{'Min':<20} {np.min(queue_fixed):>20.4f}               {np.min(queue_ppo):>20.4f}")
-    print(f"{'Max':<20} {np.max(queue_fixed):>20.4f}               {np.max(queue_ppo):>20.4f}")
-    queue_imp = ((np.mean(queue_fixed) - np.mean(queue_ppo)) / np.mean(queue_fixed) * 100) if np.mean(queue_fixed) > 0 else 0
-    print("-"*100)
-    print(f"{'✅ PPO Better By':<20} {queue_imp:>45.2f}%")
-    print("="*100)
-    
-    # THROUGHPUT
-    print("\n" + "="*100)
-    print(" "*35 + "3. THROUGHPUT METRIC")
-    print("="*100)
-    print("(Higher = Better | Vehicles exiting per step)\n")
-    
-    tp_fixed = np.array(fixed_metrics["throughput"])
-    tp_ppo = np.array(ppo_metrics["throughput"])
-    
-    print(f"{'Statistic':<20} {'FIXED TIMING':<35} {'PPO MODEL':<35}")
-    print("-"*100)
-    print(f"{'Mean':<20} {np.mean(tp_fixed):>20.4f}               {np.mean(tp_ppo):>20.4f}")
-    print(f"{'Median':<20} {np.median(tp_fixed):>20.4f}               {np.median(tp_ppo):>20.4f}")
-    print(f"{'Std Deviation':<20} {np.std(tp_fixed):>20.4f}               {np.std(tp_ppo):>20.4f}")
-    print(f"{'Min':<20} {np.min(tp_fixed):>20.4f}               {np.min(tp_ppo):>20.4f}")
-    print(f"{'Max':<20} {np.max(tp_fixed):>20.4f}               {np.max(tp_ppo):>20.4f}")
-    tp_imp = ((np.mean(tp_ppo) - np.mean(tp_fixed)) / np.mean(tp_fixed) * 100) if np.mean(tp_fixed) > 0 else 0
-    print("-"*100)
-    print(f"{'✅ PPO Better By':<20} {tp_imp:>45.2f}%")
-    print("="*100)
-    
-    # STOPS
-    print("\n" + "="*100)
-    print(" "*35 + "4. STOPS METRIC")
-    print("="*100)
-    print("(Lower = Better | Ratio of stopped vehicles, 0=None 1=All)\n")
-    
-    stops_fixed = np.array(fixed_metrics["stops"])
-    stops_ppo = np.array(ppo_metrics["stops"])
-    
-    print(f"{'Statistic':<20} {'FIXED TIMING':<35} {'PPO MODEL':<35}")
-    print("-"*100)
-    print(f"{'Mean':<20} {np.mean(stops_fixed):>20.4f}               {np.mean(stops_ppo):>20.4f}")
-    print(f"{'Median':<20} {np.median(stops_fixed):>20.4f}               {np.median(stops_ppo):>20.4f}")
-    print(f"{'Std Deviation':<20} {np.std(stops_fixed):>20.4f}               {np.std(stops_ppo):>20.4f}")
-    print(f"{'Min':<20} {np.min(stops_fixed):>20.4f}               {np.min(stops_ppo):>20.4f}")
-    print(f"{'Max':<20} {np.max(stops_fixed):>20.4f}               {np.max(stops_ppo):>20.4f}")
-    stops_imp = ((np.mean(stops_fixed) - np.mean(stops_ppo)) / np.mean(stops_fixed) * 100) if np.mean(stops_fixed) > 0 else 0
-    print("-"*100)
-    print(f"{'✅ PPO Better By':<20} {stops_imp:>45.2f}%")
-    print("="*100)
-    
-    # PRESSURE
-    print("\n" + "="*100)
-    print(" "*35 + "5. PRESSURE METRIC")
-    print("="*100)
-    print("(Lower = Better | Congestion accumulation: incoming - outgoing)\n")
-    
-    pressure_fixed = np.array(fixed_metrics["pressure"])
-    pressure_ppo = np.array(ppo_metrics["pressure"])
-    
-    print(f"{'Statistic':<20} {'FIXED TIMING':<35} {'PPO MODEL':<35}")
-    print("-"*100)
-    print(f"{'Mean':<20} {np.mean(pressure_fixed):>20.4f}               {np.mean(pressure_ppo):>20.4f}")
-    print(f"{'Median':<20} {np.median(pressure_fixed):>20.4f}               {np.median(pressure_ppo):>20.4f}")
-    print(f"{'Std Deviation':<20} {np.std(pressure_fixed):>20.4f}               {np.std(pressure_ppo):>20.4f}")
-    print(f"{'Min':<20} {np.min(pressure_fixed):>20.4f}               {np.min(pressure_ppo):>20.4f}")
-    print(f"{'Max':<20} {np.max(pressure_fixed):>20.4f}               {np.max(pressure_ppo):>20.4f}")
-    pressure_imp = ((np.mean(pressure_fixed) - np.mean(pressure_ppo)) / np.mean(pressure_fixed) * 100) if np.mean(pressure_fixed) > 0 else 0
-    print("-"*100)
-    print(f"{'✅ PPO Better By':<20} {pressure_imp:>45.2f}%")
-    print("="*100)
-    
-    # SUMMARY
-    print("\n" + "="*100)
-    print(" "*30 + "OVERALL PERFORMANCE SUMMARY")
-    print("="*100)
-    
-    improvements = [delay_imp, queue_imp, tp_imp, stops_imp, pressure_imp]
-    avg_imp = np.mean(improvements)
-    
-    print(f"\n{'Metric':<20} {'PPO Better By':<20} {'Status':<20}")
-    print("-"*100)
-    print(f"{'Delay':<20} {delay_imp:>18.2f}% {'✅' if delay_imp > 0 else '❌':<20}")
-    print(f"{'Queue':<20} {queue_imp:>18.2f}% {'✅' if queue_imp > 0 else '❌':<20}")
-    print(f"{'Throughput':<20} {tp_imp:>18.2f}% {'✅' if tp_imp > 0 else '❌':<20}")
-    print(f"{'Stops':<20} {stops_imp:>18.2f}% {'✅' if stops_imp > 0 else '❌':<20}")
-    print(f"{'Pressure':<20} {pressure_imp:>18.2f}% {'✅' if pressure_imp > 0 else '❌':<20}")
-    print("-"*100)
-    print(f"{'AVERAGE':<20} {avg_imp:>18.2f}%")
-    print("="*100)
-    
-    if avg_imp > 20:
-        print("\n🚀 VERDICT: PPO SIGNIFICANTLY OUTPERFORMS FIXED TIMING!\n")
-    elif avg_imp > 5:
-        print("\n✅ VERDICT: PPO CLEARLY BETTER THAN FIXED TIMING!\n")
+# Start SUMO only once
+if not st.session_state['sumo_started']:
+    data_store = SumoDataStore()
+    sumo_thread = threading.Thread(target=run_sumo, daemon=True)
+    sumo_thread.start()
+    st.session_state['sumo_started'] = True
+    st.session_state['data_store'] = data_store
+else:
+    data_store = st.session_state['data_store']
+
+# ===== STREAMLIT UI =====
+st.set_page_config(
+    page_title="SUMO Traffic Dashboard - 5 Metrics",
+    page_icon="🚦",
+    layout="wide"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    .metric-good { color: #00ff00; }
+    .metric-bad { color: #ff0000; }
+    .metric-neutral { color: #ffa500; }
+</style>
+""", unsafe_allow_html=True)
+
+# Title
+st.title("🚦 SUMO Traffic Dashboard - PPO vs Fixed Metrics")
+st.markdown("Monitoring **5 Key Metrics**: Delay, Queue, Throughput, Stops, Pressure")
+
+# Show SUMO status
+col_status, col_step, col_time = st.columns(3)
+with col_status:
+    if st.session_state.get('sumo_running', False):
+        st.success("✅ SUMO Simulation Running")
     else:
-        print("\n⚠️  VERDICT: RESULTS ARE COMPARABLE\n")
+        st.warning("⏳ Starting SUMO Simulation...")
+with col_step:
+    st.metric("Simulation Step", f"{data_store.current_step}")
+with col_time:
+    sim_time = data_store.current_step * 0.1
+    st.metric("Sim Time", f"{sim_time:.1f} s")
 
-# ==================== PPO SIMULATION ====================
-def run_ppo_simulation():
-    """Run PPO-controlled traffic simulation"""
-    print("\n" + "="*70)
-    print("PHASE 1: Running PPO-Controlled Simulation")
-    print("="*70)
-    
-    try:
-        from env import SumoEnv
-        print("[PPO] ✓ SumoEnv imported")
-    except ImportError as e:
-        print(f"[PPO] ✗ Failed to import SumoEnv: {e}")
-        return False
-    
-    env = None
-    try:
-        # Initialize environment
-        env = SumoEnv(sumo_cfg="map.sumocfg", use_gui=False)
-        print("[PPO] ✓ Environment initialized")
-        
-        # Load model
-        try:
-            model = PPO.load(MODEL_PATH)
-            print(f"[PPO] ✓ Model loaded from {MODEL_PATH}")
-            use_model = True
-        except Exception as e:
-            print(f"[PPO] ✗ Model load failed: {e}")
-            use_model = False
-        
-        # Reset and run
-        obs, info = env.reset()
-        print("[PPO] Starting episode...")
-        
-        step = 0
-        done = False
-        
-        print("[PPO] Running for 9000 steps (900 seconds)...")
-        
-        while step < MAX_STEPS:
-            if use_model:
-                action, _ = model.predict(obs, deterministic=True)
-            else:
-                action = env.action_space.sample()
-            
-            obs, reward, terminated, truncated, info = env.step(action)
-            
-            # Collect metrics even if episode is done (reset and continue)
-            collect_metrics_from_env(info, ppo_metrics)
-            
-            step += 1
-            if step % 500 == 0:
-                print(f"[PPO] Step {step}/{MAX_STEPS}")
-            
-            # If episode ends, reset and continue for remaining steps
-            if (terminated or truncated) and step < MAX_STEPS:
-                print(f"[PPO] Episode ended at step {step}, resetting...")
-                obs, info = env.reset()
-        
-        print(f"[PPO] ✓ Episode finished at step {step}")
-        return True
-    
-    except Exception as e:
-        print(f"[PPO] ✗ Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-    
-    finally:
-        if env:
-            try:
-                env.close()
-                print("[PPO] ✓ Environment closed")
-            except:
-                pass
-        
-        # Clean up any lingering SUMO processes
-        try:
-            os.system("taskkill /IM sumo.exe /F 2>nul")
-        except:
-            pass
-        
-        time.sleep(2)
+st.markdown("---")
 
-# ==================== FIXED TIMING SIMULATION ====================
-def run_fixed_timing_simulation(port=8814):
-    """Run fixed timing traffic simulation"""
-    print("\n" + "="*70)
-    print("PHASE 2: Running Fixed Timing Simulation")
-    print("="*70)
-    
-    # Start SUMO process
-    cmd = [
-        SUMO_GUI_BINARY,
-        "-n", "lol.xml",
-        "-r", "routes.rou.xml",
-        "--additional-files", "vtypes.add.xml,tls.add.xml",
-        "--remote-port", str(port),
-        "--step-length", "0.1",
-    ]
-    print(f"[FIXED] Starting SUMO: {' '.join(cmd)}")
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    time.sleep(3)  # Wait for SUMO to start
-    
-    tr = None
-    try:
-        # Connect to SUMO
-        for attempt in range(20):
-            try:
-                tr = traci.connect(port=port, numRetries=3)
-                print(f"[FIXED] ✓ Connected on port {port}")
-                break
-            except Exception as e:
-                print(f"[FIXED] Connection attempt {attempt+1}/20 failed: {str(e)[:60]}")
-                time.sleep(0.5)
-        else:
-            print("[FIXED] ✗ Failed to connect")
-            return False
-        
-        # Run simulation
-        step = 0
-        print("[FIXED] Starting simulation...")
-        
-        while step < MAX_STEPS:
-            tr.simulationStep()
-            collect_metrics_from_traci(tr, fixed_metrics)
-            
-            step += 1
-            if step % 100 == 0:
-                print(f"[FIXED] Step {step}/{MAX_STEPS}")
-        
-        print(f"[FIXED] ✓ Simulation finished at step {step}")
-        return True
-    
-    except Exception as e:
-        print(f"[FIXED] ✗ Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-    
-    finally:
-        if tr:
-            try:
-                tr.close()
-                print("[FIXED] ✓ TraCI closed")
-            except:
-                pass
-        
-        if proc.poll() is None:
-            proc.terminate()
-            time.sleep(0.5)
-            print("[FIXED] ✓ SUMO process terminated")
+# ===== 5 KEY METRICS - MAIN DASHBOARD =====
+st.subheader("📊 5 Key Performance Metrics (Current Values)")
 
-# ==================== PLOTTING ====================
-def plot_comparison():
-    """Plot each metric in its own figure"""
-    print("\n" + "="*70)
-    print("PHASE 3: Creating 5 Metric Figures")
-    print("="*70)
-    
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    metrics_info = [
-        ("delay", "Delay", "Normalized Delay (0=Full Speed, 1=Stopped)", "orange"),
-        ("queue", "Queue Length", "Average Halting Vehicles", "green"),
-        ("throughput", "Throughput", "Vehicles Exiting Per Step", "purple"),
-        ("stops", "Stop Ratio", "Ratio of Stopped Vehicles (0=None, 1=All)", "red"),
-        ("pressure", "Pressure", "Congestion Accumulation (Incoming - Outgoing)", "brown"),
-    ]
-    
-    for metric_key, title, ylabel, color in metrics_info:
-        fig, ax = plt.subplots(figsize=(14, 6))
+# Create 5 metric cards in a row
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    current_delay = data_store.global_metrics["delay"][-1] if data_store.global_metrics["delay"] else 0
+    st.metric(
+        "⏱️ DELAY", 
+        f"{current_delay:.3f}",
+        help="Normalized Delay (0=Full Speed, 1=Stopped) | LOWER IS BETTER"
+    )
+    st.caption("LOWER = Better")
+
+with col2:
+    current_queue = data_store.global_metrics["queue"][-1] if data_store.global_metrics["queue"] else 0
+    st.metric(
+        "📊 QUEUE", 
+        f"{current_queue:.1f} veh",
+        help="Average halting vehicles on incoming lanes | LOWER IS BETTER"
+    )
+    st.caption("LOWER = Better")
+
+with col3:
+    current_tp = data_store.global_metrics["throughput"][-1] if data_store.global_metrics["throughput"] else 0
+    st.metric(
+        "🚗 THROUGHPUT", 
+        f"{current_tp:.0f} veh/step",
+        help="Vehicles exiting per step | HIGHER IS BETTER"
+    )
+    st.caption("HIGHER = Better")
+
+with col4:
+    current_stops = data_store.global_metrics["stops"][-1] if data_store.global_metrics["stops"] else 0
+    st.metric(
+        "🛑 STOPS", 
+        f"{current_stops:.3f}",
+        help="Ratio of stopped vehicles (0=None, 1=All) | LOWER IS BETTER"
+    )
+    st.caption("LOWER = Better")
+
+with col5:
+    current_pressure = data_store.global_metrics["pressure"][-1] if data_store.global_metrics["pressure"] else 0
+    st.metric(
+        "⚡ PRESSURE", 
+        f"{current_pressure:.0f}",
+        help="Congestion: Incoming - Outgoing | LOWER IS BETTER"
+    )
+    st.caption("LOWER = Better")
+
+st.markdown("---")
+
+# ===== TREND CHARTS FOR ALL 5 METRICS =====
+st.subheader("📈 Metric Trends Over Time")
+
+# Create tabs for each metric type
+metric_tabs = st.tabs(["⏱️ Delay", "📊 Queue", "🚗 Throughput", "🛑 Stops", "⚡ Pressure"])
+
+# Metric configurations
+metrics_config = {
+    "delay": {"title": "Delay Trend", "ylabel": "Normalized Delay (0-1)", "color": "red", "lower_better": True},
+    "queue": {"title": "Queue Trend", "ylabel": "Average Queue Length (vehicles)", "color": "orange", "lower_better": True},
+    "throughput": {"title": "Throughput Trend", "ylabel": "Vehicles per Step", "color": "green", "lower_better": False},
+    "stops": {"title": "Stop Ratio Trend", "ylabel": "Stopped Vehicles Ratio", "color": "purple", "lower_better": True},
+    "pressure": {"title": "Pressure Trend", "ylabel": "Incoming - Outgoing", "color": "brown", "lower_better": True},
+}
+
+for idx, (metric_key, config) in enumerate(metrics_config.items()):
+    with metric_tabs[idx]:
+        col1, col2 = st.columns([3, 1])
         
-        f = np.array(fixed_metrics[metric_key])
-        p = np.array(ppo_metrics[metric_key])
+        with col1:
+            fig = go.Figure()
+            
+            if data_store.time_history and data_store.global_metrics[metric_key]:
+                values = list(data_store.global_metrics[metric_key])
+                times = list(data_store.time_history)
+                
+                fig.add_trace(go.Scatter(
+                    x=times,
+                    y=values,
+                    mode='lines',
+                    name=config['title'],
+                    line=dict(color=config['color'], width=2),
+                    fill='tozeroy'
+                ))
+                
+                # Add rolling average (window=10)
+                if len(values) >= 10:
+                    rolling_avg = pd.Series(values).rolling(window=10).mean()
+                    fig.add_trace(go.Scatter(
+                        x=times,
+                        y=rolling_avg,
+                        mode='lines',
+                        name='Rolling Avg (10 steps)',
+                        line=dict(color='blue', width=1, dash='dash')
+                    ))
+                
+                fig.update_layout(
+                    title=f"{config['title']} - Current: {values[-1]:.3f}" if values else config['title'],
+                    xaxis_title="Simulation Step",
+                    yaxis_title=config['ylabel'],
+                    height=400,
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig, use_container_width=True)
         
-        if f.size > 0:
-            ax.plot(f, label="Fixed Timing", linewidth=2.5, color='orange', alpha=0.8)
-        if p.size > 0:
-            ax.plot(p, label="PPO Model", linewidth=2.5, color='blue', alpha=0.8)
+        with col2:
+            # Statistics box
+            values = list(data_store.global_metrics[metric_key]) if data_store.global_metrics[metric_key] else []
+            if values:
+                st.markdown("**Statistics**")
+                st.metric("Current", f"{values[-1]:.3f}")
+                st.metric("Mean", f"{np.mean(values):.3f}")
+                st.metric("Median", f"{np.median(values):.3f}")
+                st.metric("Std Dev", f"{np.std(values):.3f}")
+                st.metric("Min", f"{np.min(values):.3f}")
+                st.metric("Max", f"{np.max(values):.3f}")
+                
+                # Performance indicator
+                if config['lower_better']:
+                    trend = values[-1] - values[0] if len(values) > 1 else 0
+                    if trend < 0:
+                        st.success(f"✅ Improving ({trend:.3f})")
+                    else:
+                        st.warning(f"⚠️ Worsening (+{trend:.3f})")
+                else:
+                    trend = values[-1] - values[0] if len(values) > 1 else 0
+                    if trend > 0:
+                        st.success(f"✅ Improving (+{trend:.3f})")
+                    else:
+                        st.warning(f"⚠️ Worsening ({trend:.3f})")
+
+st.markdown("---")
+
+# ===== PER-INTERSECTION DETAILS =====
+st.subheader("🚥 Per-Intersection Details")
+
+# Create tabs for each intersection
+tl_tabs = st.tabs([f"🚦 {tl}" for tl in TL_IDS])
+
+for idx, tl in enumerate(TL_IDS):
+    with tl_tabs[idx]:
+        # Get latest metrics for this intersection
+        metrics_data = {}
+        for metric in ["delay", "queue", "throughput", "stops", "pressure"]:
+            metrics_data[metric] = data_store.intersections[tl][metric][-1] if data_store.intersections[tl][metric] else 0
         
-        ax.set_title(f"{title}: PPO vs Fixed Timing", fontsize=16, fontweight='bold')
-        ax.set_ylabel(ylabel, fontsize=12)
-        ax.set_xlabel("Simulation Step", fontsize=12)
-        ax.legend(loc='upper right', fontsize=11)
-        ax.grid(True, alpha=0.3)
+        # Display metrics in 5 columns
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1:
+            st.metric("Delay", f"{metrics_data['delay']:.3f}")
+        with col2:
+            st.metric("Queue", f"{metrics_data['queue']:.1f}")
+        with col3:
+            st.metric("Throughput", f"{metrics_data['throughput']:.0f}")
+        with col4:
+            st.metric("Stops", f"{metrics_data['stops']:.3f}")
+        with col5:
+            st.metric("Pressure", f"{metrics_data['pressure']:.0f}")
+        
+        # Phase and occupancy
+        col1, col2 = st.columns(2)
+        with col1:
+            current_phase = data_store.intersections[tl]["phase"][-1] if data_store.intersections[tl]["phase"] else 0
+            phase_symbols = {0: "🔴 RED", 1: "🟡 YELLOW", 2: "🟢 GREEN", 3: "🟡 YELLOW"}
+            st.metric("Traffic Light Phase", phase_symbols.get(current_phase, f"Phase {current_phase}"))
+        
+        with col2:
+            current_occ = data_store.intersections[tl]["occupancy"][-1] if data_store.intersections[tl]["occupancy"] else 0
+            st.metric("Lane Occupancy", f"{current_occ:.1f}%")
+        
+        # Mini trends for this intersection
+        st.markdown("**Metric Trends**")
+        fig, axes = plt.subplots(1, 3, figsize=(12, 3))
+        
+        metrics_to_plot = ["queue", "throughput", "pressure"]
+        colors = ["orange", "green", "brown"]
+        
+        for i, (metric, color) in enumerate(zip(metrics_to_plot, colors)):
+            values = list(data_store.intersections[tl][metric]) if data_store.intersections[tl][metric] else []
+            times = list(data_store.time_history)
+            
+            if values and times:
+                axes[i].plot(times, values, color=color, linewidth=2)
+                axes[i].set_title(metric.capitalize())
+                axes[i].set_xlabel("Step")
+                axes[i].grid(True, alpha=0.3)
         
         plt.tight_layout()
-        filename = f"metric_{metric_key}_{timestamp}.png"
-        plt.savefig(filename, dpi=150)
-        print(f"✓ Saved: {filename}")
-        plt.show()
+        st.pyplot(fig)
+        plt.close()
 
-# ==================== MAIN ====================
-def main():
-    print("\n" + "="*70)
-    print("SUMO PPO vs FIXED TIMING COMPARISON (SEQUENTIAL)")
-    print("="*70)
-    
-    # Phase 1: PPO
-    ppo_ok = run_ppo_simulation()
-    
-    if not ppo_ok:
-        print("\n✗ PPO simulation failed")
-        return
-    
-    # Phase 2: Fixed
-    fixed_ok = run_fixed_timing_simulation()
-    
-    if not fixed_ok:
-        print("\n✗ Fixed timing simulation failed")
-        return
-    
-    # Phase 3: Analysis
-    export_metrics()
-    print_comparison_report()
-    plot_comparison()
-    
-    print("\n" + "="*70)
-    print("=== COMPARISON COMPLETE ===")
-    print("="*70 + "\n")
+st.markdown("---")
 
-if __name__ == "__main__":
-    main()
+# ===== SIDE PANEL WITH SUMMARY STATISTICS =====
+with st.sidebar:
+    st.title("📈 Summary Statistics")
+    
+    st.markdown("### Overall Performance")
+    
+    # Calculate average metrics
+    avg_delay = np.mean(list(data_store.global_metrics["delay"])) if data_store.global_metrics["delay"] else 0
+    avg_queue = np.mean(list(data_store.global_metrics["queue"])) if data_store.global_metrics["queue"] else 0
+    avg_tp = np.mean(list(data_store.global_metrics["throughput"])) if data_store.global_metrics["throughput"] else 0
+    avg_stops = np.mean(list(data_store.global_metrics["stops"])) if data_store.global_metrics["stops"] else 0
+    avg_pressure = np.mean(list(data_store.global_metrics["pressure"])) if data_store.global_metrics["pressure"] else 0
+    
+    st.metric("📊 Avg Delay", f"{avg_delay:.3f}")
+    st.metric("📊 Avg Queue", f"{avg_queue:.1f}")
+    st.metric("📊 Avg Throughput", f"{avg_tp:.1f}")
+    st.metric("📊 Avg Stops", f"{avg_stops:.3f}")
+    st.metric("📊 Avg Pressure", f"{avg_pressure:.1f}")
+    
+    st.markdown("---")
+    
+    # Performance scoring (lower is better for most metrics)
+    st.markdown("### Performance Score")
+    
+    # Normalize metrics (0-100 scale, higher is better)
+    delay_score = max(0, min(100, (1 - avg_delay) * 100))
+    queue_score = max(0, min(100, 100 - (avg_queue * 10)))
+    tp_score = max(0, min(100, (avg_tp / 5) * 100))
+    stops_score = max(0, min(100, (1 - avg_stops) * 100))
+    pressure_score = max(0, min(100, 100 - (abs(avg_pressure) * 5)))
+    
+    overall_score = (delay_score + queue_score + tp_score + stops_score + pressure_score) / 5
+    
+    st.metric("Overall Score", f"{overall_score:.1f}/100")
+    
+    # Progress bar
+    st.progress(overall_score / 100)
+    
+    st.markdown("---")
+    st.markdown("### ℹ️ About")
+    st.markdown("""
+    **5 Key Metrics:**
+    - **Delay**: Lower is better (0=full speed, 1=stopped)
+    - **Queue**: Lower is better (halting vehicles)
+    - **Throughput**: Higher is better (vehicles/step)
+    - **Stops**: Lower is better (stopped ratio)
+    - **Pressure**: Lower is better (incoming-outgoing)
+    """)
+
+# Auto-refresh
+time.sleep(1)
+st.rerun()
