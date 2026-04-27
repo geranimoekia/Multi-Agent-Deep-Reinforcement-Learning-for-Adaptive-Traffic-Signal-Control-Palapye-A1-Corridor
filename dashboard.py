@@ -1,484 +1,1073 @@
-"""
-SUMO Multi-Intersection Dashboard for Streamlit
-Run with: streamlit run dashboard.py
-"""
-
 import streamlit as st
 import traci
 import threading
 import time
-import pandas as pd
-import plotly.graph_objs as go
-from collections import deque
+import traceback
+import glob
 import os
-import atexit
+import numpy as np
+import plotly.graph_objs as go
+from collections import deque, defaultdict
+import traffic_injector
+import green_wave
+from traffic_scenario import TrafficScenario, PROFILE_NAMES, PROFILES
+from tl_programs import apply_tl_programs
 
-# ===== CONFIGURATION =====
+# ================= CONFIG =================
 SUMO_CFG = "triple.sumocfg"
 USE_GUI = True
-MAX_HISTORY = 100
+MAX_HISTORY = 300
 
-# Traffic light IDs
-TL_IDS = [
-    "6073919354",
-    "6073919354_B", 
-    "6073919354_C"
-]
+TL_IDS = ["6073919354", "6073919354_B", "6073919354_C"]
 
-# Lane mappings
-LANES = {
-    "6073919354": [
-        "-E5_0",
-        "-465932558#1.34_0",
-        "-465932558#1.34_1", 
-        "-465932558#1.34_2",
-        "470773638#1_0",
-        "465932558#0_0",
-        "465932558#0_1",
-    ],
-    "6073919354_B": [
-        "-E5_B_0",
-        "-465932558#1.34_B_0",
-        "-465932558#1.34_B_1",
-        "-465932558#1.34_B_2", 
-        "470773638#1_B_0",
-        "465932558#0_B_0",
-        "465932558#0_B_1",
-    ],
-    "6073919354_C": [
-        "-465932558#2_C_0",
-        "470773638#1_C_0",
-        "E0_C_0",
-    ]
+# ================= THEME =================
+APPLE_FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+APPLE_MONO = "'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace"
+
+COLORS = {
+    'bg_primary': '#f2f2f7',
+    'bg_card': '#ffffff',
+    'text_primary': '#1d1d1f',
+    'text_secondary': '#6e6e73',
+    'text_tertiary': '#aeaeb2',
+    'accent_green': '#34c759',
+    'accent_orange': '#ff9500',
+    'accent_red': '#ff3b30',
+    'accent_blue': '#0071e3',
+    'border_light': '#e5e5ea',
 }
 
-# ===== DATA STORAGE CLASS =====
-class SumoDataStore:
-    def __init__(self):
-        self.time_history = deque(maxlen=MAX_HISTORY)
-        self.global_queue = deque(maxlen=MAX_HISTORY)
-        self.global_throughput = deque(maxlen=MAX_HISTORY)
-        
-        self.intersections = {
-            tl: {
-                "queue": deque(maxlen=MAX_HISTORY),
-                "throughput": deque(maxlen=MAX_HISTORY),
-                "phase": deque(maxlen=MAX_HISTORY),
-                "occupancy": deque(maxlen=MAX_HISTORY),
-                "waiting_time": deque(maxlen=MAX_HISTORY),
-            }
-            for tl in TL_IDS
-        }
-        
-        self.running = True
-        self.current_step = 0
-        self.lane_queues = {}
-        self.flow_periods = {}
-        self.demand_level = 1.0
-        
-    def update(self):
-        self.current_step += 1
-        self.time_history.append(self.current_step)
-        
-        total_queue = 0
-        total_throughput = 0
-        
-        for tl in TL_IDS:
-            lanes = LANES.get(tl, [])
-            
-            queues = []
-            throughputs = []
-            occupancies = []
-            waiting_times = []
-            
-            for lane in lanes:
-                if lane:
-                    try:
-                        q = traci.lane.getLastStepHaltingNumber(lane)
-                        t = traci.lane.getLastStepVehicleNumber(lane)
-                        occ = traci.lane.getLastStepOccupancy(lane)
-                        wt = traci.lane.getWaitingTime(lane)
-                        
-                        queues.append(q)
-                        throughputs.append(t)
-                        occupancies.append(occ)
-                        waiting_times.append(wt)
-                        
-                        self.lane_queues[f"{tl}_{lane}"] = q
-                    except Exception:
-                        pass
-            
-            q_sum = sum(queues) if queues else 0
-            t_sum = sum(throughputs) if throughputs else 0
-            occ_avg = sum(occupancies) / len(occupancies) if occupancies else 0
-            wt_sum = sum(waiting_times) if waiting_times else 0
-            
-            try:
-                phase = traci.trafficlight.getPhase(tl)
-            except:
-                phase = 0
-            
-            self.intersections[tl]["queue"].append(q_sum)
-            self.intersections[tl]["throughput"].append(t_sum)
-            self.intersections[tl]["phase"].append(phase)
-            self.intersections[tl]["occupancy"].append(occ_avg)
-            self.intersections[tl]["waiting_time"].append(wt_sum)
-            
-            total_queue += q_sum
-            total_throughput += t_sum
-        
-        self.global_queue.append(total_queue)
-        self.global_throughput.append(total_throughput)
-    
-    def update_demand(self, demand_multiplier):
-        """Update traffic demand by adjusting flow periods"""
-        try:
-            flows = traci.route.getFlowIDList()
-            
-            for flow_id in flows:
-                # Store original period on first call
-                if flow_id not in self.flow_periods:
-                    try:
-                        self.flow_periods[flow_id] = traci.flow.getFlowPeriod(flow_id)
-                    except:
-                        continue
-                
-                # Calculate new period based on demand
-                original_period = self.flow_periods[flow_id]
-                new_period = max(1, int(original_period / demand_multiplier))
-                
-                try:
-                    traci.flow.setFlowPeriod(flow_id, new_period)
-                except:
-                    pass
-                    
-            self.demand_level = demand_multiplier
-        except Exception as e:
-            print(f"Error updating demand: {e}")
+# Plot theme
+PLOT_BASE = dict(
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='#fafafa',
+    font=dict(color=COLORS['text_secondary'], family=APPLE_FONT, size=11),
+)
+AXIS_STYLE = dict(
+    gridcolor='#f0f0f0',
+    linecolor=COLORS['border_light'],
+    zerolinecolor=COLORS['border_light'],
+    tickcolor=COLORS['text_tertiary'],
+)
 
-# ===== SUMO SIMULATION THREAD =====
+# ================= STATE =================
+class Store:
+    def __init__(self):
+        self.step = 0
+        self.time = deque(maxlen=MAX_HISTORY)
+        self.queue = deque(maxlen=MAX_HISTORY)
+        self.throughput = deque(maxlen=MAX_HISTORY)
+        self.running = True
+        self.lock = threading.Lock()
+        # PPO model control
+        self.model_enabled = False
+        self.model = None
+        self.model_name = ""
+
+store = Store()
+
+
+# ================= MODEL CONTROL HELPERS =================
+_DELTA_T         = 3
+_YELLOW_DUR      = 4
+_MIN_GREEN       = 8
+_MIN_SWITCH_QUEUE = 8   # target lanes need this many halting vehicles before a switch
+_N_LANES         = 8
+_OBS_MAX_Q       = 15.0
+
+_MAJOR_GREEN = {
+    "6073919354":   [0, 4],
+    "6073919354_B": [0, 4],
+    "6073919354_C": [0, 2, 4],
+}
+_YELLOW_AFTER = {
+    "6073919354":   {0: 1, 4: 5},
+    "6073919354_B": {0: 1, 4: 5},
+    "6073919354_C": {0: 1, 2: 3, 4: 5},
+}
+
+
+def _build_obs(controlled_lanes, phase_state, current_action):
+    parts = []
+    for tl in TL_IDS:
+        vals = []
+        for lane in controlled_lanes.get(tl, []):
+            try:
+                h = traci.lane.getLastStepHaltingNumber(lane)
+                vals.append(min(h / _OBS_MAX_Q, 1.0))
+            except Exception:
+                vals.append(0.0)
+        while len(vals) < _N_LANES:
+            vals.append(0.0)
+        parts.extend(vals[:_N_LANES])
+        n_phases = len(_MAJOR_GREEN[tl])
+        parts.append(current_action.get(tl, 0) / max(n_phases - 1, 1))
+        parts.append(0.0 if phase_state.get(tl) == "GREEN" else 1.0)
+    return np.array(parts, dtype=np.float32)
+
+
+def _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes=None):
+    for i, tl in enumerate(TL_IDS):
+        req = int(action[i]) if action is not None else cur_act.get(tl, 0)
+        state = phase_state.get(tl, "GREEN")
+
+        if state == "GREEN":
+            green_time[tl] = green_time.get(tl, 0) + 1
+            if req != cur_act.get(tl, 0) and green_time[tl] >= _MIN_GREEN:
+                # Only switch if target lanes have enough queued vehicles
+                target_lanes = (phase_lanes or {}).get(tl, {}).get(req, [])
+                if target_lanes:
+                    target_q = sum(
+                        traci.lane.getLastStepHaltingNumber(l)
+                        for l in target_lanes
+                    )
+                    if target_q < _MIN_SWITCH_QUEUE:
+                        continue  # not enough demand on target — hold current green
+                cur_green = _MAJOR_GREEN[tl][cur_act.get(tl, 0)]
+                yellow = _YELLOW_AFTER[tl][cur_green]
+                traci.trafficlight.setPhase(tl, yellow)
+                phase_state[tl] = "YELLOW"
+                state_timer[tl] = _YELLOW_DUR
+                pend_act[tl] = req
+
+        elif state == "YELLOW":
+            state_timer[tl] = state_timer.get(tl, 1) - 1
+            if state_timer[tl] <= 0:
+                target = _MAJOR_GREEN[tl][pend_act.get(tl, 0)]
+                traci.trafficlight.setPhase(tl, target)
+                phase_state[tl] = "GREEN"
+                cur_act[tl] = pend_act.get(tl, 0)
+                green_time[tl] = 0
+
+
+# ================= SIMULATION LOOP =================
 def run_sumo():
-    """Run SUMO simulation in background thread"""
     try:
         cmd = ["sumo-gui" if USE_GUI else "sumo", "-c", SUMO_CFG]
         traci.start(cmd)
-        st.session_state['sumo_running'] = True
-        
-        while st.session_state.get('sumo_continue', True):
+        print("SUMO Started Successfully")
+
+        apply_tl_programs()
+
+        initial = TrafficScenario(st.session_state.get("scenario_name", "normal"))
+        traffic_injector.init(initial)
+
+        gw = green_wave.create(TL_IDS)
+        gw.bootstrap(free_flow_kmh=st.session_state.get("gw_speed", 50.0))
+
+        # Cache lanes once for model obs building
+        controlled_lanes = {}
+        phase_lanes = {}
+        for tl in TL_IDS:
+            controlled_lanes[tl] = list(
+                dict.fromkeys(traci.trafficlight.getControlledLanes(tl))
+            )
+            links_tl = traci.trafficlight.getControlledLinks(tl)
+            try:
+                programs = traci.trafficlight.getAllProgramLogics(tl)
+                phase_strs = {i: p.state for i, p in enumerate(programs[0].phases)}
+            except Exception:
+                phase_strs = {}
+            phase_lanes[tl] = {}
+            for act_idx, ph_idx in enumerate(_MAJOR_GREEN[tl]):
+                state_str = phase_strs.get(ph_idx, "")
+                served = []
+                for li, ch in enumerate(state_str):
+                    if ch in ('G', 'g') and li < len(links_tl):
+                        for (fl, _, _) in links_tl[li]:
+                            if fl and fl not in served:
+                                served.append(fl)
+                phase_lanes[tl][act_idx] = served
+
+        # Phase state machine for model control
+        phase_state  = {tl: "GREEN" for tl in TL_IDS}
+        state_timer  = {tl: 0       for tl in TL_IDS}
+        cur_act      = {tl: 0       for tl in TL_IDS}
+        pend_act     = {tl: 0       for tl in TL_IDS}
+        green_time   = {tl: 0       for tl in TL_IDS}
+        window_steps = 0
+
+        while store.running:
             traci.simulationStep()
-            data_store.update()
-            time.sleep(0.1)
-            
+            step = traci.simulation.getTime()
+
+            with store.lock:
+                store.step = int(step)
+
+            traffic_injector.inject(int(step))
+            gw.update(int(step))
+
+            # Model inference every DELTA_T sim steps
+            window_steps += 1
+            if window_steps >= _DELTA_T:
+                window_steps = 0
+                with store.lock:
+                    mdl     = store.model
+                    enabled = store.model_enabled
+
+                if enabled and mdl is not None:
+                    obs    = _build_obs(controlled_lanes, phase_state, cur_act)
+                    action, _ = mdl.predict(obs, deterministic=True)
+                    _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
+                else:
+                    # drain any in-progress yellow if model was just turned off
+                    if any(phase_state[tl] == "YELLOW" for tl in TL_IDS):
+                        _tick_phases(None, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
+
+            q = 0
+            t = 0
+            try:
+                for lane in traci.lane.getIDList():
+                    try:
+                        q += traci.lane.getLastStepHaltingNumber(lane)
+                        t += traci.lane.getLastStepVehicleNumber(lane)
+                    except Exception:
+                        pass
+            except Exception as e:
+                print(f"Metrics error: {e}")
+
+            with store.lock:
+                store.time.append(step)
+                store.queue.append(q)
+                store.throughput.append(t)
+
+            time.sleep(0.05)
+
         traci.close()
-        st.session_state['sumo_running'] = False
+        print("SUMO Closed")
+
     except Exception as e:
         print(f"SUMO Error: {e}")
-        st.session_state['sumo_running'] = False
+        traceback.print_exc()
+        try:
+            traci.close()
+        except Exception:
+            pass
+        store.running = False
 
-# ===== INITIALIZE SESSION STATE =====
-if 'sumo_started' not in st.session_state:
-    st.session_state['sumo_started'] = False
-    st.session_state['sumo_continue'] = True
-    st.session_state['sumo_running'] = False
-    st.session_state['demand_level'] = 1.0
 
-# Start SUMO only once
-if not st.session_state['sumo_started']:
-    data_store = SumoDataStore()
-    sumo_thread = threading.Thread(target=run_sumo, daemon=True)
-    sumo_thread.start()
-    st.session_state['sumo_started'] = True
-    st.session_state['data_store'] = data_store
-else:
-    data_store = st.session_state['data_store']
+# ================= START THREAD =================
+if "started" not in st.session_state:
+    st.session_state.started = True
+    st.session_state.thread = threading.Thread(target=run_sumo, daemon=True)
+    st.session_state.thread.start()
 
-# Cleanup on exit
-def cleanup():
-    st.session_state['sumo_continue'] = False
-    time.sleep(0.5)
+import atexit
+atexit.register(lambda: setattr(store, "running", False))
 
-atexit.register(cleanup)
 
-# ===== STREAMLIT UI =====
+# ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="SUMO Traffic Dashboard",
+    page_title="SUMO Traffic Control System",
     page_icon="🚦",
     layout="wide"
 )
 
-# Title
-st.title("🚦 Multi-Intersection SUMO Dashboard")
-st.markdown(f"Monitoring **{len(TL_IDS)}** traffic light intersections")
+# ================= CUSTOM CSS =================
+st.markdown(f"""
+<style>
+* {{
+    box-sizing: border-box;
+}}
 
-# Show SUMO status
-if st.session_state.get('sumo_running', False):
-    st.success("✅ SUMO Simulation Running")
-else:
-    st.warning("⏳ Starting SUMO Simulation...")
+.stApp {{
+    background-color: {COLORS['bg_primary']} !important;
+    color: {COLORS['text_primary']};
+    font-family: {APPLE_FONT} !important;
+}}
 
-# Sidebar controls
+/* Main content area */
+.main .block-container {{
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    background-color: {COLORS['bg_primary']};
+}}
+
+h1, h2, h3, h4, h5, h6 {{
+    color: {COLORS['text_primary']} !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.3px !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+/* Title styling */
+h1 {{
+    font-size: 32px !important;
+    margin-bottom: 0.5rem !important;
+}}
+
+/* Subtitle */
+.main p {{
+    color: {COLORS['text_secondary']} !important;
+    font-size: 14px;
+}}
+
+/* Metric containers - MORE SPECIFIC SELECTORS */
+div[data-testid="stMetricValue"] > div {{
+    color: {COLORS['text_primary']} !important;
+    font-size: 32px !important;
+    font-weight: 700 !important;
+    font-family: {APPLE_MONO} !important;
+    line-height: 1.2 !important;
+}}
+
+div[data-testid="stMetric"] {{
+    background-color: {COLORS['bg_card']} !important;
+    border-radius: 14px !important;
+    padding: 20px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04) !important;
+    border: 1px solid {COLORS['border_light']} !important;
+}}
+
+div[data-testid="stMetric"] label {{
+    color: {COLORS['text_tertiary']} !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+div[data-testid="stMetricDelta"] {{
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}}
+
+div[data-testid="stMetricDelta"] svg {{
+    display: none !important;
+}}
+
+/* Buttons */
+.stButton > button {{
+    background-color: {COLORS['accent_blue']} !important;
+    color: white !important;
+    border-radius: 10px !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    box-shadow: 0 2px 8px rgba(0,113,227,0.2) !important;
+    transition: all 0.2s !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+.stButton > button:hover {{
+    background-color: #0051a8 !important;
+    box-shadow: 0 4px 12px rgba(0,113,227,0.3) !important;
+}}
+
+.stButton > button[kind="secondary"] {{
+    background-color: {COLORS['bg_card']} !important;
+    color: {COLORS['text_primary']} !important;
+    border: 1px solid {COLORS['border_light']} !important;
+}}
+
+.stButton > button[kind="secondary"]:hover {{
+    background-color: #f9f9f9 !important;
+    border-color: {COLORS['text_tertiary']} !important;
+}}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {{
+    background-color: {COLORS['bg_card']} !important;
+    border-right: 1px solid {COLORS['border_light']} !important;
+}}
+
+section[data-testid="stSidebar"] > div {{
+    background-color: {COLORS['bg_card']} !important;
+}}
+
+section[data-testid="stSidebar"] .block-container {{
+    padding-top: 2rem !important;
+}}
+
+section[data-testid="stSidebar"] h3 {{
+    font-size: 18px !important;
+    margin-bottom: 1rem !important;
+}}
+
+section[data-testid="stSidebar"] hr {{
+    margin: 1.5rem 0 !important;
+    border-color: {COLORS['border_light']} !important;
+}}
+
+/* Sidebar — force all labels and text to be visible */
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] .stToggle label,
+section[data-testid="stSidebar"] .stCheckbox label,
+section[data-testid="stSidebar"] .stSelectbox label,
+section[data-testid="stSidebar"] .stSlider label {{
+    color: {COLORS['text_primary']} !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    font-family: {APPLE_FONT} !important;
+    opacity: 1 !important;
+}}
+
+/* Sidebar selectbox — dropdown box itself */
+section[data-testid="stSidebar"] .stSelectbox > div > div {{
+    background-color: {COLORS['bg_primary']} !important;
+    border: 1px solid {COLORS['border_light']} !important;
+    border-radius: 8px !important;
+    color: {COLORS['text_primary']} !important;
+}}
+
+section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] span {{
+    color: {COLORS['text_primary']} !important;
+}}
+
+/* Sidebar toggle track and thumb */
+section[data-testid="stSidebar"] .stToggle [data-baseweb="checkbox"] {{
+    opacity: 1 !important;
+}}
+
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] .stCaptionContainer {{
+    color: {COLORS['text_secondary']} !important;
+    opacity: 1 !important;
+}}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {{
+    gap: 8px !important;
+    background-color: transparent !important;
+    border-bottom: 2px solid {COLORS['border_light']} !important;
+    padding: 0 !important;
+}}
+
+.stTabs [data-baseweb="tab"] {{
+    background-color: transparent !important;
+    border: none !important;
+    color: {COLORS['text_tertiary']} !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    padding: 12px 24px !important;
+    border-bottom: 3px solid transparent !important;
+    font-family: {APPLE_FONT} !important;
+    height: auto !important;
+}}
+
+.stTabs [data-baseweb="tab"]:hover {{
+    color: {COLORS['text_primary']} !important;
+}}
+
+.stTabs [aria-selected="true"] {{
+    background-color: transparent !important;
+    border-bottom: 3px solid {COLORS['accent_blue']} !important;
+    color: {COLORS['accent_blue']} !important;
+    font-weight: 600 !important;
+}}
+
+.stTabs [data-baseweb="tab-panel"] {{
+    padding-top: 2rem !important;
+}}
+
+/* Selectbox */
+.stSelectbox label {{
+    color: {COLORS['text_secondary']} !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+.stSelectbox > div > div {{
+    border-color: {COLORS['border_light']} !important;
+    border-radius: 8px !important;
+}}
+
+/* Slider */
+.stSlider label {{
+    color: {COLORS['text_secondary']} !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+.stSlider [data-baseweb="slider"] {{
+    margin-top: 1rem !important;
+}}
+
+/* Checkbox */
+.stCheckbox label {{
+    color: {COLORS['text_secondary']} !important;
+    font-size: 14px !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+/* Toggle */
+.stToggle label {{
+    color: {COLORS['text_secondary']} !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+/* Dataframe */
+div[data-testid="stDataFrame"] {{
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    border: 1px solid {COLORS['border_light']} !important;
+}}
+
+.dataframe {{
+    font-family: {APPLE_FONT} !important;
+    font-size: 13px !important;
+}}
+
+.dataframe thead tr th {{
+    background-color: #fafafa !important;
+    color: {COLORS['text_secondary']} !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px !important;
+    border-bottom: 2px solid {COLORS['border_light']} !important;
+}}
+
+.dataframe tbody tr td {{
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #f5f5f5 !important;
+}}
+
+.dataframe tbody tr:hover {{
+    background-color: #fafafa !important;
+}}
+
+/* Info/Warning boxes */
+.stAlert {{
+    border-radius: 10px !important;
+    border: 1px solid {COLORS['border_light']} !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+/* Section labels */
+.section-label {{
+    color: {COLORS['text_tertiary']} !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    margin-bottom: 12px !important;
+    margin-top: 24px !important;
+    display: block !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+/* Status pill */
+.status-pill {{
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    display: inline-block !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+.status-online {{
+    background: #f0faf4 !important;
+    color: #1c7a3e !important;
+    border: 1px solid #c3e9d0 !important;
+}}
+
+.status-offline {{
+    background: #fdf2f2 !important;
+    color: #c0392b !important;
+    border: 1px solid #f5c6c6 !important;
+}}
+
+/* Caption text */
+.stCaptionContainer {{
+    color: {COLORS['text_tertiary']} !important;
+    font-size: 12px !important;
+    font-family: {APPLE_FONT} !important;
+}}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# ================= HELPER FUNCTIONS =================
+def section_label(text):
+    """Create a properly styled section label"""
+    st.markdown(f'<p class="section-label">{text}</p>', unsafe_allow_html=True)
+
+
+def status_pill(text, online=True):
+    css_class = "status-online" if online else "status-offline"
+    dot = "●" if online else "○"
+    return f'<span class="status-pill {css_class}">{dot} {text}</span>'
+
+
+# ================= SIDEBAR =================
 with st.sidebar:
-    st.subheader("⚙️ Controls")
-    
-    # Auto-refresh
+    st.markdown("### SUMO Control")
+    st.markdown("---")
+
+    # Auto-refresh controls
     auto_refresh = st.checkbox("Auto-refresh", value=True)
-    refresh_rate = st.slider("Refresh interval (seconds)", 1, 10, 2)
-    
+    if auto_refresh:
+        refresh_rate = st.slider("Refresh interval (seconds)", 1, 5, 2)
+
     st.markdown("---")
     
-    # Traffic demand control
-    st.subheader("🚗 Traffic Demand")
+    # Quick stats
+    section_label("Quick Stats")
     
-    demand_mode = st.radio(
-        "Demand Mode",
-        ["Manual", "Preset Profile"]
+    with store.lock:
+        current_step = store.step
+    
+    total_vehicles = traffic_injector.vehicle_count()
+    log_snapshot = list(traffic_injector.injection_log)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Step", f"{current_step}")
+    with col2:
+        st.metric("Vehicles", f"{total_vehicles}")
+    
+    st.metric("Injections", f"{len(log_snapshot)}")
+
+    st.markdown("---")
+    
+    # Active scenario indicator
+    section_label("Active Scenario")
+    current_scenario = st.session_state.get("scenario_name", "normal")
+    st.markdown(f"**{current_scenario.replace('_', ' ').title()}**")
+    st.caption("Change in Control tab")
+
+    st.markdown("---")
+    
+    # Green wave controls (in sidebar so always accessible)
+    section_label("Green Wave")
+    gw = green_wave.get()
+    if gw is not None:
+        gw_on = st.toggle(
+            "Enable Green Wave",
+            value=st.session_state.get("gw_enabled", True),
+            key="gw_sidebar_toggle"
+        )
+        if gw_on != st.session_state.get("gw_enabled", True):
+            st.session_state["gw_enabled"] = gw_on
+            gw.enabled = gw_on
+            if gw_on:
+                gw._apply_all()
+        if gw_on:
+            spd = st.slider(
+                "Speed (km/h)", 20, 80,
+                st.session_state.get("gw_speed", 50),
+                key="gw_sidebar_speed"
+            )
+            if spd != st.session_state.get("gw_speed", 50):
+                st.session_state["gw_speed"] = spd
+                gw.set_speed(spd)
+            st.markdown(status_pill("Active", online=True), unsafe_allow_html=True)
+        else:
+            st.markdown(status_pill("Disabled", online=False), unsafe_allow_html=True)
+    else:
+        st.caption("Waiting for simulation...")
+
+    st.markdown("---")
+
+    # PPO model control
+    section_label("PPO Model")
+
+    model_files = sorted(glob.glob("ppo_models/*.zip"))
+    model_names = [os.path.basename(f) for f in model_files]
+
+    if model_names:
+        default_idx = model_names.index("best_model.zip") if "best_model.zip" in model_names else 0
+        selected_name = st.selectbox("Model file", model_names, index=default_idx, key="model_select")
+        selected_path = f"ppo_models/{selected_name}"
+
+        with store.lock:
+            currently_enabled = store.model_enabled
+            currently_loaded  = store.model_name
+
+        model_on = st.toggle("Enable Model Control", value=currently_enabled, key="model_toggle")
+
+        if model_on and (not currently_enabled or currently_loaded != selected_name):
+            # Load (or reload) model
+            from stable_baselines3 import PPO
+            with st.spinner(f"Loading {selected_name}..."):
+                mdl = PPO.load(selected_path)
+            with store.lock:
+                store.model        = mdl
+                store.model_name   = selected_name
+                store.model_enabled = True
+            st.success(f"Model active: {selected_name}")
+
+        elif not model_on and currently_enabled:
+            with store.lock:
+                store.model_enabled = False
+                store.model        = None
+                store.model_name   = ""
+            st.info("Model disabled — SUMO running its own TL programs.")
+
+        if currently_enabled:
+            st.markdown(
+                status_pill(f"AI: {currently_loaded}", online=True),
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(status_pill("AI: Off", online=False), unsafe_allow_html=True)
+    else:
+        st.caption("No models found in ppo_models/")
+
+    st.markdown("---")
+
+    # Stop button
+    if st.button("Stop Simulation", type="primary", use_container_width=True):
+        store.running = False
+        st.warning("Stopping simulation...")
+        time.sleep(1)
+        st.rerun()
+
+
+# ================= MAIN CONTENT =================
+st.title("SUMO Traffic Control System")
+st.markdown("Real-time vehicle injection with adaptive demand management")
+
+# Calculate current metrics
+with store.lock:
+    current_queue = store.queue[-1] if store.queue else 0
+    current_throughput = store.throughput[-1] if store.throughput else 0
+    avg_queue = sum(store.queue) / len(store.queue) if store.queue else 0
+    total_throughput = sum(store.throughput) if store.throughput else 0
+    time_data = list(store.time)
+    queue_data = list(store.queue)
+    throughput_data = list(store.throughput)
+
+
+# ================= TABS =================
+tab1, tab2, tab3 = st.tabs(["Live Monitor", "Traffic Analysis", "Control & Configuration"])
+
+
+# ═══════════════════════════════════════════════════════════════
+# TAB 1: LIVE MONITOR
+# ═══════════════════════════════════════════════════════════════
+with tab1:
+    st.markdown("### Real-time Traffic Metrics")
+    
+    # Hero metrics strip
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        delta_val = current_queue - avg_queue
+        st.metric(
+            "Current Queue",
+            f"{current_queue}",
+            delta=f"{delta_val:.1f} vs avg",
+            delta_color="inverse"
+        )
+    
+    with col2:
+        st.metric("Current Throughput", f"{current_throughput}")
+    
+    with col3:
+        st.metric("Total Throughput", f"{total_throughput}")
+    
+    with col4:
+        st.metric("Average Queue", f"{avg_queue:.1f}")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Main traffic chart
+    st.markdown(section_label("Live Traffic Flow"), unsafe_allow_html=True)
+    
+    fig_live = go.Figure()
+    
+    fig_live.add_trace(go.Scatter(
+        x=time_data,
+        y=queue_data,
+        name="Queue Length",
+        line=dict(width=2.5, color=COLORS['accent_red']),
+        fill='tozeroy',
+        fillcolor=f"rgba(255, 59, 48, 0.1)",
+        mode='lines'
+    ))
+    
+    fig_live.add_trace(go.Scatter(
+        x=time_data,
+        y=throughput_data,
+        name="Throughput",
+        line=dict(width=2.5, color=COLORS['accent_green']),
+        yaxis="y2",
+        mode='lines'
+    ))
+    
+    fig_live.update_layout(
+        **PLOT_BASE,
+        height=400,
+        xaxis_title="Time Step",
+        yaxis_title="Queue Length (vehicles)",
+        yaxis=dict(**AXIS_STYLE),
+        yaxis2=dict(
+            title="Throughput (vehicles/step)",
+            overlaying='y',
+            side='right',
+            **AXIS_STYLE
+        ),
+        xaxis=dict(**AXIS_STYLE),
+        hovermode="x unified",
+        legend=dict(
+            orientation='h',
+            y=1.1,
+            x=0.5,
+            xanchor='center',
+            bgcolor='rgba(255,255,255,0.9)',
+            bordercolor=COLORS['border_light'],
+            borderwidth=1,
+            font=dict(size=11)
+        ),
+        margin=dict(l=10, r=10, t=40, b=10)
     )
     
-    if demand_mode == "Manual":
-        demand_level = st.slider(
-            "Traffic Demand",
-            min_value=0.1,
-            max_value=2.5,
-            value=st.session_state.get('demand_level', 1.0),
-            step=0.1,
-            help="0.5 = Light, 1.0 = Normal, 2.0+ = Heavy"
+    st.plotly_chart(fig_live, use_container_width=True, key="live_traffic_chart")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Recent injections
+    st.markdown(section_label("Recent Vehicle Injections"), unsafe_allow_html=True)
+    
+    recent = log_snapshot[-15:][::-1]
+    
+    if recent:
+        st.dataframe(
+            [
+                {
+                    "Step": e["step"],
+                    "Vehicle ID": e["veh_id"],
+                    "Type": e["type"],
+                    "Route": f"{e['origin']} → {e['destination']}",
+                    "Edges": e["route_len"],
+                }
+                for e in recent
+            ],
+            use_container_width=True,
+            hide_index=True
         )
-        demand_display = f"{demand_level:.1f}x"
+    else:
+        st.info("No vehicles injected yet. Waiting for simulation to start...")
+
+
+# ═══════════════════════════════════════════════════════════════
+# TAB 2: TRAFFIC ANALYSIS
+# ═══════════════════════════════════════════════════════════════
+with tab2:
+    st.markdown("### Traffic Patterns & Analysis")
+    
+    # Build heatmap data
+    heatmap_data = defaultdict(int)
+    for entry in log_snapshot:
+        heatmap_data[(entry["origin"], entry["destination"])] += 1
+    
+    if heatmap_data:
+        # Origin-Destination heatmap
+        st.markdown(section_label("Origin-Destination Flow Distribution"), unsafe_allow_html=True)
         
-    else:  # Preset Profile
-        profile = st.selectbox(
-            "Select Profile",
-            ["Light (0.5x)", "Normal (1.0x)", "Heavy (1.5x)", "Rush Hour (2.0x)", "Extreme (2.5x)"]
+        sorted_items = sorted(heatmap_data.items(), key=lambda x: x[1], reverse=True)[:20]
+        labels = [f"{o} → {d}" for (o, d), _ in sorted_items]
+        values = [v for _, v in sorted_items]
+        
+        fig_heatmap = go.Figure(data=go.Bar(
+            x=labels,
+            y=values,
+            marker=dict(
+                color=values,
+                colorscale=[
+                    [0, COLORS['accent_green']],
+                    [0.5, COLORS['accent_orange']],
+                    [1, COLORS['accent_red']]
+                ],
+                colorbar=dict(title="Count", thickness=15)
+            ),
+            text=values,
+            textposition='outside',
+            textfont=dict(size=10, color=COLORS['text_secondary'])
+        ))
+        
+        fig_heatmap.update_layout(
+            **PLOT_BASE,
+            height=500,
+            xaxis_title="Origin → Destination",
+            yaxis_title="Injection Count",
+            xaxis=dict(**AXIS_STYLE, tickangle=-45),
+            yaxis=dict(**AXIS_STYLE),
+            margin=dict(l=10, r=10, t=20, b=100)
         )
-        profile_map = {
-            "Light (0.5x)": 0.5,
-            "Normal (1.0x)": 1.0,
-            "Heavy (1.5x)": 1.5,
-            "Rush Hour (2.0x)": 2.0,
-            "Extreme (2.5x)": 2.5,
-        }
-        demand_level = profile_map[profile]
-        demand_display = profile.split("(")[1].strip(")")
+        
+        st.plotly_chart(fig_heatmap, use_container_width=True, key="od_heatmap")
+        
+        # Summary stats
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Unique Routes", f"{len(heatmap_data)}")
+        with col2:
+            st.metric("Total Injections", f"{sum(heatmap_data.values())}")
+        with col3:
+            most_used = max(heatmap_data.items(), key=lambda x: x[1])
+            st.metric("Most Used Route", f"{most_used[1]} vehicles")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Queue vs Throughput correlation
+        st.markdown(section_label("Queue vs Throughput Correlation"), unsafe_allow_html=True)
+        
+        fig_correlation = go.Figure()
+        
+        fig_correlation.add_trace(go.Scatter(
+            x=queue_data,
+            y=throughput_data,
+            mode='markers',
+            marker=dict(
+                size=6,
+                color=time_data,
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title="Time Step", thickness=15),
+                opacity=0.7,
+                line=dict(width=0.5, color='white')
+            ),
+            text=[f"Step: {int(t)}" for t in time_data],
+            hovertemplate="<b>Queue:</b> %{x}<br><b>Throughput:</b> %{y}<br>%{text}<extra></extra>"
+        ))
+        
+        fig_correlation.update_layout(
+            **PLOT_BASE,
+            height=400,
+            xaxis_title="Queue Length (vehicles)",
+            yaxis_title="Throughput (vehicles/step)",
+            xaxis=dict(**AXIS_STYLE),
+            yaxis=dict(**AXIS_STYLE),
+            margin=dict(l=10, r=10, t=10, b=10)
+        )
+        
+        st.plotly_chart(fig_correlation, use_container_width=True, key="correlation_chart")
+        
+    else:
+        st.info("Waiting for traffic data to build analysis...")
+
+
+# ═══════════════════════════════════════════════════════════════
+# TAB 3: CONTROL & CONFIGURATION
+# ═══════════════════════════════════════════════════════════════
+with tab3:
+    st.markdown("### Scenario & Control Configuration")
     
-    # Apply demand button
-    if st.button("🔄 Apply Demand", key="apply_demand"):
-        try:
-            data_store.update_demand(demand_level)
-            st.session_state['demand_level'] = demand_level
-            st.success(f"✅ Demand set to {demand_display}")
-        except Exception as e:
-            st.error(f"❌ Error: {e}")
+    # Scenario selection section
+    st.markdown(section_label("Traffic Scenario Selection"), unsafe_allow_html=True)
     
-    st.markdown("---")
+    SCENARIO_DESCRIPTIONS = {
+        "low": {
+            "name": "Low Traffic",
+            "desc": "Off-peak dispersed traffic flow",
+            "color": COLORS['accent_green']
+        },
+        "normal": {
+            "name": "Normal Traffic",
+            "desc": "Weekday mixed traffic conditions",
+            "color": COLORS['accent_blue']
+        },
+        "rush_hour_am": {
+            "name": "Morning Rush",
+            "desc": "Heavy inbound morning traffic",
+            "color": COLORS['accent_orange']
+        },
+        "rush_hour_pm": {
+            "name": "Evening Rush",
+            "desc": "Heavy outbound evening traffic",
+            "color": COLORS['accent_orange']
+        },
+        "holiday": {
+            "name": "Holiday Traffic",
+            "desc": "Transit traffic through town",
+            "color": COLORS['accent_blue']
+        },
+        "incident": {
+            "name": "Incident",
+            "desc": "Two entry points closed",
+            "color": COLORS['accent_red']
+        },
+    }
     
-    # Stop button
-    if st.button("⏹️ Stop SUMO"):
-        st.session_state['sumo_continue'] = False
+    # Create scenario cards
+    cols = st.columns(3)
+    
+    for idx, scenario_name in enumerate(PROFILE_NAMES):
+        with cols[idx % 3]:
+            scenario_info = SCENARIO_DESCRIPTIONS.get(scenario_name, {
+                "name": scenario_name.replace("_", " ").title(),
+                "desc": "Custom scenario",
+                "color": COLORS['text_secondary']
+            })
+            
+            is_active = st.session_state.get("scenario_name", "normal") == scenario_name
+            
+            button_label = f"{'● ' if is_active else ''}{scenario_info['name']}"
+            
+            if st.button(
+                button_label,
+                key=f"scenario_{scenario_name}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary"
+            ):
+                if not is_active:
+                    traffic_injector.set_scenario(TrafficScenario(scenario_name))
+                    st.session_state["scenario_name"] = scenario_name
+                    st.rerun()
+            
+            st.caption(scenario_info['desc'])
+    
+    # Show active scenario details
+    if st.session_state.get("scenario_name"):
+        st.markdown("<br>", unsafe_allow_html=True)
+        active_name = st.session_state["scenario_name"]
+        prof = PROFILES[active_name]
+        
+        st.markdown(f"**Active Scenario:** {active_name.replace('_', ' ').title()}")
+        st.markdown(f"**Description:** {prof['description']}")
+        st.markdown(f"**Direction Mode:** {prof['direction_mode']}")
+        
+        if prof["blocked_origins"]:
+            st.warning(f"⚠ Blocked entries: {', '.join(prof['blocked_origins'])}")
+    
+    # Random scenario button
+    if st.button("Random Scenario", use_container_width=True):
+        rand = TrafficScenario.random()
+        traffic_injector.set_scenario(rand)
+        st.session_state["scenario_name"] = rand.name
         st.rerun()
     
     st.markdown("---")
-    st.subheader("📊 Simulation Info")
-    sim_step = st.empty()
-    total_time = st.empty()
-    current_demand_display = st.empty()
+    
+    # Green wave — detail view (toggle lives in sidebar)
+    section_label("Green Wave Coordination")
 
-# Global metrics
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    current_queue = data_store.global_queue[-1] if data_store.global_queue else 0
-    st.metric("🌍 Global Queue", f"{current_queue} veh")
-with col2:
-    current_throughput = data_store.global_throughput[-1] if data_store.global_throughput else 0
-    st.metric("🚗 Global Throughput", f"{current_throughput} veh/step")
-with col3:
-    total_vehicles = sum(data_store.global_throughput) if data_store.global_throughput else 0
-    st.metric("📈 Total Vehicles", f"{total_vehicles}")
-with col4:
-    avg_queue = sum(data_store.global_queue) / len(data_store.global_queue) if data_store.global_queue else 0
-    st.metric("📊 Avg Queue", f"{avg_queue:.1f} veh")
-
-# Update sidebar info
-sim_step.metric("Step", f"{data_store.current_step}")
-total_time.metric("Sim Time", f"{data_store.current_step * 0.1:.1f} s")
-current_demand_display.metric("🎯 Current Demand", f"{data_store.demand_level:.1f}x")
-
-st.markdown("---")
-
-# Global trend charts
-st.subheader("📈 Global Trends")
-col1, col2 = st.columns(2)
-
-with col1:
-    if data_store.time_history:
-        fig_queue = go.Figure()
-        fig_queue.add_trace(go.Scatter(
-            x=list(data_store.time_history),
-            y=list(data_store.global_queue),
-            mode='lines',
-            name='Queue Length',
-            line=dict(color='#FF6B6B', width=2)
-        ))
-        fig_queue.update_layout(
-            title="Total Queue Length Over Time",
-            xaxis_title="Simulation Step",
-            yaxis_title="Number of Vehicles",
-            height=400,
-            hovermode='x unified'
-        )
-        st.plotly_chart(fig_queue, use_container_width=True)
-
-with col2:
-    if data_store.time_history:
-        fig_throughput = go.Figure()
-        fig_throughput.add_trace(go.Scatter(
-            x=list(data_store.time_history),
-            y=list(data_store.global_throughput),
-            mode='lines',
-            name='Throughput',
-            line=dict(color='#51CF66', width=2)
-        ))
-        fig_throughput.update_layout(
-            title="Total Throughput Over Time",
-            xaxis_title="Simulation Step",
-            yaxis_title="Vehicles per Step",
-            height=400,
-            hovermode='x unified'
-        )
-        st.plotly_chart(fig_throughput, use_container_width=True)
-
-st.markdown("---")
-
-# Intersection details
-st.subheader("🚥 Intersection Details")
-
-# Create tabs for each intersection
-tabs = st.tabs([f"🚦 {tl}" for tl in TL_IDS])
-
-for idx, tl in enumerate(TL_IDS):
-    with tabs[idx]:
-        st.write(f"**Intersection ID:** `{tl}`")
-        st.write(f"**Lanes:** {len(LANES.get(tl, []))}")
-        
-        # Get latest data with safety checks
-        int_data = data_store.intersections[tl]
-        latest_queue = int_data["queue"][-1] if len(int_data["queue"]) > 0 else 0
-        latest_throughput = int_data["throughput"][-1] if len(int_data["throughput"]) > 0 else 0
-        latest_phase = int_data["phase"][-1] if len(int_data["phase"]) > 0 else 0
-        latest_occ = int_data["occupancy"][-1] if len(int_data["occupancy"]) > 0 else 0
-        latest_wait = int_data["waiting_time"][-1] if len(int_data["waiting_time"]) > 0 else 0
-        
-        # Phase display
-        phase_symbols = {0: "🔴 RED", 1: "🟡 YELLOW", 2: "🟢 GREEN", 3: "🟡 YELLOW"}
-        phase_display = phase_symbols.get(int(latest_phase), f"Phase {int(latest_phase)}")
-        
-        # Metrics row - 5 metrics
-        col1, col2, col3, col4, col5 = st.columns(5)
-        with col1:
-            st.metric("🚗 Queue", f"{int(latest_queue)} veh")
-        with col2:
-            st.metric("📊 Throughput", f"{int(latest_throughput)} veh/step")
-        with col3:
-            st.metric("🎯 Phase", phase_display)
-        with col4:
-            st.metric("📈 Occupancy", f"{latest_occ:.2f}%")
-        with col5:
-            st.metric("⏱️ Wait Time", f"{latest_wait:.1f}s")
-        
-        st.markdown("---")
-        
-        # Charts - Queue and Throughput
+    gw = green_wave.get()
+    if gw is not None and gw.enabled:
         col1, col2 = st.columns(2)
-        
         with col1:
-            if len(int_data["queue"]) > 0:
-                fig_q = go.Figure()
-                fig_q.add_trace(go.Scatter(
-                    x=list(data_store.time_history),
-                    y=list(int_data["queue"]),
-                    mode='lines+markers',
-                    name='Queue',
-                    line=dict(color='#FF6B6B', width=2),
-                    marker=dict(size=4)
-                ))
-                fig_q.update_layout(
-                    title=f"Queue Length - {tl}",
-                    xaxis_title="Time Step",
-                    yaxis_title="Vehicles",
-                    height=350,
-                    hovermode='x unified'
-                )
-                st.plotly_chart(fig_q, use_container_width=True)
-            else:
-                st.info("Waiting for data...")
-        
+            st.metric("Cycle Length", f"{gw.cycle_length:.1f} s")
         with col2:
-            if len(int_data["throughput"]) > 0:
-                fig_t = go.Figure()
-                fig_t.add_trace(go.Scatter(
-                    x=list(data_store.time_history),
-                    y=list(int_data["throughput"]),
-                    mode='lines+markers',
-                    name='Throughput',
-                    line=dict(color='#51CF66', width=2),
-                    marker=dict(size=4)
-                ))
-                fig_t.update_layout(
-                    title=f"Throughput - {tl}",
-                    xaxis_title="Time Step",
-                    yaxis_title="Vehicles/Step",
-                    height=350,
-                    hovermode='x unified'
-                )
-                st.plotly_chart(fig_t, use_container_width=True)
-            else:
-                st.info("Waiting for data...")
-        
-        # Charts - Occupancy and Waiting Time
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if len(int_data["occupancy"]) > 0:
-                fig_occ = go.Figure()
-                fig_occ.add_trace(go.Scatter(
-                    x=list(data_store.time_history),
-                    y=list(int_data["occupancy"]),
-                    mode='lines',
-                    name='Occupancy',
-                    line=dict(color='#4C6EF5', width=2),
-                    fill='tozeroy'
-                ))
-                fig_occ.update_layout(
-                    title=f"Lane Occupancy - {tl}",
-                    xaxis_title="Time Step",
-                    yaxis_title="Occupancy %",
-                    height=300,
-                    hovermode='x unified'
-                )
-                st.plotly_chart(fig_occ, use_container_width=True)
-        
-        with col2:
-            if len(int_data["waiting_time"]) > 0:
-                fig_wait = go.Figure()
-                fig_wait.add_trace(go.Scatter(
-                    x=list(data_store.time_history),
-                    y=list(int_data["waiting_time"]),
-                    mode='lines',
-                    name='Waiting Time',
-                    line=dict(color='#FFD43B', width=2),
-                    fill='tozeroy'
-                ))
-                fig_wait.update_layout(
-                    title=f"Avg Waiting Time - {tl}",
-                    xaxis_title="Time Step",
-                    yaxis_title="Seconds",
-                    height=300,
-                    hovermode='x unified'
-                )
-                st.plotly_chart(fig_wait, use_container_width=True)
+            st.metric("Coordinated Signals", f"{len(TL_IDS)}")
 
-st.markdown("---")
+        section_label("Signal Offsets")
+        offset_data = [
+            {
+                "Traffic Light": tl_id,
+                "Offset (seconds)": f"+{offset:.1f}",
+                "Phase": f"{(offset / gw.cycle_length * 100):.1f}%" if gw.cycle_length else "—",
+            }
+            for tl_id, offset in gw.offsets.items()
+        ]
+        if offset_data:
+            st.dataframe(offset_data, use_container_width=True, hide_index=True)
+    else:
+        st.caption("Green wave disabled — toggle it in the sidebar.")
 
-# Auto-refresh without flickering
+
+# ================= AUTO-REFRESH =================
 if auto_refresh:
     time.sleep(refresh_rate)
     st.rerun()
