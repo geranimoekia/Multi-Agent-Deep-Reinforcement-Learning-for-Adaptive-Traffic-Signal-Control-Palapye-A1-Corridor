@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SUMO // TFC-MON</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:        #05080f;
+  --panel:     #080d16;
+  --panel2:    #0a1020;
+  --border:    #0f2040;
+  --border2:   #163060;
+  --accent:    #00aaff;
+  --accent2:   #0066aa;
+  --accent3:   #003355;
+  --green:     #00ff88;
+  --green2:    #00cc66;
+  --red:       #ff3344;
+  --yellow:    #ffcc00;
+  --orange:    #ff6600;
+  --dim:       #1a3a5a;
+  --text:      #a0c8e8;
+  --text2:     #5080a0;
+  --text3:     #2a4060;
+  --mono:      'Share Tech Mono', monospace;
+  --display:   'Rajdhani', sans-serif;
+  --glow:      0 0 8px rgba(0,170,255,0.3);
+  --glow-g:    0 0 8px rgba(0,255,136,0.3);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* grid lines background */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,100,180,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,100,180,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── header ─────────────────────────────────────────── */
+.header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border2);
+  background: var(--panel);
+}
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 24px;
+  border-right: 1px solid var(--border2);
+  min-width: 220px;
+}
+.brand-top {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #fff;
+  line-height: 1;
+}
+.brand-top span { color: var(--accent); text-shadow: var(--glow); }
+.brand-sub {
+  font-size: 9px;
+  letter-spacing: .22em;
+  color: var(--text2);
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+.header-metrics {
+  display: flex;
+  flex: 1;
+}
+.hm {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.hm::before {
+  content: attr(data-idx);
+  position: absolute;
+  top: 6px; left: 8px;
+  font-size: 8px;
+  color: var(--text3);
+  letter-spacing: .1em;
+}
+.hm-label {
+  font-size: 8px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.hm-val {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  text-shadow: var(--glow);
+}
+.hm-unit {
+  font-size: 9px;
+  color: var(--text2);
+  margin-top: 2px;
+  letter-spacing: .1em;
+}
+.header-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-left: 1px solid var(--border2);
+  min-width: 260px;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text3);
+  flex-shrink: 0;
+}
+.status-dot.run {
+  background: var(--green);
+  box-shadow: var(--glow-g);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.status-text {
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: .08em;
+}
+.status-text.run { color: var(--green); }
+
+/* demand control */
+.demand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demand-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; white-space: nowrap; }
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100px;
+  height: 3px;
+  background: var(--border2);
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border-radius: 0;
+  box-shadow: var(--glow);
+  cursor: pointer;
+}
+.demand-readout {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 36px;
+}
+.btn {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .1s;
+  clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent3); }
+.btn.stop:hover { border-color: var(--red); color: var(--red); background: rgba(255,51,68,0.08); }
+
+/* ── tab nav ─────────────────────────────────────────── */
+.tabnav {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border2);
+  padding: 0 24px;
+  gap: 0;
+}
+.navtab {
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: var(--text3);
+  border-bottom: 2px solid transparent;
+  transition: all .1s;
+  margin-bottom: -1px;
+}
+.navtab:hover { color: var(--text); }
+.navtab.on { color: var(--accent); border-bottom-color: var(--accent); text-shadow: var(--glow); }
+.tabnav-right {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: .12em;
+}
+
+/* ── main content ────────────────────────────────────── */
+.content {
+  position: relative;
+  z-index: 10;
+  padding: 16px 20px;
+}
+.panel { display: none; }
+.panel.on { display: block; }
+
+/* ── section headers ─────────────────────────────────── */
+.sec {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.sec-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border2) 0%, transparent 100%);
+}
+.sec-title {
+  font-family: var(--display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.sec-tag {
+  font-size: 8px;
+  letter-spacing: .1em;
+  color: var(--text3);
+  border: 1px solid var(--border2);
+  padding: 1px 6px;
+}
+
+/* ── chart grid ──────────────────────────────────────── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+/* chart box with corner accents */
+.cbox {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative;
+  padding: 12px 14px 14px;
+}
+.cbox::before, .cbox::after,
+.cbox .corner-bl, .cbox .corner-br {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+}
+.cbox::before  { top: -1px;    left: -1px;  border-top: 2px solid var(--accent2); border-left: 2px solid var(--accent2); }
+.cbox::after   { top: -1px;    right: -1px; border-top: 2px solid var(--accent2); border-right: 2px solid var(--accent2); }
+.cbox .corner-bl { bottom: -1px; left: -1px;  border-bottom: 2px solid var(--accent2); border-left: 2px solid var(--accent2); }
+.cbox .corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent2); border-right: 2px solid var(--accent2); }
+
+.ctitle {
+  font-size: 8px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ctitle::before {
+  content: '';
+  display: inline-block;
+  width: 4px; height: 4px;
+  background: var(--accent);
+  box-shadow: var(--glow);
+}
+.chart-wrap { position: relative; }
+
+/* ── intersection tabs ───────────────────────────────── */
+.itabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+.itab {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  padding: 5px 14px;
+  cursor: pointer;
+  color: var(--text3);
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  transition: all .1s;
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+}
+.itab:hover { color: var(--text); border-color: var(--border2); }
+.itab.on {
+  color: var(--accent);
+  border-color: var(--accent2);
+  background: var(--accent3);
+  text-shadow: var(--glow);
+}
+.ipanel { display: none; }
+.ipanel.on { display: block; }
+
+/* ── live metrics strip ──────────────────────────────── */
+.lm-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.lm {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent2);
+  padding: 8px 12px;
+  position: relative;
+}
+.lm-label {
+  font-size: 8px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 5px;
+}
+.lm-val {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  text-shadow: var(--glow);
+}
+.lm-val.ph-red    { color: var(--red);    text-shadow: 0 0 8px rgba(255,51,68,0.4);  border-left-color: var(--red) !important; }
+.lm-val.ph-green  { color: var(--green);  text-shadow: var(--glow-g); }
+.lm-val.ph-yellow { color: var(--yellow); text-shadow: 0 0 8px rgba(255,204,0,0.4); }
+
+/* ── scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-brand">
+    <div class="brand-top">TFC<span>·</span>MON</div>
+    <div class="brand-sub">Multi-intersection / SUMO sim</div>
+  </div>
+
+  <div class="header-metrics">
+    <div class="hm" data-idx="01">
+      <div class="hm-label">Global Queue</div>
+      <div class="hm-val" id="m0">—</div>
+      <div class="hm-unit">vehicles halted</div>
+    </div>
+    <div class="hm" data-idx="02">
+      <div class="hm-label">Throughput</div>
+      <div class="hm-val" id="m1">—</div>
+      <div class="hm-unit">veh / step</div>
+    </div>
+    <div class="hm" data-idx="03">
+      <div class="hm-label">Total Vehicles</div>
+      <div class="hm-val" id="m2">—</div>
+      <div class="hm-unit">cumulative</div>
+    </div>
+    <div class="hm" data-idx="04">
+      <div class="hm-label">Avg Queue</div>
+      <div class="hm-val" id="m3">—</div>
+      <div class="hm-unit">rolling mean</div>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="status-row">
+      <div class="status-dot" id="sdot"></div>
+      <span class="status-text" id="stext">CONNECTING...</span>
+    </div>
+    <div class="status-row" style="font-size:9px;color:var(--text3);letter-spacing:.08em" id="siminfo">step — · t=—s · demand —×</div>
+    <div class="demand-wrap">
+      <span class="demand-label">DEMAND</span>
+      <input type="range" id="dslider" min="0.1" max="2.5" step="0.1" value="1.0">
+      <span class="demand-readout" id="dval">1.0×</span>
+      <button class="btn" onclick="applyDemand()">SET</button>
+      <button class="btn stop" onclick="stopSim()">STOP</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB NAV -->
+<div class="tabnav">
+  <div class="navtab on"  onclick="swTab('global',this)">Network</div>
+  <div class="navtab"     onclick="swTab('ints',this)">Intersections</div>
+  <div class="tabnav-right" id="tickinfo">T+0.0s</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- GLOBAL -->
+  <div id="panel-global" class="panel on">
+    <div class="sec">
+      <div class="sec-title">Queue &amp; Throughput</div>
+      <div class="sec-tag">LIVE · 1Hz</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="grid2">
+      <div class="cbox">
+        <div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="ctitle">Queue length · all intersections</div>
+        <div class="chart-wrap"><canvas id="gc0" height="210"></canvas></div>
+      </div>
+      <div class="cbox">
+        <div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="ctitle">Throughput · vehicles per step</div>
+        <div class="chart-wrap"><canvas id="gc1" height="210"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERSECTIONS -->
+  <div id="panel-ints" class="panel">
+    <div class="itabs" id="itabs"></div>
+    <div id="ipanels"></div>
+  </div>
+
+</div>
+
+<script>
+// ── chart factory ──────────────────────────────────────────────────────────
+Chart.defaults.color = '#3a6080';
+Chart.defaults.borderColor = '#0f2040';
+
+const PALETTE = {
+  queue:        { line: '#ff3344', fill: 'rgba(255,51,68,0.07)'   },
+  throughput:   { line: '#00ff88', fill: 'rgba(0,255,136,0.07)'   },
+  occupancy:    { line: '#00aaff', fill: 'rgba(0,170,255,0.07)'   },
+  waiting_time: { line: '#ffcc00', fill: 'rgba(255,204,0,0.07)'   },
+};
+
+function mkChart(id, key) {
+  const p = PALETTE[key] || PALETTE.occupancy;
+  return new Chart(document.getElementById(id), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        borderColor: p.line,
+        backgroundColor: p.fill,
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.25,
+        fill: true,
+      }]
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#080d16',
+          borderColor: '#163060',
+          borderWidth: 1,
+          titleColor: '#3a6080',
+          bodyColor: p.line,
+          padding: 8,
+          titleFont: { family: "'Share Tech Mono'", size: 10 },
+          bodyFont:  { family: "'Share Tech Mono'", size: 11 },
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#0c1e32', lineWidth: 1 },
+          ticks: { color: '#2a4060', maxTicksLimit: 8, font: { family: "'Share Tech Mono'", size: 9 } },
+          border: { color: '#0f2040' }
+        },
+        y: {
+          grid: { color: '#0c1e32', lineWidth: 1 },
+          ticks: { color: '#2a4060', font: { family: "'Share Tech Mono'", size: 9 } },
+          border: { color: '#0f2040' }
+        }
+      }
+    }
+  });
+}
+
+function patch(chart, labels, data) {
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = data;
+  chart.update('none');
+}
+
+// ── global charts ──────────────────────────────────────────────────────────
+const gC = {
+  queue:      mkChart('gc0', 'queue'),
+  throughput: mkChart('gc1', 'throughput'),
+};
+
+// ── intersection setup ─────────────────────────────────────────────────────
+const TLS = ["6073919354","6073919354_B","6073919354_C"];
+const iC  = {};
+
+TLS.forEach((tl, i) => {
+  // tab
+  const btn = document.createElement('div');
+  btn.className = 'itab' + (i === 0 ? ' on' : '');
+  btn.textContent = `[ ${tl} ]`;
+  btn.onclick = () => {
+    document.querySelectorAll('.itab').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('.ipanel').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('ip' + i).classList.add('on');
+  };
+  document.getElementById('itabs').appendChild(btn);
+
+  // panel
+  const p = document.createElement('div');
+  p.className = 'ipanel' + (i === 0 ? ' on' : '');
+  p.id = 'ip' + i;
+  p.innerHTML = `
+    <div class="lm-row">
+      <div class="lm"><div class="lm-label">Queue</div><div class="lm-val" id="lq${i}">—</div></div>
+      <div class="lm"><div class="lm-label">Throughput</div><div class="lm-val" id="lt${i}">—</div></div>
+      <div class="lm"><div class="lm-label">Signal Phase</div><div class="lm-val" id="lp${i}">—</div></div>
+      <div class="lm"><div class="lm-label">Occupancy</div><div class="lm-val" id="lo${i}">—</div></div>
+      <div class="lm"><div class="lm-label">Wait Time</div><div class="lm-val" id="lw${i}">—</div></div>
+    </div>
+    <div class="grid2">
+      <div class="cbox" style="height:230px">
+        <div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="ctitle">Queue · ${tl}</div>
+        <div class="chart-wrap" style="height:185px"><canvas id="iq${i}"></canvas></div>
+      </div>
+      <div class="cbox" style="height:230px">
+        <div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="ctitle">Throughput · ${tl}</div>
+        <div class="chart-wrap" style="height:185px"><canvas id="it${i}"></canvas></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="cbox" style="height:210px">
+        <div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="ctitle">Lane Occupancy %</div>
+        <div class="chart-wrap" style="height:165px"><canvas id="io${i}"></canvas></div>
+      </div>
+      <div class="cbox" style="height:210px">
+        <div class="corner-bl"></div><div class="corner-br"></div>
+        <div class="ctitle">Cumulative Wait (s)</div>
+        <div class="chart-wrap" style="height:165px"><canvas id="iw${i}"></canvas></div>
+      </div>
+    </div>`;
+  document.getElementById('ipanels').appendChild(p);
+
+  iC[tl] = {
+    queue:        mkChart('iq' + i, 'queue'),
+    throughput:   mkChart('it' + i, 'throughput'),
+    occupancy:    mkChart('io' + i, 'occupancy'),
+    waiting_time: mkChart('iw' + i, 'waiting_time'),
+  };
+});
+
+// ── controls ───────────────────────────────────────────────────────────────
+const slider = document.getElementById('dslider');
+const dval   = document.getElementById('dval');
+slider.oninput = () => { dval.textContent = parseFloat(slider.value).toFixed(1) + '×'; };
+
+async function applyDemand() {
+  await fetch('/api/demand', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ level: parseFloat(slider.value) }),
+  });
+}
+async function stopSim() {
+  await fetch('/api/stop', { method: 'POST' });
+}
+
+function swTab(name, el) {
+  document.querySelectorAll('.navtab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('panel-' + name).classList.add('on');
+}
+
+// ── poll ───────────────────────────────────────────────────────────────────
+async function poll() {
+  try {
+    const res = await fetch('/api/data', { cache: 'no-store' });
+    const d   = await res.json();
+
+    // status
+    const dot  = document.getElementById('sdot');
+    const stxt = document.getElementById('stext');
+    if (d.running) {
+      dot.className  = 'status-dot run';
+      stxt.textContent = 'SIMULATION ACTIVE';
+      stxt.className = 'status-text run';
+    } else {
+      dot.className  = 'status-dot';
+      stxt.textContent = 'SIMULATION STOPPED';
+      stxt.className = 'status-text';
+    }
+    document.getElementById('siminfo').textContent =
+      `step ${String(d.step).padStart(6,'0')} · t=${d.sim_time}s · demand ${d.demand}×`;
+    document.getElementById('tickinfo').textContent = `T+${d.sim_time}s`;
+
+    // header metrics
+    document.getElementById('m0').textContent = d.cur_queue;
+    document.getElementById('m1').textContent = d.cur_tput;
+    document.getElementById('m2').textContent = d.total_veh;
+    document.getElementById('m3').textContent = d.avg_queue;
+
+    // global charts
+    patch(gC.queue,      d.time, d.g_queue);
+    patch(gC.throughput, d.time, d.g_throughput);
+
+    // intersection data
+    TLS.forEach((tl, i) => {
+      const id = d.intersections[tl];
+      if (!id || !id.latest) return;
+      const lv = id.latest;
+
+      document.getElementById('lq' + i).textContent = lv.queue      ?? '—';
+      document.getElementById('lt' + i).textContent = lv.throughput  ?? '—';
+      document.getElementById('lo' + i).textContent = (lv.occupancy ?? '—') + '%';
+      document.getElementById('lw' + i).textContent = (lv.waiting_time ?? '—') + 's';
+
+      const pe = document.getElementById('lp' + i);
+      pe.textContent = lv.phase_label ?? '—';
+      pe.className   = 'lm-val ph-' + (lv.phase_label || '').toLowerCase();
+
+      patch(iC[tl].queue,        d.time, id.queue);
+      patch(iC[tl].throughput,   d.time, id.throughput);
+      patch(iC[tl].occupancy,    d.time, id.occupancy);
+      patch(iC[tl].waiting_time, d.time, id.waiting_time);
+    });
+
+  } catch {
+    document.getElementById('stext').textContent = 'API UNREACHABLE';
+    document.getElementById('sdot').className = 'status-dot';
+  }
+}
+
+poll();
+setInterval(poll, 1000);
+</script>
+</body>
+</html>

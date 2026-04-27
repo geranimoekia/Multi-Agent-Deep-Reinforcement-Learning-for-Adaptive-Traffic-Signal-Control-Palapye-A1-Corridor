@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-04-08 00:12:15 by Eclipse SUMO sumo Version 1.24.0
+<!-- generated on 2026-04-26 15:07:22 by Eclipse SUMO sumo Version 1.24.0
 -->
 
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
         <net-file value="network_tripled.net.xml"/>
-        <route-files value="triple_routes_flows.rou.xml"/>
+        <route-files value="empty.rou.xml"/>
         <additional-files value="vtypes.add.xml"/>
     </input>
 
