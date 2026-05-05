@@ -1,4 +1,5 @@
 import os
+import random
 import numpy as np
 import gymnasium as gym
 import traci
@@ -15,17 +16,27 @@ SUMO_CFG = "triple.sumocfg"
 TL_IDS = ["6073919354", "6073919354_B", "6073919354_C"]
 
 DELTA_T = 3           # RL step duration (seconds)
-YELLOW_DUR = 4        # yellow duration before next green
-MIN_GREEN = 8         # min steps of green before a switch is allowed
-MIN_SWITCH_QUEUE = 8  # target lanes must have at least this many halting vehicles to justify a switch
-MAX_SIM_STEPS = 2000
+YELLOW_DUR = 1        # _tick_phases calls while yellow ≈ 3 sim-steps
+MIN_GREEN = 5         # min steps of green before a switch is allowed
+MAX_GREEN = 40        # force rotation after this many calls ≈ 120 sim-steps (gridlock guard)
+MAX_SIM_STEPS = 1200  # shorter episodes → tighter credit assignment
 
 N_LANES_PER_TL = 8
+N_OUT_LANES_PER_TL = 4
 OBS_MAX_QUEUE = 15.0
+LOG_OBS_MAX = float(np.log1p(OBS_MAX_QUEUE))  # precomputed for log scaling
+OBS_MAX_WAIT = 300.0                           # seconds cap for per-lane waiting time
+LOG_OBS_MAX_WAIT = float(np.log1p(OBS_MAX_WAIT))
 
 MAX_QUEUE = 15.0
-MAX_PRESSURE = 40.0
-MAX_TRAVEL_TIME = 300.0
+
+# Curriculum: episode thresholds → scenario pool
+# Each env progresses independently; starts simple and adds complexity
+CURRICULUM = [
+    (0,  ["low", "normal"]),
+    (30, ["normal", "rush_hour_am", "rush_hour_pm", "holiday"]),
+    (80, None),  # None = full random (all scenarios)
+]
 
 # Major green phases the agent can select (index into list = action value)
 MAJOR_GREEN_PHASES = {
@@ -54,7 +65,7 @@ class SumoEnv(gym.Env):
         self.use_gui = use_gui
         self.scenario_name = scenario_name
 
-        obs_size = len(TL_IDS) * (N_LANES_PER_TL + 2)
+        obs_size = len(TL_IDS) * (N_LANES_PER_TL + N_LANES_PER_TL + N_OUT_LANES_PER_TL + 2)  # +N_LANES for waiting time
         self.observation_space = gym.spaces.Box(
             low=0.0, high=1.0, shape=(obs_size,), dtype=np.float32
         )
@@ -72,6 +83,7 @@ class SumoEnv(gym.Env):
 
         self._sim_step = 0
         self._sumo_running = False
+        self._episode_count = 0   # curriculum progression
 
     # ─────────────────────────────────────────────────────────────
     # RESET
@@ -79,6 +91,25 @@ class SumoEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
+        # Retry loop: if SUMO fails to start, try up to 3 times before giving up
+        for _attempt in range(3):
+            try:
+                return self._reset_inner()
+            except Exception as e:
+                print(f"[ENV {self._label}] reset() attempt {_attempt+1} failed: {e}")
+                try:
+                    traci.switch(self._label)
+                    traci.close()
+                except Exception:
+                    pass
+                self._sumo_running = False
+                if _attempt == 2:
+                    raise
+
+        # unreachable, but satisfies type checkers
+        return np.zeros(self.observation_space.shape, dtype=np.float32), {}
+
+    def _reset_inner(self):
         if self._sumo_running:
             try:
                 traci.switch(self._label)
@@ -87,11 +118,16 @@ class SumoEnv(gym.Env):
                 pass
             self._sumo_running = False
 
-        scenario = (
-            TrafficScenario(self.scenario_name)
-            if self.scenario_name
-            else TrafficScenario.random()
-        )
+        if self.scenario_name:
+            scenario = TrafficScenario(self.scenario_name)
+        else:
+            # Curriculum: pick from an increasingly complex pool as episodes accumulate
+            pool = None
+            for threshold, scenarios in CURRICULUM:
+                if self._episode_count >= threshold:
+                    pool = scenarios
+            scenario = TrafficScenario.random() if pool is None else TrafficScenario(random.choice(pool))
+        self._episode_count += 1
 
         binary = "sumo-gui" if self.use_gui else "sumo"
         traci.start([binary, "-c", SUMO_CFG, "--no-warnings", "--no-step-log"],
@@ -102,6 +138,15 @@ class SumoEnv(gym.Env):
         self._sim_step = 0
 
         apply_tl_programs()
+
+        _max_ms = 60.0 / 3.6
+        for _eid in traci.edge.getIDList():
+            try:
+                if traci.edge.getMaxSpeed(_eid) > _max_ms:
+                    traci.edge.setMaxSpeed(_eid, _max_ms)
+            except Exception:
+                pass
+
         traffic_injector.init(scenario)
 
         gw = green_wave.create(TL_IDS)
@@ -123,7 +168,9 @@ class SumoEnv(gym.Env):
             # Map each action index → incoming lanes served by that green phase
             try:
                 programs = traci.trafficlight.getAllProgramLogics(tl)
-                phase_strs = {i: p.state for i, p in enumerate(programs[0].phases)}
+                active_id = traci.trafficlight.getProgram(tl)
+                active_prog = next((p for p in programs if p.programID == active_id), programs[0])
+                phase_strs = {i: p.state for i, p in enumerate(active_prog.phases)}
             except Exception:
                 phase_strs = {}
             self._phase_lanes[tl] = {}
@@ -155,54 +202,85 @@ class SumoEnv(gym.Env):
     # STEP
     # ─────────────────────────────────────────────────────────────
     def step(self, action):
-        traci.switch(self._label)
-        for i, tl in enumerate(TL_IDS):
-            req = int(action[i])
-            state = self._phase_state[tl]
+        try:
+            traci.switch(self._label)
+            for i, tl in enumerate(TL_IDS):
+                req = int(action[i])
+                state = self._phase_state[tl]
 
-            if state == "GREEN":
-                self._green_time[tl] += 1
-                if req != self._current_action[tl] and self._green_time[tl] >= MIN_GREEN:
-                    # Only switch if target lanes have enough queued vehicles
-                    target_lanes = self._phase_lanes.get(tl, {}).get(req, [])
-                    target_queue = sum(
-                        traci.lane.getLastStepHaltingNumber(l) for l in target_lanes
-                    ) if target_lanes else MIN_SWITCH_QUEUE
-                    if target_queue >= MIN_SWITCH_QUEUE:
+                if state == "GREEN":
+                    self._green_time[tl] += 1
+                    want_switch = req != self._current_action[tl] and self._green_time[tl] >= MIN_GREEN
+
+                    # Gridlock guard: only force a rotation when an alternative is more congested
+                    if not want_switch and self._green_time[tl] >= MAX_GREEN:
+                        cur = self._current_action[tl]
+                        cur_lanes = self._phase_lanes.get(tl, {}).get(cur, [])
+                        cur_q = sum(traci.lane.getLastStepHaltingNumber(l) for l in cur_lanes) if cur_lanes else 0
+                        best_req, best_q = cur, -1
+                        for alt in range(len(MAJOR_GREEN_PHASES[tl])):
+                            if alt == cur:
+                                continue
+                            alt_lanes = self._phase_lanes.get(tl, {}).get(alt, [])
+                            alt_q = (
+                                sum(traci.lane.getLastStepHaltingNumber(l) for l in alt_lanes)
+                                if alt_lanes else 0
+                            )
+                            if alt_q > best_q:
+                                best_q, best_req = alt_q, alt
+                        if best_req != cur and best_q > cur_q:
+                            req = best_req
+                            want_switch = True
+
+                    if want_switch:
                         cur_green = MAJOR_GREEN_PHASES[tl][self._current_action[tl]]
                         yellow = YELLOW_AFTER[tl][cur_green]
                         traci.trafficlight.setPhase(tl, yellow)
+                        traci.trafficlight.setPhaseDuration(tl, 9999)
                         self._phase_state[tl] = "YELLOW"
                         self._state_timer[tl] = YELLOW_DUR
                         self._pending_action[tl] = req
+                    else:
+                        traci.trafficlight.setPhaseDuration(tl, 9999)
 
-            elif state == "YELLOW":
-                self._state_timer[tl] -= 1
-                if self._state_timer[tl] <= 0:
-                    # yellow expired — go straight to the next green
-                    target = MAJOR_GREEN_PHASES[tl][self._pending_action[tl]]
-                    traci.trafficlight.setPhase(tl, target)
-                    self._phase_state[tl] = "GREEN"
-                    self._current_action[tl] = self._pending_action[tl]
-                    self._green_time[tl] = 0
+                elif state == "YELLOW":
+                    self._state_timer[tl] -= 1
+                    if self._state_timer[tl] <= 0:
+                        target = MAJOR_GREEN_PHASES[tl][self._pending_action[tl]]
+                        traci.trafficlight.setPhase(tl, target)
+                        traci.trafficlight.setPhaseDuration(tl, 9999)
+                        self._phase_state[tl] = "GREEN"
+                        self._current_action[tl] = self._pending_action[tl]
+                        self._green_time[tl] = 0
 
-        for _ in range(DELTA_T):
-            traci.simulationStep()
-            self._sim_step += 1
-            traffic_injector.inject(self._sim_step)
+            for _ in range(DELTA_T):
+                traci.simulationStep()
+                self._sim_step += 1
+                traffic_injector.inject(self._sim_step)
 
-        obs = self._get_obs()
-        reward = self._compute_reward()
-        terminated = self._sim_step >= MAX_SIM_STEPS
+            obs = self._get_obs()
+            reward = self._compute_reward()
+            terminated = self._sim_step >= MAX_SIM_STEPS
 
-        if terminated:
+            if terminated:
+                try:
+                    traci.close()
+                except Exception:
+                    pass
+                self._sumo_running = False
+
+            return obs, reward, terminated, False, {}
+
+        except Exception as e:
+            print(f"[ENV {self._label}] step() crashed: {e} — ending episode early")
             try:
+                traci.switch(self._label)
                 traci.close()
             except Exception:
                 pass
             self._sumo_running = False
-
-        return obs, reward, terminated, False, {}
+            dummy_obs = np.zeros(self.observation_space.shape, dtype=np.float32)
+            return dummy_obs, 0.0, True, False, {}
 
     def close(self):
         if self._sumo_running:
@@ -219,17 +297,42 @@ class SumoEnv(gym.Env):
     def _get_obs(self):
         parts = []
         for tl in TL_IDS:
+            # Incoming: halting vehicles per controlled lane (log-scaled for better low-queue resolution)
             vals = []
             for lane in self._controlled_lanes[tl]:
                 try:
                     h = traci.lane.getLastStepHaltingNumber(lane)
-                    vals.append(min(h / OBS_MAX_QUEUE, 1.0))
+                    vals.append(min(float(np.log1p(h) / LOG_OBS_MAX), 1.0))
                 except Exception:
                     vals.append(0.0)
             while len(vals) < N_LANES_PER_TL:
                 vals.append(0.0)
             parts.extend(vals[:N_LANES_PER_TL])
-            # Normalise action index to [0, 1] so it fits the declared obs bounds
+
+            # Waiting time: cumulative per-lane waiting time (log-scaled)
+            wait_vals = []
+            for lane in self._controlled_lanes[tl]:
+                try:
+                    w = traci.lane.getWaitingTime(lane)
+                    wait_vals.append(min(float(np.log1p(w) / LOG_OBS_MAX_WAIT), 1.0))
+                except Exception:
+                    wait_vals.append(0.0)
+            while len(wait_vals) < N_LANES_PER_TL:
+                wait_vals.append(0.0)
+            parts.extend(wait_vals[:N_LANES_PER_TL])
+
+            # Outgoing: vehicle count per exit lane (log-scaled)
+            out_vals = []
+            for lane in self._outgoing_lanes[tl]:
+                try:
+                    v = traci.lane.getLastStepVehicleNumber(lane)
+                    out_vals.append(min(float(np.log1p(v) / LOG_OBS_MAX), 1.0))
+                except Exception:
+                    out_vals.append(0.0)
+            while len(out_vals) < N_OUT_LANES_PER_TL:
+                out_vals.append(0.0)
+            parts.extend(out_vals[:N_OUT_LANES_PER_TL])
+
             n_phases = len(MAJOR_GREEN_PHASES[tl])
             parts.append(self._current_action[tl] / max(n_phases - 1, 1))
             parts.append(0.0 if self._phase_state[tl] == "GREEN" else 1.0)
@@ -240,33 +343,33 @@ class SumoEnv(gym.Env):
     # ─────────────────────────────────────────────────────────────
     def _compute_reward(self):
         try:
-            # queue component
-            queues = []
-            for tl in TL_IDS:
-                for lane in self._controlled_lanes[tl]:
-                    queues.append(traci.lane.getLastStepHaltingNumber(lane))
-            avg_q = float(np.clip(np.mean(queues) / MAX_QUEUE if queues else 0.0, 0.0, 1.0))
+            n_lanes = sum(len(self._controlled_lanes[tl]) for tl in TL_IDS)
 
-            # pressure component (|incoming - outgoing| per TL)
-            pressure = 0.0
-            for tl in TL_IDS:
-                inc = sum(traci.lane.getLastStepVehicleNumber(l) for l in self._controlled_lanes[tl])
-                out = sum(traci.lane.getLastStepVehicleNumber(l) for l in self._outgoing_lanes[tl])
-                pressure += abs(inc - out)
-            pressure = float(np.clip(pressure / (MAX_PRESSURE * len(TL_IDS)), 0.0, 1.0))
+            # Cumulative waiting time across all controlled lanes (primary metric)
+            total_wait = sum(
+                traci.lane.getWaitingTime(lane)
+                for tl in TL_IDS
+                for lane in self._controlled_lanes[tl]
+            )
 
-            # waiting time component
-            vehs = traci.vehicle.getIDList()
-            waits = [traci.vehicle.getAccumulatedWaitingTime(v) for v in vehs]
-            travel = float(np.clip(np.mean(waits) / MAX_TRAVEL_TIME if waits else 0.0, 0.0, 1.0))
+            # Total halting vehicles (absolute gridlock guard)
+            total_q = sum(
+                traci.lane.getLastStepHaltingNumber(lane)
+                for tl in TL_IDS
+                for lane in self._controlled_lanes[tl]
+            )
 
-            reward = -(0.6 * avg_q + 0.4 * pressure + 0.2 * travel)
+            # tanh on average waiting time per lane keeps reward in (-1, 0]; 60 s is the sensitivity scale
+            reward = -float(np.tanh(total_wait / max(n_lanes * 60.0, 1.0)))
 
-            # safety penalties
-            reward -= traci.simulation.getCollidingVehiclesNumber() * 2.0
-            reward -= traci.simulation.getStartingTeleportNumber() * 1.0
+            # Absolute queue penalty (prevents coasting at sustained high queue)
+            reward -= 0.1 * total_q / max(n_lanes * MAX_QUEUE, 1)
 
-            return float(np.clip(reward, -5.0, 0.0))
+            # Safety penalties
+            reward -= traci.simulation.getCollidingVehiclesNumber() * 0.5
+            reward -= traci.simulation.getStartingTeleportNumber() * 0.3
+
+            return float(np.clip(reward, -2.0, 0.5))
 
         except Exception:
-            return -1.0
+            return 0.0
