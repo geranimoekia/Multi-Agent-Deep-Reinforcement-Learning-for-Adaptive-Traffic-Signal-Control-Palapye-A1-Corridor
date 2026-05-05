@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+rl_env/
+venv/
+env/
+
+# Training artifacts (generated — not source)
+ppo_models/
+ppo_logs/
+
+# Claude internal
+.claude/
+
+# OS
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# SUMO output files
+*.log
+tripinfo.xml
