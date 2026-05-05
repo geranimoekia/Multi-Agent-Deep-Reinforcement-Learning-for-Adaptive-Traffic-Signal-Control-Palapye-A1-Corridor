@@ -59,6 +59,7 @@ class Store:
         self.throughput = deque(maxlen=MAX_HISTORY)
         self.running = True
         self.lock = threading.Lock()
+        self.active_vehicles = 0   # vehicles currently in network (goes up AND down)
         # PPO model control
         self.model_enabled = False
         self.model = None
@@ -69,11 +70,15 @@ store = Store()
 
 # ================= MODEL CONTROL HELPERS =================
 _DELTA_T         = 3
-_YELLOW_DUR      = 4
+_YELLOW_DUR      = 1    # _tick_phases calls while yellow ≈ 3 sim-steps
 _MIN_GREEN       = 8
-_MIN_SWITCH_QUEUE = 8   # target lanes need this many halting vehicles before a switch
+_MAX_GREEN       = 40   # force rotation after this many calls ≈ 120 sim-steps (gridlock guard)
 _N_LANES         = 8
+_N_OUT_LANES     = 4
 _OBS_MAX_Q       = 15.0
+_LOG_OBS_MAX     = float(np.log1p(_OBS_MAX_Q))   # must match sumo_env.py
+_OBS_MAX_WAIT    = 300.0
+_LOG_OBS_MAX_WAIT = float(np.log1p(_OBS_MAX_WAIT))  # must match sumo_env.py
 
 _MAJOR_GREEN = {
     "6073919354":   [0, 4],
@@ -87,19 +92,45 @@ _YELLOW_AFTER = {
 }
 
 
-def _build_obs(controlled_lanes, phase_state, current_action):
+def _build_obs(controlled_lanes, outgoing_lanes, phase_state, current_action):
     parts = []
     for tl in TL_IDS:
+        # Incoming: halting vehicles per controlled lane (how blocked is the approach)
         vals = []
         for lane in controlled_lanes.get(tl, []):
             try:
                 h = traci.lane.getLastStepHaltingNumber(lane)
-                vals.append(min(h / _OBS_MAX_Q, 1.0))
+                vals.append(min(float(np.log1p(h) / _LOG_OBS_MAX), 1.0))
             except Exception:
                 vals.append(0.0)
         while len(vals) < _N_LANES:
             vals.append(0.0)
         parts.extend(vals[:_N_LANES])
+
+        # Waiting time: cumulative per-lane waiting time (log-scaled, matches sumo_env.py)
+        wait_vals = []
+        for lane in controlled_lanes.get(tl, []):
+            try:
+                w = traci.lane.getWaitingTime(lane)
+                wait_vals.append(min(float(np.log1p(w) / _LOG_OBS_MAX_WAIT), 1.0))
+            except Exception:
+                wait_vals.append(0.0)
+        while len(wait_vals) < _N_LANES:
+            wait_vals.append(0.0)
+        parts.extend(wait_vals[:_N_LANES])
+
+        # Outgoing: vehicle count per exit lane (is there space to receive traffic)
+        out_vals = []
+        for lane in outgoing_lanes.get(tl, []):
+            try:
+                v = traci.lane.getLastStepVehicleNumber(lane)
+                out_vals.append(min(float(np.log1p(v) / _LOG_OBS_MAX), 1.0))
+            except Exception:
+                out_vals.append(0.0)
+        while len(out_vals) < _N_OUT_LANES:
+            out_vals.append(0.0)
+        parts.extend(out_vals[:_N_OUT_LANES])
+
         n_phases = len(_MAJOR_GREEN[tl])
         parts.append(current_action.get(tl, 0) / max(n_phases - 1, 1))
         parts.append(0.0 if phase_state.get(tl) == "GREEN" else 1.0)
@@ -113,28 +144,45 @@ def _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time
 
         if state == "GREEN":
             green_time[tl] = green_time.get(tl, 0) + 1
-            if req != cur_act.get(tl, 0) and green_time[tl] >= _MIN_GREEN:
-                # Only switch if target lanes have enough queued vehicles
-                target_lanes = (phase_lanes or {}).get(tl, {}).get(req, [])
-                if target_lanes:
-                    target_q = sum(
-                        traci.lane.getLastStepHaltingNumber(l)
-                        for l in target_lanes
+            want_switch = req != cur_act.get(tl, 0) and green_time[tl] >= _MIN_GREEN
+
+            # Gridlock guard: only force a rotation when an alternative is more congested
+            if not want_switch and green_time[tl] >= _MAX_GREEN:
+                cur = cur_act.get(tl, 0)
+                cur_lanes = (phase_lanes or {}).get(tl, {}).get(cur, [])
+                cur_q = sum(traci.lane.getLastStepHaltingNumber(l) for l in cur_lanes) if cur_lanes else 0
+                best_req, best_q = cur, -1
+                for alt in range(len(_MAJOR_GREEN[tl])):
+                    if alt == cur:
+                        continue
+                    alt_lanes = (phase_lanes or {}).get(tl, {}).get(alt, [])
+                    alt_q = (
+                        sum(traci.lane.getLastStepHaltingNumber(l) for l in alt_lanes)
+                        if alt_lanes else 0
                     )
-                    if target_q < _MIN_SWITCH_QUEUE:
-                        continue  # not enough demand on target — hold current green
+                    if alt_q > best_q:
+                        best_q, best_req = alt_q, alt
+                if best_req != cur and best_q > cur_q:
+                    req = best_req
+                    want_switch = True
+
+            if want_switch:
                 cur_green = _MAJOR_GREEN[tl][cur_act.get(tl, 0)]
                 yellow = _YELLOW_AFTER[tl][cur_green]
                 traci.trafficlight.setPhase(tl, yellow)
+                traci.trafficlight.setPhaseDuration(tl, 9999)
                 phase_state[tl] = "YELLOW"
                 state_timer[tl] = _YELLOW_DUR
                 pend_act[tl] = req
+            else:
+                traci.trafficlight.setPhaseDuration(tl, 9999)
 
         elif state == "YELLOW":
             state_timer[tl] = state_timer.get(tl, 1) - 1
             if state_timer[tl] <= 0:
                 target = _MAJOR_GREEN[tl][pend_act.get(tl, 0)]
                 traci.trafficlight.setPhase(tl, target)
+                traci.trafficlight.setPhaseDuration(tl, 9999)
                 phase_state[tl] = "GREEN"
                 cur_act[tl] = pend_act.get(tl, 0)
                 green_time[tl] = 0
@@ -149,6 +197,15 @@ def run_sumo():
 
         apply_tl_programs()
 
+        # Cap every edge to 60 km/h (16.67 m/s)
+        _MAX_MS = 60.0 / 3.6
+        for _eid in traci.edge.getIDList():
+            try:
+                if traci.edge.getMaxSpeed(_eid) > _MAX_MS:
+                    traci.edge.setMaxSpeed(_eid, _MAX_MS)
+            except Exception:
+                pass
+
         initial = TrafficScenario(st.session_state.get("scenario_name", "normal"))
         traffic_injector.init(initial)
 
@@ -157,15 +214,24 @@ def run_sumo():
 
         # Cache lanes once for model obs building
         controlled_lanes = {}
+        outgoing_lanes = {}
         phase_lanes = {}
         for tl in TL_IDS:
             controlled_lanes[tl] = list(
                 dict.fromkeys(traci.trafficlight.getControlledLanes(tl))
             )
             links_tl = traci.trafficlight.getControlledLinks(tl)
+            out = []
+            for link_group in links_tl:
+                for (_, to_lane, _) in link_group:
+                    if to_lane and to_lane not in out:
+                        out.append(to_lane)
+            outgoing_lanes[tl] = out
             try:
                 programs = traci.trafficlight.getAllProgramLogics(tl)
-                phase_strs = {i: p.state for i, p in enumerate(programs[0].phases)}
+                active_id = traci.trafficlight.getProgram(tl)
+                active_prog = next((p for p in programs if p.programID == active_id), programs[0])
+                phase_strs = {i: p.state for i, p in enumerate(active_prog.phases)}
             except Exception:
                 phase_strs = {}
             phase_lanes[tl] = {}
@@ -186,6 +252,7 @@ def run_sumo():
         pend_act     = {tl: 0       for tl in TL_IDS}
         green_time   = {tl: 0       for tl in TL_IDS}
         window_steps = 0
+        model_active = False  # last-known model state for transition detection
 
         while store.running:
             traci.simulationStep()
@@ -195,7 +262,10 @@ def run_sumo():
                 store.step = int(step)
 
             traffic_injector.inject(int(step))
-            gw.update(int(step))
+
+            # Only let green wave run when the model is NOT in control
+            if not model_active:
+                gw.update(int(step))
 
             # Model inference every DELTA_T sim steps
             window_steps += 1
@@ -205,8 +275,22 @@ def run_sumo():
                     mdl     = store.model
                     enabled = store.model_enabled
 
+                # Snap all TLs to major-green-0 the moment the model is turned on so
+                # cur_act matches reality (SUMO may be mid-cycle at any phase)
+                if enabled and not model_active:
+                    for tl in TL_IDS:
+                        traci.trafficlight.setPhase(tl, _MAJOR_GREEN[tl][0])
+                        traci.trafficlight.setPhaseDuration(tl, 9999)
+                        phase_state[tl] = "GREEN"
+                        state_timer[tl] = 0
+                        cur_act[tl]     = 0
+                        pend_act[tl]    = 0
+                        green_time[tl]  = 0
+
+                model_active = enabled
+
                 if enabled and mdl is not None:
-                    obs    = _build_obs(controlled_lanes, phase_state, cur_act)
+                    obs    = _build_obs(controlled_lanes, outgoing_lanes, phase_state, cur_act)
                     action, _ = mdl.predict(obs, deterministic=True)
                     _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
                 else:
@@ -226,10 +310,12 @@ def run_sumo():
             except Exception as e:
                 print(f"Metrics error: {e}")
 
+            active = traci.vehicle.getIDCount()
             with store.lock:
                 store.time.append(step)
                 store.queue.append(q)
                 store.throughput.append(t)
+                store.active_vehicles = active
 
             time.sleep(0.05)
 
@@ -616,17 +702,18 @@ with st.sidebar:
     
     with store.lock:
         current_step = store.step
-    
-    total_vehicles = traffic_injector.vehicle_count()
+        active_vehicles = store.active_vehicles
+
+    total_injected = traffic_injector.vehicle_count()
     log_snapshot = list(traffic_injector.injection_log)
-    
+
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Step", f"{current_step}")
     with col2:
-        st.metric("Vehicles", f"{total_vehicles}")
-    
-    st.metric("Injections", f"{len(log_snapshot)}")
+        st.metric("Active", f"{active_vehicles}")
+
+    st.metric("Total Injected", f"{total_injected}")
 
     st.markdown("---")
     
@@ -704,9 +791,13 @@ with st.sidebar:
                 store.model_name   = ""
             st.info("Model disabled — SUMO running its own TL programs.")
 
-        if currently_enabled:
+        with store.lock:
+            display_enabled = store.model_enabled
+            display_name    = store.model_name
+
+        if display_enabled:
             st.markdown(
-                status_pill(f"AI: {currently_loaded}", online=True),
+                status_pill(f"AI: {display_name}", online=True),
                 unsafe_allow_html=True
             )
         else:

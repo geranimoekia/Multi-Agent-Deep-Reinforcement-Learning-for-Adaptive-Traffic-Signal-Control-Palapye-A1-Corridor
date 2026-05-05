@@ -22,6 +22,7 @@ _active_pairs: list[tuple[str, str]] = []    # pool used by inject()
 
 _scenario: TrafficScenario | None = None
 _veh_count = 0
+_scenario_step = 0   # resets on scenario change — keeps demand within training distribution
 injection_log: list[dict] = []
 
 
@@ -31,9 +32,10 @@ def init(scenario: TrafficScenario | None = None):
     Validates all OD pairs against the live SUMO network, then applies the scenario.
     Resets vehicle counter and log — safe to call again on episode reset.
     """
-    global _all_od_pairs, _veh_count, injection_log
+    global _all_od_pairs, _veh_count, _scenario_step, injection_log
 
     _veh_count = 0
+    _scenario_step = 0
     injection_log.clear()
 
     if scenario is None:
@@ -81,6 +83,8 @@ def init(scenario: TrafficScenario | None = None):
 
 def set_scenario(scenario: TrafficScenario):
     """Hot-swap the scenario without restarting SUMO."""
+    global _scenario_step
+    _scenario_step = 0
     _apply_scenario(scenario)
 
 
@@ -121,12 +125,13 @@ def _apply_scenario(scenario: TrafficScenario):
 
 def inject(step: int):
     """Inject one vehicle per call according to the active scenario."""
-    global _veh_count
+    global _veh_count, _scenario_step
 
     if not _active_pairs or _scenario is None:
         return
 
-    rate = _scenario.demand_rate(step)
+    rate = _scenario.demand_rate(_scenario_step)
+    _scenario_step += 1
     # When rate >= 1.0, always inject; otherwise inject with probability = rate
     if rate < 1.0 and random.random() > rate:
         return
