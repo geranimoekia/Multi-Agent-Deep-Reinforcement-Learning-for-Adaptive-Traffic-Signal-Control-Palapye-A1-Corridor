@@ -14,7 +14,7 @@ from traffic_scenario import TrafficScenario, PROFILE_NAMES, PROFILES
 from tl_programs import apply_tl_programs
 
 # ================= CONFIG =================
-SUMO_CFG = "triple.sumocfg"
+SUMO_CFG = "network/triple.sumocfg"
 USE_GUI = True
 MAX_HISTORY = 300
 

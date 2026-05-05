@@ -8,7 +8,7 @@ from traffic_scenario import (
     TRANSIT_ENTRIES, TRANSIT_EXITS,
 )
 
-FLOW_FILE = "triple_routes_flows.rou.xml"
+FLOW_FILE = "network/triple_routes_flows.rou.xml"
 TYPES = ["car_small", "car_normal", "car_suv", "car_sport", "moto", "truck", "bus_city"]
 
 # Built once at init() from the live network — never changes mid-episode.

@@ -12,7 +12,7 @@ from tl_programs import apply_tl_programs
 # ─────────────────────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────────────────────
-SUMO_CFG = "triple.sumocfg"
+SUMO_CFG = "network/triple.sumocfg"
 TL_IDS = ["6073919354", "6073919354_B", "6073919354_C"]
 
 DELTA_T = 3           # RL step duration (seconds)
