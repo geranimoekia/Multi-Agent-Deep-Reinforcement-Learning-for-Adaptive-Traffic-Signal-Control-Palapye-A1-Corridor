@@ -1,6 +1,6 @@
 # DRL Traffic Signal Control
 
-A Deep Reinforcement Learning system that controls traffic signals in a real-world road network using the SUMO traffic simulator. A PPO agent learns to minimise vehicle waiting time across three coordinated intersections.
+Deep RL traffic signal control using PPO + SUMO. An agent learns when to switch the light green across 3 coordinated intersections — curriculum training, dynamic demand injection, live Streamlit dashboard.
 
 ---
 
