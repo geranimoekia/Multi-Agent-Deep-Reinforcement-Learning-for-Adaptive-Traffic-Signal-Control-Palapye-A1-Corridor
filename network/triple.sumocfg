@@ -8,7 +8,7 @@
     <input>
         <net-file value="network_tripled.net.xml"/>
         <route-files value="empty.rou.xml"/>
-        <additional-files value="vtypes.add.xml"/>
+        <additional-files value="vtypes.add.xml,tls.add.xml"/>
     </input>
 
     <time>

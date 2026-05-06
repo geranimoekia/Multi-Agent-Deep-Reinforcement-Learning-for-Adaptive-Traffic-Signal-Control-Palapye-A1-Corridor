@@ -64,6 +64,11 @@ class Store:
         self.model_enabled = False
         self.model = None
         self.model_name = ""
+        # Per-TL live state (updated every DELTA_T steps by run_sumo)
+        self.tl_phase_state = {tl: "GREEN" for tl in ["6073919354", "6073919354_B", "6073919354_C"]}
+        self.tl_cur_act     = {tl: 0       for tl in ["6073919354", "6073919354_B", "6073919354_C"]}
+        self.tl_queue       = {tl: 0       for tl in ["6073919354", "6073919354_B", "6073919354_C"]}
+        self.model_actions  = {tl: 0       for tl in ["6073919354", "6073919354_B", "6073919354_C"]}
 
 store = Store()
 
@@ -81,13 +86,13 @@ _OBS_MAX_WAIT    = 300.0
 _LOG_OBS_MAX_WAIT = float(np.log1p(_OBS_MAX_WAIT))  # must match sumo_env.py
 
 _MAJOR_GREEN = {
-    "6073919354":   [0, 4],
-    "6073919354_B": [0, 4],
+    "6073919354":   [0, 2, 4],   # A=N+S rights | B=E+W all | C=N+S all
+    "6073919354_B": [0, 2, 4],
     "6073919354_C": [0, 2, 4],
 }
 _YELLOW_AFTER = {
-    "6073919354":   {0: 1, 4: 5},
-    "6073919354_B": {0: 1, 4: 5},
+    "6073919354":   {0: 1, 2: 3, 4: 5},
+    "6073919354_B": {0: 1, 2: 3, 4: 5},
     "6073919354_C": {0: 1, 2: 3, 4: 5},
 }
 
@@ -293,10 +298,26 @@ def run_sumo():
                     obs    = _build_obs(controlled_lanes, outgoing_lanes, phase_state, cur_act)
                     action, _ = mdl.predict(obs, deterministic=True)
                     _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
+                    with store.lock:
+                        for i, tl in enumerate(TL_IDS):
+                            store.model_actions[tl] = int(action[i])
                 else:
                     # drain any in-progress yellow if model was just turned off
                     if any(phase_state[tl] == "YELLOW" for tl in TL_IDS):
                         _tick_phases(None, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
+
+                # publish per-TL state regardless of model on/off
+                tl_queues_snap = {}
+                for tl in TL_IDS:
+                    tl_queues_snap[tl] = sum(
+                        traci.lane.getLastStepHaltingNumber(l)
+                        for l in controlled_lanes.get(tl, [])
+                    )
+                with store.lock:
+                    for tl in TL_IDS:
+                        store.tl_phase_state[tl] = phase_state.get(tl, "GREEN")
+                        store.tl_cur_act[tl]     = cur_act.get(tl, 0)
+                        store.tl_queue[tl]       = tl_queues_snap[tl]
 
             q = 0
             t = 0
@@ -776,8 +797,17 @@ with st.sidebar:
         if model_on and (not currently_enabled or currently_loaded != selected_name):
             # Load (or reload) model
             from stable_baselines3 import PPO
+            import gymnasium as gym
             with st.spinner(f"Loading {selected_name}..."):
                 mdl = PPO.load(selected_path)
+            # Warn if action space doesn't match current 3-TL setup
+            expected = gym.spaces.MultiDiscrete([len(_MAJOR_GREEN[tl]) for tl in TL_IDS])
+            if list(mdl.action_space.nvec) != list(expected.nvec):
+                st.warning(
+                    f"⚠️ Action space mismatch — model was trained with "
+                    f"`{list(mdl.action_space.nvec)}` but current setup expects "
+                    f"`{list(expected.nvec)}`. Retrain the model for correct behaviour."
+                )
             with store.lock:
                 store.model        = mdl
                 store.model_name   = selected_name
@@ -828,6 +858,11 @@ with store.lock:
     time_data = list(store.time)
     queue_data = list(store.queue)
     throughput_data = list(store.throughput)
+    tl_phase_snap   = dict(store.tl_phase_state)
+    tl_act_snap     = dict(store.tl_cur_act)
+    tl_queue_snap   = dict(store.tl_queue)
+    tl_model_act    = dict(store.model_actions)
+    model_is_on     = store.model_enabled
 
 
 # ================= TABS =================
@@ -862,9 +897,55 @@ with tab1:
         st.metric("Average Queue", f"{avg_queue:.1f}")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
+    # ── Per-intersection status ──────────────────────────────────────────────
+    section_label("Intersection Status")
+
+    _TL_LABELS = {
+        "6073919354":   "TL-A  (main)",
+        "6073919354_B": "TL-B  (middle)",
+        "6073919354_C": "TL-C  (T-junction)",
+    }
+    _PHASE_NAMES = {0: "Phase A", 1: "Phase B", 2: "Phase C"}
+    _PHASE_DESC  = {
+        "6073919354":   {0: "N+S rights", 1: "E+W all", 2: "N+S all"},
+        "6073919354_B": {0: "N+S rights", 1: "E+W all", 2: "N+S all"},
+        "6073919354_C": {0: "Approach 1", 1: "Approach 2", 2: "Approach 3"},
+    }
+
+    tl_cols = st.columns(3)
+    for col, tl in zip(tl_cols, TL_IDS):
+        with col:
+            ps    = tl_phase_snap.get(tl, "GREEN")
+            act   = tl_act_snap.get(tl, 0)
+            q     = tl_queue_snap.get(tl, 0)
+            m_act = tl_model_act.get(tl, 0)
+
+            ph_label = _PHASE_DESC.get(tl, {}).get(act, f"Phase {act}")
+            state_color = COLORS['accent_green'] if ps == "GREEN" else COLORS['accent_orange']
+            state_icon  = "🟢" if ps == "GREEN" else "🟡"
+
+            st.markdown(
+                f"""<div style="background:{COLORS['bg_card']};border:1px solid {COLORS['border_light']};
+                border-radius:12px;padding:14px 16px;margin-bottom:4px;">
+                <div style="font-size:11px;color:{COLORS['text_tertiary']};font-weight:600;
+                text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">
+                {_TL_LABELS.get(tl, tl)}</div>
+                <div style="font-size:22px;font-weight:700;color:{state_color};margin-bottom:4px;">
+                {state_icon} {ps}</div>
+                <div style="font-size:13px;color:{COLORS['text_secondary']};margin-bottom:2px;">
+                Active: <b>{ph_label}</b> (action&nbsp;{act})</div>
+                <div style="font-size:13px;color:{COLORS['text_secondary']};margin-bottom:2px;">
+                Queue: <b>{q}</b> halting</div>
+                {"<div style='font-size:12px;color:" + COLORS['accent_blue'] + ";margin-top:4px;'>🤖 Model → action " + str(m_act) + "</div>" if model_is_on else ""}
+                </div>""",
+                unsafe_allow_html=True
+            )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
     # Main traffic chart
-    st.markdown(section_label("Live Traffic Flow"), unsafe_allow_html=True)
+    section_label("Live Traffic Flow")
     
     fig_live = go.Figure()
     
@@ -919,7 +1000,7 @@ with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Recent injections
-    st.markdown(section_label("Recent Vehicle Injections"), unsafe_allow_html=True)
+    section_label("Recent Vehicle Injections")
     
     recent = log_snapshot[-15:][::-1]
     
@@ -955,7 +1036,7 @@ with tab2:
     
     if heatmap_data:
         # Origin-Destination heatmap
-        st.markdown(section_label("Origin-Destination Flow Distribution"), unsafe_allow_html=True)
+        section_label("Origin-Destination Flow Distribution")
         
         sorted_items = sorted(heatmap_data.items(), key=lambda x: x[1], reverse=True)[:20]
         labels = [f"{o} → {d}" for (o, d), _ in sorted_items]
@@ -1003,7 +1084,7 @@ with tab2:
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Queue vs Throughput correlation
-        st.markdown(section_label("Queue vs Throughput Correlation"), unsafe_allow_html=True)
+        section_label("Queue vs Throughput Correlation")
         
         fig_correlation = go.Figure()
         
@@ -1047,7 +1128,7 @@ with tab3:
     st.markdown("### Scenario & Control Configuration")
     
     # Scenario selection section
-    st.markdown(section_label("Traffic Scenario Selection"), unsafe_allow_html=True)
+    section_label("Traffic Scenario Selection")
     
     SCENARIO_DESCRIPTIONS = {
         "low": {
