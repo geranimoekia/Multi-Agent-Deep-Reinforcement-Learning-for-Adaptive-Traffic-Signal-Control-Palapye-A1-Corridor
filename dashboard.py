@@ -71,8 +71,8 @@ store = Store()
 # ================= MODEL CONTROL HELPERS =================
 _DELTA_T         = 3
 _YELLOW_DUR      = 1    # _tick_phases calls while yellow ≈ 3 sim-steps
-_MIN_GREEN       = 8
-_MAX_GREEN       = 40   # force rotation after this many calls ≈ 120 sim-steps (gridlock guard)
+_MIN_GREEN       = 5    # must match MIN_GREEN in sumo_env.py
+_MAX_GREEN       = 25   # force rotation sooner — helps middle intersection (B) from getting stuck
 _N_LANES         = 8
 _N_OUT_LANES     = 4
 _OBS_MAX_Q       = 15.0
