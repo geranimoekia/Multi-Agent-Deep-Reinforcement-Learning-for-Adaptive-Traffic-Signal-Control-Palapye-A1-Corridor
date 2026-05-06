@@ -39,16 +39,18 @@ CURRICULUM = [
 ]
 
 # Major green phases the agent can select (index into list = action value)
+# Phase indices match network/tls.add.xml (loaded at SUMO startup)
+# TL_A/B: 3-phase plan — A(0) N+S rights | B(2) E+W all | C(4) N+S all
 MAJOR_GREEN_PHASES = {
-    "6073919354":   [0, 4],
-    "6073919354_B": [0, 4],
+    "6073919354":   [0, 2, 4],
+    "6073919354_B": [0, 2, 4],
     "6073919354_C": [0, 2, 4],
 }
 
-# Yellow phase that immediately follows each major green phase (keyed by SUMO phase index)
+# Yellow phase immediately following each major green (keyed by SUMO phase index)
 YELLOW_AFTER = {
-    "6073919354":   {0: 1, 4: 5},
-    "6073919354_B": {0: 1, 4: 5},
+    "6073919354":   {0: 1, 2: 3, 4: 5},
+    "6073919354_B": {0: 1, 2: 3, 4: 5},
     "6073919354_C": {0: 1, 2: 3, 4: 5},
 }
 
@@ -69,7 +71,7 @@ class SumoEnv(gym.Env):
         self.observation_space = gym.spaces.Box(
             low=0.0, high=1.0, shape=(obs_size,), dtype=np.float32
         )
-        self.action_space = gym.spaces.MultiDiscrete([2, 2, 3])
+        self.action_space = gym.spaces.MultiDiscrete([3, 3, 3])
 
         # runtime state (populated at reset)
         self._controlled_lanes = {}

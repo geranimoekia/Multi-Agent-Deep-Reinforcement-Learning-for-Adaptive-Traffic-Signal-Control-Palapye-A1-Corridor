@@ -40,16 +40,16 @@ PROFILES: dict[str, dict] = {
     },
     "rush_hour_am": {
         # Morning: peaks early (people flooding in), then eases off
-        "base_rate": 0.45,
-        "phase_mults": [5.0, 4.0, 2.5, 1.0, 0.5],
+        "base_rate": 0.30,
+        "phase_mults": [2.8, 2.2, 1.4, 0.8, 0.4],
         "blocked_origins": [],
         "direction_mode": "inbound",
         "description": "Morning rush — high inbound flow, people going to work",
     },
     "rush_hour_pm": {
         # Evening: builds up late (people leaving work), peaks near end
-        "base_rate": 0.45,
-        "phase_mults": [0.5, 1.0, 2.5, 4.0, 5.0],
+        "base_rate": 0.30,
+        "phase_mults": [0.4, 0.8, 1.4, 2.2, 2.8],
         "blocked_origins": [],
         "direction_mode": "outbound",
         "description": "Evening rush — high outbound flow, people going home",
