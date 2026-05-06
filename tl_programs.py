@@ -7,32 +7,53 @@ without pulling in gymnasium or numpy.
 import traci
 
 
+def _apply_2phase(tl_id: str, n_links: int):
+    """
+    Apply a generic 2-phase program to a standard cross-intersection.
+    Phase 0 (index 0): first half of links green  → yellow at index 1
+    Phase 4 (index 4): second half of links green → yellow at index 5
+    This guarantees the PPO agent's expected phase indices (0, 4) exist.
+    """
+    half = n_links // 2
+    # Phase 0: first half G, second half r
+    p0_state = "G" * half + "r" * (n_links - half)
+    p0_yell  = "y" * half + "r" * (n_links - half)
+    # Phase 4: first half r, second half G
+    p4_state = "r" * half + "G" * (n_links - half)
+    p4_yell  = "r" * half + "y" * (n_links - half)
+
+    phases = [
+        traci.trafficlight.Phase(41, p0_state),  # phase 0 — green A
+        traci.trafficlight.Phase(4,  p0_yell),   # phase 1 — yellow A
+        traci.trafficlight.Phase(2,  "r" * n_links),  # phase 2 — all-red
+        traci.trafficlight.Phase(2,  "r" * n_links),  # phase 3 — all-red
+        traci.trafficlight.Phase(41, p4_state),  # phase 4 — green B
+        traci.trafficlight.Phase(4,  p4_yell),   # phase 5 — yellow B
+    ]
+    logic = traci.trafficlight.Logic("ppo_2phase", 0, 0, phases)
+    traci.trafficlight.setProgramLogic(tl_id, logic)
+    traci.trafficlight.setProgram(tl_id, "ppo_2phase")
+
+
 def apply_tl_programs():
     """
-    Override TL C with a strictly conflict-free 3-phase program.
-
-    6073919354_C is a T-junction with 3 approaches that ALL conflict:
-      - Approaches A+C share the north exit  → merge conflict
-      - Approaches B+C cross on the north road → head-on conflict
-      - Approaches A+B share the E6 exit      → merge conflict
-
-    Solution: one approach at a time.
-
-      Phase 0 (41s): Approach A only  (-465932558#2_C)
-        link 0  -465932558#2_C → E6_C           G
-        link 1  -465932558#2_C → -470773638#1_C G
-        all others: r
-
-      Phase 2 (41s): Approach B only  (470773638#1_C)
-        link 2  470773638#1_C → 465932558#2_C   G
-        link 3  470773638#1_C → E6_C            G
-        all others: r
-
-      Phase 4 (41s): Approach C only  (E0_C)
-        link 4  E0_C → -470773638#1_C           G
-        link 5  E0_C → 465932558#2_C            G
-        all others: r
+    Apply known conflict-free programs to all three TLs so that the PPO
+    agent's expected phase indices (0 and 4 as major greens, 1 and 5 as
+    yellows) are guaranteed to exist regardless of the SUMO default program.
     """
+    # ── TL_A and TL_B: standard 2-phase cross-intersection ──────────────────
+    for tl_id in ("6073919354", "6073919354_B"):
+        try:
+            n_links = len(traci.trafficlight.getControlledLinks(tl_id))
+            if n_links < 2:
+                print(f"[TL CONFIG] {tl_id}: too few links ({n_links}), skipping")
+                continue
+            _apply_2phase(tl_id, n_links)
+            print(f"[TL CONFIG] {tl_id}: 2-phase program applied ({n_links} links)")
+        except Exception as e:
+            print(f"[TL CONFIG] Failed to apply {tl_id} program: {e}")
+
+    # ── TL_C: T-junction needs strict one-approach-at-a-time program ────────
     tl_id = "6073919354_C"
     try:
         #            link:  0  1  2  3  4  5
