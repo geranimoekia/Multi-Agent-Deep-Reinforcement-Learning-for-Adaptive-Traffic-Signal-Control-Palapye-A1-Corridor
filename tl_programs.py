@@ -15,11 +15,11 @@ def _apply_2phase(tl_id: str, n_links: int):
     This guarantees the PPO agent's expected phase indices (0, 4) exist.
     """
     half = n_links // 2
-    # Phase 0: first half G, second half r
-    p0_state = "G" * half + "r" * (n_links - half)
+    # Use lowercase 'g' (yield-green) to avoid unsafe conflict warnings
+    # when multiple links share an exit lane
+    p0_state = "g" * half + "r" * (n_links - half)
     p0_yell  = "y" * half + "r" * (n_links - half)
-    # Phase 4: first half r, second half G
-    p4_state = "r" * half + "G" * (n_links - half)
+    p4_state = "r" * half + "g" * (n_links - half)
     p4_yell  = "r" * half + "y" * (n_links - half)
 
     phases = [
