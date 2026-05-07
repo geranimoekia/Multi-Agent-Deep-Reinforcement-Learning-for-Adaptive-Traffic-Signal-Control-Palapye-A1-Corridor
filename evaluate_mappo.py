@@ -196,8 +196,8 @@ def _plot(df):
         ax.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig("eval_comparison.png", dpi=150, bbox_inches="tight")
-    print("Saved: eval_comparison.png")
+    plt.savefig("output/eval_comparison.png", dpi=150, bbox_inches="tight")
+    print("Saved: output/eval_comparison.png")
 
 
 def _print_table(df):
