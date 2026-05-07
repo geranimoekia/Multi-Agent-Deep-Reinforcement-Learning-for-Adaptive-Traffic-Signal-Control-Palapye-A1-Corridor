@@ -746,7 +746,7 @@ The workflow consists of four major components:
 
 During the simulation phase, a YOLOv8-based CameraVision system was developed to test the feasibility of real-time vehicle detection, tracking, and queue estimation. This module was successfully tested using a sample traffic video and demonstrated the ability to identify vehicles, estimate queue lengths, and track movement directions. However, full integration of the CameraVision pipeline into the SUMO simulation environment was not part of the simulation-phase scope. Instead, CameraVision will be fully integrated during the implementation phase, where real or recorded intersection footage will be available. For this simulation study, all DRL training and evaluation relied entirely on SUMO-generated synthetic traffic data.
 
-Python libraries such as TensorFlow, PyTorch, OpenCV, and scikit-learn were used to implement model training, visual data processing, and computational components. The TraCI interface was employed to link SUMO with Python in real time.
+Python libraries including PyTorch, OpenCV, and scikit-learn were used to implement model training, visual data processing, and computational components. The TraCI interface was employed to link SUMO with Python in real time.
 
 
 
@@ -873,7 +873,7 @@ The CameraVision system processed sample traffic video frames using OpenCV and Y
 \label{fig:yolo_detection}
 \end{figure}
 
-Although functionally successful, this module was not integrated into the SUMO environment during the simulation phase. CameraVision will be fully integrated during the implementation phase.
+Although functionally successful, this module was not integrated into the SUMO environment during the simulation phase. CameraVision integration with the live simulation environment is left as future work.
 
 \paragraph{Directional Tracking}
 
@@ -892,56 +892,52 @@ The decision-making component of the system is a Deep Reinforcement Learning (DR
 The observation space defines the full set of environmental variables that the agent uses to understand the current state of the intersection. The PPO agent receives a numerical state vector composed of:
 
 \begin{itemize}
-    \item \textbf{Queue lengths per lane:} The number of vehicles waiting in each incoming lane.
-    \item \textbf{Number of halted vehicles:} Vehicles with a speed less than 0.1 m/s, indicating congestion.
-    \item \textbf{Vehicle arrival rate:} The number of vehicles entering each approach within a defined time window.
-    \item \textbf{Current signal phase:} Encoded as an integer representing the active traffic light configuration.
-    \item \textbf{Average approach speeds:} The mean speed of vehicles across each lane group, used to estimate traffic flow efficiency.
-    \item \textbf{Pressure metric:} A traffic control metric defined as $P = \sum(\text{incoming vehicles}) - \sum(\text{outgoing vehicles})$, which represents the directional traffic load at the intersection.
+    \item Queue lengths per lane: the number of vehicles waiting in each incoming lane.
+    \item Number of halted vehicles: vehicles with a speed below 0.1 m/s, indicating congestion.
+    \item Vehicle arrival rate: the number of vehicles entering each approach within a defined time window.
+    \item Current signal phase: encoded as an integer representing the active traffic light configuration.
+    \item Average approach speeds: the mean speed of vehicles across each lane group, used to estimate flow efficiency.
+    \item Pressure metric: defined as $P = \sum(\text{incoming vehicles}) - \sum(\text{outgoing vehicles})$, representing the directional load at the intersection.
 \end{itemize}
-
-These variables collectively allow the DRL agent to maintain an accurate representation of traffic conditions and make informed control decisions.
 
 \paragraph{Action Space}
 
 The action space consists of discrete actions representing all allowed traffic signal phases at the intersection. Each action corresponds to a valid configuration of green, yellow, and red signals. To ensure safety and realism, several constraints are incorporated:
 
 \begin{itemize}
-    \item \textbf{Mandatory yellow transition:} Before any phase change, a yellow phase of fixed duration is enforced.
-    \item \textbf{Minimum green time:} Each green phase must remain active for a minimum duration to prevent rapid flickering and ensure predictable driver behavior.
-    \item \textbf{Prevention of rapid toggling:} The agent is restricted from switching repeatedly between two phases within a short time interval.
+    \item A mandatory yellow transition is enforced before any phase change.
+    \item Each green phase must remain active for a minimum duration to prevent rapid flickering and ensure predictable driver behaviour.
+    \item The agent is restricted from switching repeatedly between two phases within a short time interval.
 \end{itemize}
-
-These constraints prevent unrealistic or unsafe signal sequences while allowing the agent to optimise phase transitions dynamically.
 
 \paragraph{Reward Function}
 
 The reward function is designed to guide the agent toward traffic-efficient behaviour. It combines multiple weighted components that penalise congestion and reward improved traffic movement:
 
 \begin{itemize}
-    \item \textbf{Queue penalty:} A negative reward proportional to total queue length across all lanes.
-    \item \textbf{Throughput reward:} A positive reward for each vehicle that successfully exits the intersection.
-    \item \textbf{Halting penalty:} Additional penalties applied when large numbers of vehicles remain stationary.
-    \item \textbf{Phase-switching penalty:} Discourages unnecessary signal switching to promote smooth traffic flow.
-    \item \textbf{Pressure reduction reward:} Encourages the agent to reduce traffic pressure by prioritising heavily congested approaches.
+    \item A queue penalty: a negative reward proportional to total queue length across all lanes.
+    \item A throughput reward: a positive signal for each vehicle that successfully exits the intersection.
+    \item A halting penalty: additional penalties when large numbers of vehicles remain stationary.
+    \item A phase-switching penalty: discourages unnecessary switching to promote smooth flow.
+    \item A pressure reduction reward: encourages the agent to prioritise heavily congested approaches.
 \end{itemize}
 
-The reward formulation balances local delay reduction, global flow improvement, and controller stability.
+Taken together, these components push the agent toward reducing delays and keeping vehicles moving without switching signals so frequently that drivers cannot react predictably.
 
 \paragraph{SUMO--DRL Interaction via TraCI}
 
 The PPO agent interacts with the SUMO simulation using the TraCI (Traffic Control Interface) protocol. The process occurs in a closed loop:
 
 \begin{enumerate}
-    \item \textbf{Action selection:} The agent chooses a phase based on the current observation vector.
-    \item \textbf{Traffic light update:} TraCI applies the selected signal phase to the intersection.
-    \item \textbf{Simulation advancement:} SUMO advances the simulation by a fixed number of timesteps (e.g., 1--5 seconds) to allow vehicles to react to the new signal.
-    \item \textbf{State extraction:} Updated traffic data (queues, speeds, counts) are retrieved from SUMO.
-    \item \textbf{Reward calculation:} The environment computes the reward for the previous action.
-    \item \textbf{Environment transition:} The next state and reward are returned to the agent for learning and policy improvement.
+    \item The agent chooses a phase based on the current observation vector.
+    \item TraCI applies the selected signal phase to the intersection.
+    \item SUMO advances the simulation by a fixed number of timesteps to allow vehicles to react.
+    \item Updated traffic data --- queues, speeds, counts --- are retrieved from SUMO.
+    \item The environment computes the reward for the previous action.
+    \item The next state and reward are returned to the agent for the next learning step.
 \end{enumerate}
 
-This closed-loop cycle continues for the duration of each episode, enabling the agent to iteratively refine its traffic signal control policy based on observed outcomes and accumulated rewards.
+This cycle repeats for the duration of each episode. Over many episodes the agent accumulates enough experience to refine its policy from random phase selection toward one that consistently reduces queue lengths and waiting times.
 
 \begin{algorithm}[H]
 \caption{PPO-Based Traffic Signal Control in SUMO}
