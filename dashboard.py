@@ -6,12 +6,15 @@ import traceback
 import glob
 import os
 import numpy as np
+import torch
 import plotly.graph_objs as go
 from collections import deque, defaultdict
 import traffic_injector
 import green_wave
 from traffic_scenario import TrafficScenario, PROFILE_NAMES, PROFILES
 from tl_programs import apply_tl_programs
+from mappo_networks import Actor
+from mappo_env import LOCAL_OBS_DIM, N_ACTIONS
 
 # ================= CONFIG =================
 SUMO_CFG = "network/triple.sumocfg"
@@ -60,7 +63,7 @@ class Store:
         self.running = True
         self.lock = threading.Lock()
         self.active_vehicles = 0   # vehicles currently in network (goes up AND down)
-        # PPO model control
+        # MAPPO model control
         self.model_enabled = False
         self.model = None
         self.model_name = ""
@@ -70,14 +73,16 @@ class Store:
         self.tl_queue       = {tl: 0       for tl in ["6073919354", "6073919354_B", "6073919354_C"]}
         self.model_actions  = {tl: 0       for tl in ["6073919354", "6073919354_B", "6073919354_C"]}
 
-store = Store()
+if "store" not in st.session_state:
+    st.session_state["store"] = Store()
+store = st.session_state["store"]
 
 
 # ================= MODEL CONTROL HELPERS =================
 _DELTA_T         = 3
 _YELLOW_DUR      = 1    # _tick_phases calls while yellow ≈ 3 sim-steps
-_MIN_GREEN       = 5    # must match MIN_GREEN in sumo_env.py
-_MAX_GREEN       = 25   # force rotation sooner — helps middle intersection (B) from getting stuck
+_MIN_GREEN       = 5    # must match MIN_GREEN in mappo_env.py
+_MAX_GREEN       = 40   # matches MAX_GREEN in mappo_env.py training environment
 _N_LANES         = 8
 _N_OUT_LANES     = 4
 _OBS_MAX_Q       = 15.0
@@ -142,55 +147,93 @@ def _build_obs(controlled_lanes, outgoing_lanes, phase_state, current_action):
     return np.array(parts, dtype=np.float32)
 
 
+def _phase_queue(tl, phase_idx, phase_lanes):
+    """Return total halting vehicles for the lanes served by phase_idx."""
+    lanes = (phase_lanes or {}).get(tl, {}).get(phase_idx, [])
+    return sum(traci.lane.getLastStepHaltingNumber(l) for l in lanes) if lanes else 0
+
+
 def _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes=None):
+    """
+    Queue-adaptive phase state machine.
+    action: list of int per TL from MAPPO, or None to drain pending yellows only.
+
+    Switching rules (applied only when action is not None):
+      1. Current phase empty + alternative has waiters → switch immediately (after MIN_GREEN)
+      2. MAPPO wants a different phase AND that phase has vehicles → follow MAPPO
+      3. MAPPO wants different phase AND current phase is idle → follow MAPPO
+      4. All alternatives empty → hold green indefinitely (no benefit in rotating)
+      5. Hard cap at MAX_GREEN: force switch if any alternative is congested
+    """
+    adaptive = action is not None
     for i, tl in enumerate(TL_IDS):
-        req = int(action[i]) if action is not None else cur_act.get(tl, 0)
+        req   = int(action[i]) if adaptive else cur_act.get(tl, 0)
         state = phase_state.get(tl, "GREEN")
+        cur   = cur_act.get(tl, 0)
+        n_act = len(_MAJOR_GREEN[tl])
 
         if state == "GREEN":
-            green_time[tl] = green_time.get(tl, 0) + 1
-            want_switch = req != cur_act.get(tl, 0) and green_time[tl] >= _MIN_GREEN
+            if not adaptive:
+                traci.trafficlight.setPhaseDuration(tl, 9999)
+                continue
 
-            # Gridlock guard: only force a rotation when an alternative is more congested
-            if not want_switch and green_time[tl] >= _MAX_GREEN:
-                cur = cur_act.get(tl, 0)
-                cur_lanes = (phase_lanes or {}).get(tl, {}).get(cur, [])
-                cur_q = sum(traci.lane.getLastStepHaltingNumber(l) for l in cur_lanes) if cur_lanes else 0
-                best_req, best_q = cur, -1
-                for alt in range(len(_MAJOR_GREEN[tl])):
-                    if alt == cur:
-                        continue
-                    alt_lanes = (phase_lanes or {}).get(tl, {}).get(alt, [])
-                    alt_q = (
-                        sum(traci.lane.getLastStepHaltingNumber(l) for l in alt_lanes)
-                        if alt_lanes else 0
-                    )
-                    if alt_q > best_q:
-                        best_q, best_req = alt_q, alt
-                if best_req != cur and best_q > cur_q:
-                    req = best_req
+            green_time[tl] = green_time.get(tl, 0) + 1
+            cur_q = _phase_queue(tl, cur, phase_lanes)
+
+            # Find the most congested alternative phase
+            best_alt, best_alt_q = cur, 0
+            for alt in range(n_act):
+                if alt == cur:
+                    continue
+                alt_q = _phase_queue(tl, alt, phase_lanes)
+                if alt_q > best_alt_q:
+                    best_alt_q = alt_q
+                    best_alt   = alt
+
+            want_switch = False
+            target_act  = req
+
+            if best_alt_q == 0:
+                pass  # nothing waiting anywhere else — hold green, no point switching
+
+            elif green_time[tl] >= _MIN_GREEN:
+                if cur_q == 0:
+                    # Current phase is idle, vehicles waiting elsewhere — switch to busiest
                     want_switch = True
+                    target_act  = best_alt
+                else:
+                    req_q = _phase_queue(tl, req, phase_lanes)
+                    if req != cur and req_q > 0:
+                        # MAPPO wants a specific phase AND that phase has actual vehicles
+                        want_switch = True
+                        target_act  = req
+
+            # Hard cap: only fires when something IS waiting elsewhere
+            if not want_switch and green_time[tl] >= _MAX_GREEN and best_alt_q > 0:
+                want_switch = True
+                target_act  = best_alt
 
             if want_switch:
-                cur_green = _MAJOR_GREEN[tl][cur_act.get(tl, 0)]
-                yellow = _YELLOW_AFTER[tl][cur_green]
-                traci.trafficlight.setPhase(tl, yellow)
+                cur_green_ph = _MAJOR_GREEN[tl][cur]
+                yellow_ph    = _YELLOW_AFTER[tl][cur_green_ph]
+                traci.trafficlight.setPhase(tl, yellow_ph)
                 traci.trafficlight.setPhaseDuration(tl, 9999)
                 phase_state[tl] = "YELLOW"
                 state_timer[tl] = _YELLOW_DUR
-                pend_act[tl] = req
+                pend_act[tl]    = target_act
             else:
                 traci.trafficlight.setPhaseDuration(tl, 9999)
 
         elif state == "YELLOW":
             state_timer[tl] = state_timer.get(tl, 1) - 1
             if state_timer[tl] <= 0:
-                target = _MAJOR_GREEN[tl][pend_act.get(tl, 0)]
-                traci.trafficlight.setPhase(tl, target)
+                pend     = pend_act.get(tl, 0)
+                target_ph = _MAJOR_GREEN[tl][pend]
+                traci.trafficlight.setPhase(tl, target_ph)
                 traci.trafficlight.setPhaseDuration(tl, 9999)
                 phase_state[tl] = "GREEN"
-                cur_act[tl] = pend_act.get(tl, 0)
-                green_time[tl] = 0
+                cur_act[tl]     = pend
+                green_time[tl]  = 0
 
 
 # ================= SIMULATION LOOP =================
@@ -242,6 +285,7 @@ def run_sumo():
             except Exception:
                 phase_strs = {}
             phase_lanes[tl] = {}
+            n_acts = len(_MAJOR_GREEN[tl])
             for act_idx, ph_idx in enumerate(_MAJOR_GREEN[tl]):
                 state_str = phase_strs.get(ph_idx, "")
                 served = []
@@ -250,7 +294,21 @@ def run_sumo():
                         for (fl, _, _) in links_tl[li]:
                             if fl and fl not in served:
                                 served.append(fl)
+                # Fallback: link detection failed — divide controlled lanes evenly
+                if not served and controlled_lanes[tl]:
+                    n_ctrl = len(controlled_lanes[tl])
+                    size   = max(1, n_ctrl // n_acts)
+                    start  = act_idx * size
+                    end    = n_ctrl if act_idx == n_acts - 1 else min(start + size, n_ctrl)
+                    served = controlled_lanes[tl][start:end]
                 phase_lanes[tl][act_idx] = served
+
+        # Diagnostic: print lane caches so we can verify TL_C is populated
+        for tl in TL_IDS:
+            tag = tl.split("_")[-1] if "_" in tl else "A"
+            print(f"[LANES] TL_{tag}  controlled={len(controlled_lanes[tl])}  "
+                  f"outgoing={len(outgoing_lanes[tl])}  "
+                  f"phase_lanes={[len(v) for v in phase_lanes[tl].values()]}")
 
         # Phase state machine for model control
         phase_state  = {tl: "GREEN" for tl in TL_IDS}
@@ -260,6 +318,8 @@ def run_sumo():
         green_time   = {tl: 0       for tl in TL_IDS}
         window_steps = 0
         model_active = False  # last-known model state for transition detection
+        _dbg_step    = 0      # counter for periodic diagnostic prints
+        _tick_ctr    = 0      # raw tick counter for bg-thread health prints
 
         while store.running:
             traci.simulationStep()
@@ -282,6 +342,10 @@ def run_sumo():
                     mdl     = store.model
                     enabled = store.model_enabled
 
+                _tick_ctr += 1
+                if _tick_ctr % 30 == 0:
+                    print(f"[BG tick={_tick_ctr}] enabled={enabled}  model_active={model_active}  mdl={'loaded' if mdl else 'None'}")
+
                 # Snap all TLs to major-green-0 the moment the model is turned on so
                 # cur_act matches reality (SUMO may be mid-cycle at any phase)
                 if enabled and not model_active:
@@ -293,17 +357,52 @@ def run_sumo():
                         cur_act[tl]     = 0
                         pend_act[tl]    = 0
                         green_time[tl]  = 0
+                    print("[MAPPO] Model activated — taking over TL control")
 
                 model_active = enabled
 
                 if enabled and mdl is not None:
-                    obs    = _build_obs(controlled_lanes, outgoing_lanes, phase_state, cur_act)
-                    action, _ = mdl.predict(obs, deterministic=True)
-                    _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
-                    with store.lock:
+                    try:
+                        obs = _build_obs(controlled_lanes, outgoing_lanes, phase_state, cur_act)
+                        action = []
                         for i, tl in enumerate(TL_IDS):
-                            store.model_actions[tl] = int(action[i])
+                            obs_t = torch.tensor(
+                                obs[i * LOCAL_OBS_DIM:(i + 1) * LOCAL_OBS_DIM],
+                                dtype=torch.float32
+                            ).unsqueeze(0)
+                            with torch.no_grad():
+                                act_t, _, _ = mdl.get_action(obs_t, deterministic=True)
+                            action.append(int(act_t.item()))
+
+                        # Diagnostic: print on step 1 and every 30 steps after
+                        _dbg_step += 1
+                        if _dbg_step == 1 or _dbg_step % 30 == 0:
+                            print(f"[DBG step={_dbg_step}]")
+                            for j, dtl in enumerate(TL_IDS):
+                                tag = dtl.split("_")[-1] if "_" in dtl else "A"
+                                obs_j = torch.tensor(
+                                    obs[j * LOCAL_OBS_DIM:(j + 1) * LOCAL_OBS_DIM],
+                                    dtype=torch.float32
+                                ).unsqueeze(0)
+                                with torch.no_grad():
+                                    logits_j = mdl.net(obs_j).squeeze().tolist()
+                                all_q = [_phase_queue(dtl, a, phase_lanes) for a in range(len(_MAJOR_GREEN[dtl]))]
+                                print(f"  TL_{tag}: req={action[j]} cur={cur_act[dtl]} "
+                                      f"green_t={green_time[dtl]} q_per_phase={all_q} "
+                                      f"logits={[round(l,2) for l in logits_j]}")
+
+                        _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
+                        with store.lock:
+                            for i, tl in enumerate(TL_IDS):
+                                store.model_actions[tl] = action[i]
+
+                    except Exception as _e:
+                        print(f"[MAPPO ERROR] inference/tick failed: {_e}")
+                        traceback.print_exc()
+
                 else:
+                    if enabled and mdl is None:
+                        print("[MAPPO] enabled=True but model is None — check if toggle fired")
                     # drain any in-progress yellow if model was just turned off
                     if any(phase_state[tl] == "YELLOW" for tl in TL_IDS):
                         _tick_phases(None, phase_state, state_timer, cur_act, pend_act, green_time, phase_lanes)
@@ -356,13 +455,12 @@ def run_sumo():
 
 
 # ================= START THREAD =================
+import atexit
 if "started" not in st.session_state:
     st.session_state.started = True
     st.session_state.thread = threading.Thread(target=run_sumo, daemon=True)
     st.session_state.thread.start()
-
-import atexit
-atexit.register(lambda: setattr(store, "running", False))
+    atexit.register(lambda: setattr(store, "running", False))
 
 
 # ================= PAGE CONFIG =================
@@ -779,49 +877,48 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # PPO model control
-    section_label("PPO Model")
+    # MAPPO model control
+    section_label("MAPPO Model")
 
-    model_files = sorted(glob.glob("ppo_models/*.zip"))
-    model_names = [os.path.basename(f) for f in model_files]
+    _MAPPO_PATH = "mappo_models/best_actor.pth"
+    _mappo_exists = os.path.isfile(_MAPPO_PATH)
 
-    if model_names:
-        default_idx = model_names.index("best_model.zip") if "best_model.zip" in model_names else 0
-        selected_name = st.selectbox("Model file", model_names, index=default_idx, key="model_select")
-        selected_path = f"ppo_models/{selected_name}"
-
+    if _mappo_exists:
         with store.lock:
             currently_enabled = store.model_enabled
             currently_loaded  = store.model_name
 
-        model_on = st.toggle("Enable Model Control", value=currently_enabled, key="model_toggle")
+        model_on = st.toggle("Enable MAPPO Control", value=currently_enabled, key="model_toggle")
 
-        if model_on and (not currently_enabled or currently_loaded != selected_name):
-            # Load (or reload) model
-            from stable_baselines3 import PPO
-            import gymnasium as gym
-            with st.spinner(f"Loading {selected_name}..."):
-                mdl = PPO.load(selected_path)
-            # Warn if action space doesn't match current 3-TL setup
-            expected = gym.spaces.MultiDiscrete([len(_MAJOR_GREEN[tl]) for tl in TL_IDS])
-            if list(mdl.action_space.nvec) != list(expected.nvec):
-                st.warning(
-                    f"⚠️ Action space mismatch — model was trained with "
-                    f"`{list(mdl.action_space.nvec)}` but current setup expects "
-                    f"`{list(expected.nvec)}`. Retrain the model for correct behaviour."
-                )
-            with store.lock:
-                store.model        = mdl
-                store.model_name   = selected_name
-                store.model_enabled = True
-            st.success(f"Model active: {selected_name}")
+        print(f"[SIDEBAR] model_on={model_on}  currently_enabled={currently_enabled}")
+
+        if model_on and not currently_enabled:
+            print("[SIDEBAR] → loading model...")
+            try:
+                with st.spinner("Loading best_actor.pth..."):
+                    actor = Actor(obs_dim=LOCAL_OBS_DIM, n_actions=N_ACTIONS)
+                    actor.load_state_dict(
+                        torch.load(_MAPPO_PATH, map_location="cpu", weights_only=True)
+                    )
+                    actor.eval()
+                with store.lock:
+                    store.model        = actor
+                    store.model_name   = "best_actor.pth"
+                    store.model_enabled = True
+                print("[SIDEBAR] → model loaded OK, store.model_enabled = True")
+                st.success("MAPPO active: best_actor.pth")
+            except Exception as _se:
+                print(f"[SIDEBAR ERROR] model load failed: {_se}")
+                traceback.print_exc()
+                st.error(f"Failed to load model: {_se}")
 
         elif not model_on and currently_enabled:
             with store.lock:
                 store.model_enabled = False
                 store.model        = None
                 store.model_name   = ""
-            st.info("Model disabled — SUMO running its own TL programs.")
+            print("[SIDEBAR] → model disabled")
+            st.info("MAPPO disabled — SUMO running its own TL programs.")
 
         with store.lock:
             display_enabled = store.model_enabled
@@ -835,12 +932,12 @@ with st.sidebar:
         else:
             st.markdown(status_pill("AI: Off", online=False), unsafe_allow_html=True)
     else:
-        st.caption("No models found in ppo_models/")
+        st.caption("best_actor.pth not found in mappo_models/")
 
     st.markdown("---")
 
     # Stop button
-    if st.button("Stop Simulation", type="primary", use_container_width=True):
+    if st.button("Stop Simulation", type="primary", width='stretch'):
         store.running = False
         st.warning("Stopping simulation...")
         time.sleep(1)
@@ -997,7 +1094,7 @@ with tab1:
         margin=dict(l=10, r=10, t=40, b=10)
     )
     
-    st.plotly_chart(fig_live, use_container_width=True, key="live_traffic_chart")
+    st.plotly_chart(fig_live, width='stretch', key="live_traffic_chart")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -1018,7 +1115,7 @@ with tab1:
                 }
                 for e in recent
             ],
-            use_container_width=True,
+            width='stretch',
             hide_index=True
         )
     else:
@@ -1071,7 +1168,7 @@ with tab2:
             margin=dict(l=10, r=10, t=20, b=100)
         )
         
-        st.plotly_chart(fig_heatmap, use_container_width=True, key="od_heatmap")
+        st.plotly_chart(fig_heatmap, width='stretch', key="od_heatmap")
         
         # Summary stats
         col1, col2, col3 = st.columns(3)
@@ -1117,7 +1214,7 @@ with tab2:
             margin=dict(l=10, r=10, t=10, b=10)
         )
         
-        st.plotly_chart(fig_correlation, use_container_width=True, key="correlation_chart")
+        st.plotly_chart(fig_correlation, width='stretch', key="correlation_chart")
         
     else:
         st.info("Waiting for traffic data to build analysis...")
@@ -1183,7 +1280,7 @@ with tab3:
             if st.button(
                 button_label,
                 key=f"scenario_{scenario_name}",
-                use_container_width=True,
+                width='stretch',
                 type="primary" if is_active else "secondary"
             ):
                 if not is_active:
@@ -1207,12 +1304,39 @@ with tab3:
             st.warning(f"⚠ Blocked entries: {', '.join(prof['blocked_origins'])}")
     
     # Random scenario button
-    if st.button("Random Scenario", use_container_width=True):
+    if st.button("Random Scenario", width='stretch'):
         rand = TrafficScenario.random()
         traffic_injector.set_scenario(rand)
         st.session_state["scenario_name"] = rand.name
         st.rerun()
-    
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    section_label("Spawn Rates by Scenario")
+
+    # Network has 17 controlled lanes total (TL_A=7, TL_B=7, TL_C=3)
+    _TOTAL_LANES = 17
+    _PHASE_LABELS = ["0-1k", "1-2k", "2-3k", "3-4k", "4-5k"]
+
+    rate_rows = []
+    for sname, sprof in PROFILES.items():
+        br = sprof["base_rate"]
+        mults = sprof["phase_mults"]
+        peak_rate   = br * max(mults)
+        peak_vph    = peak_rate * 3600
+        peak_vph_ln = peak_vph / _TOTAL_LANES
+        rate_rows.append({
+            "Scenario":        sname.replace("_", " ").title(),
+            "Base rate":       f"{br:.2f}/s",
+            "Peak mult":       f"×{max(mults):.1f}",
+            "Peak total/hr":   f"{peak_vph:.0f}",
+            "Peak/lane/hr":    f"{peak_vph_ln:.0f}",
+            "Phase curve":     " → ".join(f"{br*m:.2f}" for m in mults),
+        })
+
+    st.dataframe(rate_rows, hide_index=True, width='stretch')
+    st.caption(f"Network: {_TOTAL_LANES} controlled lanes (TL-A 7 + TL-B 7 + TL-C 3). "
+               f"Phase curve = veh/s at each 1 000-step window.")
+
     st.markdown("---")
     
     # Green wave — detail view (toggle lives in sidebar)
@@ -1236,7 +1360,7 @@ with tab3:
             for tl_id, offset in gw.offsets.items()
         ]
         if offset_data:
-            st.dataframe(offset_data, use_container_width=True, hide_index=True)
+            st.dataframe(offset_data, width='stretch', hide_index=True)
     else:
         st.caption("Green wave disabled — toggle it in the sidebar.")
 

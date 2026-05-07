@@ -25,46 +25,49 @@ TRANSIT_EXITS: set[str]   = {"465932558#2_C", "-465932558#2_C"}
 
 PROFILES: dict[str, dict] = {
     "low": {
-        "base_rate": 0.10,
-        "phase_mults": [0.3, 0.5, 0.7, 0.9, 1.0],
+        # ~0.06 veh/s peak → ~216 veh/hour — quiet side streets, Sunday morning
+        "base_rate": 0.05,
+        "phase_mults": [0.8, 1.0, 1.2, 1.0, 0.8],
         "blocked_origins": [],
         "direction_mode": "any",
         "description": "Light off-peak traffic, dispersed routes",
     },
     "normal": {
-        "base_rate": 0.20,
-        "phase_mults": [0.3, 0.6, 1.2, 2.0, 3.5],
+        # ~0.18 veh/s peak → ~648 veh/hour — steady weekday mid-morning
+        "base_rate": 0.10,
+        "phase_mults": [0.6, 0.8, 1.2, 1.5, 1.8],
         "blocked_origins": [],
         "direction_mode": "any",
         "description": "Typical weekday mixed demand",
     },
     "rush_hour_am": {
-        # Morning: peaks early (people flooding in), then eases off
-        "base_rate": 0.30,
-        "phase_mults": [2.8, 2.2, 1.4, 0.8, 0.4],
+        # ~0.24 veh/s peak → ~864 veh/hour — A1 inbound surge 07:00-08:30
+        "base_rate": 0.12,
+        "phase_mults": [2.0, 1.8, 1.4, 0.8, 0.4],
         "blocked_origins": [],
         "direction_mode": "inbound",
         "description": "Morning rush — high inbound flow, people going to work",
     },
     "rush_hour_pm": {
-        # Evening: builds up late (people leaving work), peaks near end
-        "base_rate": 0.30,
-        "phase_mults": [0.4, 0.8, 1.4, 2.2, 2.8],
+        # ~0.24 veh/s peak → ~864 veh/hour — outbound surge 16:30-18:00
+        "base_rate": 0.12,
+        "phase_mults": [0.4, 0.8, 1.4, 1.8, 2.0],
         "blocked_origins": [],
         "direction_mode": "outbound",
         "description": "Evening rush — high outbound flow, people going home",
     },
     "holiday": {
-        # Transit area: sustained high volume all day, both directions through town
-        "base_rate": 0.40,
-        "phase_mults": [2.5, 2.8, 3.0, 2.8, 2.5],
+        # ~0.30 veh/s peak → ~1080 veh/hour — A1 long-distance holiday traffic
+        "base_rate": 0.15,
+        "phase_mults": [1.5, 1.8, 2.0, 1.8, 1.5],
         "blocked_origins": [],
         "direction_mode": "transit",
         "description": "Holiday — sustained transit traffic through town (E0 ↔ 465932558#2_C)",
     },
     "incident": {
-        "base_rate": 0.20,
-        "phase_mults": [0.3, 0.6, 1.2, 2.0, 3.5],
+        # Same as normal but two highway entries blocked
+        "base_rate": 0.10,
+        "phase_mults": [0.6, 0.8, 1.2, 1.5, 1.8],
         "blocked_origins": ["-E5_B", "-E5"],
         "direction_mode": "any",
         "description": "Normal demand but two highway entries closed",
