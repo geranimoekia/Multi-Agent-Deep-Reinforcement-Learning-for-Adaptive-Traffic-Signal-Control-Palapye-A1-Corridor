@@ -189,6 +189,20 @@ Training logs are saved to `mappo_logs/mappo_train.csv`. Plot mean reward over t
 
 ---
 
+## Project Report
+
+The full final year project report (LaTeX source) is in [`docs/`](docs/).
+
+| File | Description |
+|------|-------------|
+| [`docs/main.tex`](docs/main.tex) | Main report document |
+| [`docs/Simulation Report.tex`](docs/Simulation%20Report.tex) | Simulation analysis chapter |
+| [`docs/references.bib`](docs/references.bib) | Bibliography |
+
+To compile locally: open `docs/main.tex` in [Overleaf](https://overleaf.com) (File → Upload Project → zip) or compile with `pdflatex` + `bibtex`.
+
+---
+
 ## Tech Stack
 
 - **SUMO 1.24+** — microscopic traffic simulation
