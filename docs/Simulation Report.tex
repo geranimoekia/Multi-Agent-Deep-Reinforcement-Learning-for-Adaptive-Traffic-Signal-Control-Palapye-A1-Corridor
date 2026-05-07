@@ -170,10 +170,10 @@ Urban intersections in Palapye experience increased traffic congestion, delays, 
 \section{Research Objectives}
 
 \begin{itemize}
-    \item Design and implement sensory systems that accurately detect vehicles, pedestrians, and traffic conditions in real time with high reliability and minimal false detection.
-    \item Design and implement a networking framework that ensures seamless, low-latency, and secure transmission of traffic data between sensors, local controllers, and the processing unit, supporting both wired and wireless communication protocols.
-    \item Design and implement intelligent algorithms that analyse incoming data, optimise signal timing dynamically, and integrate historical traffic patterns to minimise congestion, delay, and emissions while ensuring safety.
-    \item Design and implement reliable output control systems that translate optimization decisions into precise operation of traffic signals, pedestrian crossings, and variable message signs in real time.
+    \item Design and implement a vehicle detection system using computer vision that accurately identifies vehicles, estimates queue lengths, and extracts real-time traffic metrics from camera footage, establishing the sensing foundation for data-driven traffic signal control.
+    \item Model and simulate the three-intersection Palapye A1 corridor network in SUMO, incorporating realistic multi-lane geometry, six demand scenarios covering off-peak, normal, morning and evening rush hour, holiday transit, and incident conditions, and a dynamic vehicle injection system to serve as a calibrated training and evaluation platform for adaptive signal controllers.
+    \item Design and implement a Multi-Agent Deep Reinforcement Learning controller using MAPPO with a Centralised Training, Decentralised Execution architecture, where three cooperative agents share policy parameters and are jointly trained against a global cooperative reward to minimise network-wide vehicle waiting time across the corridor.
+    \item Quantitatively evaluate the MAPPO controller against a single-agent PPO baseline and a conventional fixed-time controller across key traffic performance metrics --- average waiting time, queue length, throughput, and intersection pressure --- under multiple demand scenarios to validate the benefit of multi-agent coordination over single-agent and non-adaptive approaches.
 \end{itemize}
 
 \section{Project scope revision}
