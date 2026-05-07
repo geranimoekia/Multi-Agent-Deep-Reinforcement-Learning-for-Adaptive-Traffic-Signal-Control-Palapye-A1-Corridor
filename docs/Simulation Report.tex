@@ -612,9 +612,27 @@ For green-time allocation where actions are continuous, deterministic or stochas
 
 These methods allow the agent to choose precise green durations instead of discrete phase selections.
 
-\paragraph{Multi-Agent Reinforcement Learning (MARL)}
+\subsection{Multi-Agent Reinforcement Learning for Traffic Signal Control}
 
-Large-scale networks require distributed RL where each intersection acts as an independent agent. MARL systems typically follow a centralized training, decentralized execution (CTDE) paradigm. Figure \ref{fig:marl_block} presents a clean MARL systems diagram.
+When a road network contains multiple signalised intersections in close proximity, decisions made at one junction directly affect queue formation at the next. A single-agent controller that manages all signals through one monolithic action space becomes impractical as the network grows: the joint action space grows exponentially with the number of intersections, making exploration and learning increasingly difficult \cite{busoniu2008comprehensive}. Multi-Agent Reinforcement Learning (MARL) addresses this by assigning an independent learning agent to each intersection, allowing the system to scale while preserving the ability to coordinate behaviour across the network.
+
+\subsubsection{The Centralised--Decentralised Spectrum}
+
+MARL approaches can be placed on a spectrum defined by how much information is shared between agents during both training and execution. At one extreme lies fully centralised control; at the other, fully decentralised control. Each endpoint carries fundamental trade-offs that have motivated the development of hybrid strategies.
+
+\paragraph{Fully Centralised Control}
+
+In a fully centralised scheme, a single controller observes the global state of the entire network and outputs a joint action for all intersections simultaneously. Because the controller has complete knowledge, it can in principle find the globally optimal coordination policy. However, this approach suffers from two critical limitations. First, the joint observation and action spaces grow combinatorially with the number of intersections, rendering training computationally infeasible for large networks \cite{mannion2016experimental}. Second, a centralised controller requires all sensor data to be transmitted to one processing unit in real time, creating a single point of failure and introducing significant communication latency — neither of which is acceptable in a deployed traffic management system.
+
+\paragraph{Fully Decentralised Control — Independent Learning}
+
+At the opposite extreme, each agent treats every other agent as part of the environment and learns its own policy in isolation. The simplest realisation is Independent Q-Learning (IQL), in which each intersection runs a standard DQN using only its own local observations. While this approach scales well and requires no inter-agent communication, it introduces a fundamental theoretical problem: from the perspective of any one agent, the environment appears non-stationary, because the other agents' policies are also changing during training. This violates the Markov property that Q-learning and most RL algorithms depend on, leading to oscillating or non-convergent behaviour in cooperative settings \cite{tan1993multi}. In traffic control, independent agents have been observed to develop locally efficient but globally harmful policies — for example, one intersection clearing its own queue by pushing vehicles into a downstream junction, increasing overall network delay.
+
+\subsubsection{Centralised Training with Decentralised Execution (CTDE)}
+
+The dominant paradigm in modern cooperative MARL is Centralised Training with Decentralised Execution (CTDE), first formalised by \cite{oliehoek2008optimal} and popularised by the MADDPG algorithm \cite{lowe2017multi}. The core insight is that the restrictions on information sharing only need to apply at \textit{execution time} — that is, when the trained system is deployed in the real world. During the training phase, which occurs entirely in simulation, agents can share any information freely because there are no communication constraints.
+
+Under CTDE, each agent maintains a \textit{local policy} (the Actor) that takes only its own observations as input. This represents what the agent will use at deployment, where real-time sensor data from other intersections may not be available. Alongside this, a \textit{centralised value function} (the Critic) is trained using the full joint observation of all agents. The Critic does not need to be deployed — it is used only during training to provide better estimates of how good each situation is, which in turn produces better gradient signals for updating the local policies. Once training is complete, the Critic is discarded and each intersection runs its Actor independently.
 
 \begin{figure}[H]
 \centering
@@ -622,39 +640,97 @@ Large-scale networks require distributed RL where each intersection acts as an i
     node distance=1.1cm,
     block/.style={
         rectangle, draw, rounded corners,
-        minimum width=4.0cm, minimum height=1.1cm,
+        minimum width=4.5cm, minimum height=1.1cm,
         align=center, drop shadow
     },
     agent/.style={
         rectangle, draw, rounded corners,
-        minimum width=3.0cm, minimum height=0.9cm,
+        minimum width=3.2cm, minimum height=0.9cm,
         align=center, drop shadow
     },
     arrow/.style={-stealth, thick},
 ]
 
-% Top module
-\node[block] (ctde) {Centralized Training Module};
+\node[block] (critic) {Centralised Critic\\(Global State — Training Only)};
 
-% Three agents evenly spaced beneath
-\node[agent, below=1.5cm of ctde, xshift=-4cm] (agent1) {Agent 1\\Intersection A};
-\node[agent, below=1.5cm of ctde] (agent2) {Agent 2\\Intersection B};
-\node[agent, below=1.5cm of ctde, xshift=4cm] (agent3) {Agent 3\\Intersection C};
+\node[agent, below=1.6cm of critic, xshift=-4.2cm] (a1) {Actor 1\\TL\textsubscript{A} — Local Obs};
+\node[agent, below=1.6cm of critic]                (a2) {Actor 2\\TL\textsubscript{B} — Local Obs};
+\node[agent, below=1.6cm of critic, xshift= 4.2cm] (a3) {Actor 3\\TL\textsubscript{C} — Local Obs};
 
-% Training arrows
-\draw[arrow] (ctde.south) -- (agent1.north);
-\draw[arrow] (ctde.south) -- (agent2.north);
-\draw[arrow] (ctde.south) -- (agent3.north);
+\draw[arrow] (critic.south) -- (a1.north) node[midway, left=0.3cm]{\small gradient};
+\draw[arrow] (critic.south) -- (a2.north);
+\draw[arrow] (critic.south) -- (a3.north) node[midway, right=0.3cm]{\small gradient};
 
-% Downward execution arrows
-\draw[arrow] (agent1.south) -- ++(0,-1) node[midway,right]{Execution};
-\draw[arrow] (agent2.south) -- ++(0,-1);
-\draw[arrow] (agent3.south) -- ++(0,-1);
+\draw[arrow] (a1.south) -- ++(0,-0.9) node[below]{\small Phase Decision};
+\draw[arrow] (a2.south) -- ++(0,-0.9) node[below]{\small Phase Decision};
+\draw[arrow] (a3.south) -- ++(0,-0.9) node[below]{\small Phase Decision};
 
 \end{tikzpicture}
-\caption{Centralized training and decentralized execution in Multi-Agent RL.}
-\label{fig:marl_block}
+\caption{Centralised Training with Decentralised Execution (CTDE). The Critic uses global state during training to guide all Actors; at deployment only the local Actors run.}
+\label{fig:ctde_diagram}
 \end{figure}
+
+This separation resolves the non-stationarity problem because the Critic, which observes all agents simultaneously, operates in a stationary joint environment. The individual Actors can therefore be trained with stable gradient signals despite each seeing only partial local information \cite{lowe2017multi}.
+
+\subsubsection{Key CTDE Algorithms}
+
+Several CTDE algorithms have been developed, each addressing the multi-agent coordination problem differently.
+
+\paragraph{MADDPG — Multi-Agent Deep Deterministic Policy Gradient}
+
+Lowe et al.\ \cite{lowe2017multi} extended the DDPG actor--critic framework to the multi-agent setting by giving each agent its own centralised critic that conditions on all agents' observations and actions. MADDPG demonstrated that agents could learn cooperative and competitive strategies in continuous action spaces. However, it inherits DDPG's known instability in training and requires a separate critic network per agent, making it computationally heavy for larger networks.
+
+\paragraph{QMIX — Monotonic Value Function Factorisation}
+
+QMIX \cite{rashid2018qmix} addresses cooperative MARL by decomposing the joint action-value function $Q_{tot}$ into individual per-agent utilities $Q_i$ via a mixing network, subject to a monotonicity constraint:
+\begin{equation}
+\frac{\partial Q_{tot}}{\partial Q_i} \geq 0 \quad \forall i
+\label{eq:qmix_monotone}
+\end{equation}
+This constraint ensures that the greedy action selected by each agent individually is also globally optimal with respect to $Q_{tot}$, enabling decentralised execution while training a centralised joint value estimate. QMIX achieved strong results on the StarCraft Multi-Agent Challenge benchmark \cite{samvelyan2019starcraft} and has been applied to traffic signal control with discretised action spaces.
+
+\paragraph{MAPPO — Multi-Agent Proximal Policy Optimisation}
+
+Yu et al.\ \cite{yu2022surprising} demonstrated that a straightforward extension of PPO to the multi-agent cooperative setting — termed MAPPO — achieves competitive or superior performance compared to more complex CTDE methods such as QMIX on a range of cooperative benchmarks. In MAPPO, each agent maintains its own Actor network that maps local observations to a distribution over actions, while a single shared Critic network is conditioned on the concatenated global state of all agents. The PPO clipped surrogate objective is applied independently to each agent using the same shared advantage estimate:
+
+\begin{equation}
+\mathcal{L}^{\text{CLIP}}_i = \mathbb{E}\left[\min\left(r_i(\theta)\hat{A}, \;\text{clip}(r_i(\theta), 1-\epsilon, 1+\epsilon)\hat{A}\right)\right]
+\label{eq:mappo_clip}
+\end{equation}
+
+where $r_i(\theta) = \frac{\pi_\theta(a_i | o_i)}{\pi_{\theta_\text{old}}(a_i | o_i)}$ is the probability ratio for agent $i$, and $\hat{A}$ is the advantage estimated from the centralised Critic using Generalised Advantage Estimation (GAE) \cite{schulman2015high}. The key finding of \cite{yu2022surprising} was that MAPPO's simplicity — reusing a well-understood single-agent algorithm — does not come at the cost of performance, and in many cooperative tasks outperforms specialised multi-agent methods. For traffic signal control in particular, the discrete action space (phase selection) and cooperative reward structure make MAPPO a natural fit.
+
+\subsubsection{Parameter Sharing in MARL}
+
+A practical technique that significantly reduces the number of trainable parameters in cooperative MARL is \textit{parameter sharing}: all agents use the same Actor network weights. This is valid when the agents are structurally homogeneous — that is, they observe the same types of features and take actions from the same action space. In a network of similar intersections, each junction observes queue lengths, waiting times, and outgoing vehicle counts in the same format, and selects from the same set of green phases. Under these conditions, the same policy rules apply at every junction, and a single shared network can be trained more efficiently than one network per agent \cite{gupta2017cooperative}.
+
+Parameter sharing also acts as a form of data augmentation: each training update uses experience collected simultaneously from all agents, effectively multiplying the effective batch size by the number of agents. This accelerates convergence and reduces variance in the policy gradient estimates.
+
+\subsubsection{Cooperative Reward Design}
+
+In a cooperative MARL setting, the choice of reward structure fundamentally determines whether agents learn to coordinate or to compete. Three reward structures are commonly studied \cite{chu2019multi}:
+
+\begin{enumerate}
+    \item \textbf{Local reward}: each agent receives a reward based only on its own intersection's performance (e.g., its own queue length). This is simple to compute but can produce selfish policies — an agent may clear its own queue by extending a green phase that pushes vehicles into a downstream junction.
+    \item \textbf{Global reward}: all agents share the same reward signal computed across the entire network (e.g., total network waiting time). This directly incentivises cooperation but can suffer from the \textit{credit assignment problem}: when many agents act simultaneously, it is difficult for each agent to determine which of its actions contributed positively or negatively to the shared reward.
+    \item \textbf{Mixed reward}: a weighted combination of local and global components, balancing individual accountability with network-level cooperation.
+\end{enumerate}
+
+Empirical studies on traffic signal control \cite{chu2019multi, wei2019colight} have found that global cooperative rewards, when combined with a centralised Critic that can attribute value accurately across the joint state, consistently produce better network-level outcomes than local reward schemes. The credit assignment problem is mitigated by the Critic, which learns to distinguish which states are globally valuable even when individual agents' contributions are entangled.
+
+\subsubsection{MARL Applied to Traffic Signal Control}
+
+Several studies have specifically applied MARL to multi-intersection traffic signal control, each contributing insights relevant to the Palapye corridor problem.
+
+Chu et al.\ \cite{chu2019multi} proposed a multi-agent advantage actor--critic (MA2C) framework in which each agent uses a local observation augmented with the observations of its immediate neighbours. Their experiments on a 6$\times$6 Manhattan-style grid demonstrated that neighbourhood-based information sharing significantly reduces average vehicle travel time compared to independent learning, establishing the importance of inter-agent information flow in dense networks.
+
+Wei et al.\ \cite{wei2019colight} developed CoLight, which uses graph attention networks to allow each intersection agent to attend selectively to the states of neighbouring intersections during training. CoLight reported state-of-the-art performance on both synthetic and real-world datasets, highlighting that the \textit{structure} of information sharing — not just its presence — matters for coordination quality.
+
+Zheng et al.\ \cite{zheng2019learning} studied the specific case of a signalised arterial corridor — a sequence of intersections along a main road — and found that agents trained with a global reward and CTDE architecture naturally learned phase offset patterns resembling green wave coordination, despite not being explicitly programmed to do so. This finding is directly relevant to the A1 road corridor through Palapye, where three intersections are arranged in a linear sequence.
+
+\subsubsection{Algorithm Selection: MAPPO for the Palapye Network}
+
+Based on the literature reviewed, MAPPO with parameter sharing and a global cooperative reward was selected as the control algorithm for this project. This choice is justified on four grounds. First, the three Palapye intersections are structurally homogeneous — same observation format, same action space — satisfying the condition for parameter sharing. Second, the discrete phase-selection action space aligns naturally with PPO's categorical policy distribution, avoiding the instability associated with continuous-action methods such as MADDPG or TD3. Third, Yu et al.\ \cite{yu2022surprising} demonstrated that MAPPO achieves strong cooperative performance without the additional complexity of value decomposition methods such as QMIX. Fourth, a global cooperative reward directly incentivises the agents to minimise network-wide waiting time rather than locally optimising individual junctions at the expense of the corridor as a whole.
 
 \chapter{Methodology}
 
