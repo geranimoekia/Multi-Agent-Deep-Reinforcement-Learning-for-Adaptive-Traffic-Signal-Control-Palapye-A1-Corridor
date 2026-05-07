@@ -24,6 +24,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -31,6 +32,7 @@ from playwright.async_api import async_playwright, BrowserContext
 
 PRISM_URL    = "https://prism.openai.com"
 SESSION_FILE = Path("prism_session.json")
+PROFILE_DIR  = Path("prism_profile")
 
 # ── Playwright helpers ────────────────────────────────────────────────────────
 
@@ -41,6 +43,23 @@ async def save_session(context: BrowserContext):
 
 
 async def load_context(playwright, headless: bool = True):
+    if PROFILE_DIR.exists():
+        context = await playwright.chromium.launch_persistent_context(
+            str(PROFILE_DIR),
+            headless=headless,
+            args=["--disable-blink-features=AutomationControlled"],
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36"
+            ),
+        )
+        await context.add_init_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
+        print("[PRISM] Loaded persistent browser profile")
+        return None, context
+
     browser = await playwright.chromium.launch(headless=headless)
     if SESSION_FILE.exists():
         storage = json.loads(SESSION_FILE.read_text())
@@ -52,20 +71,34 @@ async def load_context(playwright, headless: bool = True):
     return browser, context
 
 
-# ── Setup: log in once and save session ──────────────────────────────────────
+# ── Setup: one-time login in a stealth browser ───────────────────────────────
 
 async def setup():
     async with async_playwright() as p:
-        browser, context = await load_context(p, headless=False)
+        context = await p.chromium.launch_persistent_context(
+            str(PROFILE_DIR),
+            headless=False,
+            args=["--disable-blink-features=AutomationControlled"],
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36"
+            ),
+        )
+        # Hide the navigator.webdriver flag that triggers security warnings
+        await context.add_init_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
+
         page = await context.new_page()
         await page.goto(PRISM_URL)
-        print("\n[PRISM] Browser opened.")
-        print("  1. Log in to prism.openai.com")
-        print("  2. Open the project you want to sync to")
+        print("\n[PRISM] Browser opened (no automation banner this time).")
+        print("  1. Log in to your OpenAI account")
+        print("  2. Open your Prism project")
         print("  3. Press Enter here when you're ready\n")
         input("Press Enter to save session...")
         await save_session(context)
-        await browser.close()
+        await context.close()
     print("[PRISM] Setup complete. Run the script normally now.")
 
 
@@ -75,17 +108,36 @@ async def push_to_prism(context: BrowserContext, project_url: str, content: str)
     page = await context.new_page()
     try:
         print(f"[PRISM] Opening project...")
-        await page.goto(project_url, wait_until="networkidle", timeout=30_000)
+        await page.goto(project_url, wait_until="domcontentloaded", timeout=30_000)
 
-        # Find the main editor — Prism uses CodeMirror (same as Overleaf)
-        # Try to click into the editor and replace all content
-        editor = page.locator(".cm-content, .CodeMirror, [contenteditable='true']").first
-        await editor.wait_for(timeout=15_000)
-        await editor.click()
+        # Prism uses Monaco (the VS Code editor). Update the editor model
+        # directly so the document is replaced in one operation.
+        await page.locator(".monaco-editor").first.wait_for(timeout=30_000)
+        file_name = parse_qs(urlparse(project_url).query).get("m", [""])[0]
+        replaced = await page.evaluate(
+            """
+            ({ content, fileName }) => {
+                if (!window.monaco?.editor) return false;
+                const models = window.monaco.editor
+                    .getModels()
+                    .filter((model) => model.getLanguageId() === "latex");
+                if (!models.length) return false;
 
-        # Select all and replace with new content
-        await page.keyboard.press("Control+A")
-        await page.keyboard.type(content, delay=0)  # delay=0 for speed
+                const target = fileName === "main.tex"
+                    ? models.reduce((best, model) =>
+                        model.getValueLength() < best.getValueLength() ? model : best
+                      )
+                    : models.find((model) => model.getValue().includes("\\\\documentclass")) || models[0];
+
+                target.setValue(content);
+                return true;
+            }
+            """,
+            {"content": content, "fileName": file_name},
+        )
+
+        if not replaced:
+            raise RuntimeError("Could not find a Prism Monaco LaTeX editor model")
 
         print(f"[PRISM] Content pushed ({len(content)} chars)")
 
@@ -137,12 +189,12 @@ async def watch(tex_file: str, project_url: str):
     if not tex_path.exists():
         print(f"[ERROR] File not found: {tex_path}")
         sys.exit(1)
-    if not SESSION_FILE.exists():
+    if not SESSION_FILE.exists() and not PROFILE_DIR.exists():
         print("[ERROR] No saved session. Run:  python prism_sync.py --setup")
         sys.exit(1)
 
     async with async_playwright() as p:
-        browser, context = await load_context(p, headless=True)
+        browser, context = await load_context(p, headless=False)
 
         loop    = asyncio.get_event_loop()
         handler = TexHandler(tex_path, loop, context, project_url)
@@ -162,7 +214,10 @@ async def watch(tex_file: str, project_url: str):
         finally:
             observer.stop()
             observer.join()
-            await browser.close()
+            if browser is not None:
+                await browser.close()
+            else:
+                await context.close()
 
 
 def main():
