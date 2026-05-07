@@ -22,6 +22,12 @@ ARCHITECTURE RECAP (CTDE):
 Run:
     python train_mappo.py
 
+Presentation summary:
+  - This file is where learning happens.
+  - The Actor chooses traffic-light actions from local observations.
+  - The Centralized Critic evaluates the full traffic state during training.
+  - PPO updates both networks using collected SUMO experience.
+
 Outputs:
     mappo_models/   — actor + critic checkpoints  (.pth files)
     mappo_logs/     — CSV training log  (open in Excel / plot with pandas)
@@ -455,6 +461,12 @@ def evaluate(actor, n_episodes=3, scenario="normal"):
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    # Presentation flow:
+    # 1. Create Actor/Critic networks.
+    # 2. Create several SUMO environments.
+    # 3. Collect traffic experience.
+    # 4. Update the neural networks with PPO.
+    # 5. Save logs and checkpoints for evaluation.
     print("=" * 62)
     print("  MAPPO Traffic Signal Training  —  Palapye Triple Intersection")
     print(f"  Device          : {DEVICE}")
