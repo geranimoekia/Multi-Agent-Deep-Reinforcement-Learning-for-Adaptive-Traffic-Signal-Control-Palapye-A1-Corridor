@@ -131,7 +131,9 @@ class SumoEnv(gym.Env):
             scenario = TrafficScenario.random() if pool is None else TrafficScenario(random.choice(pool))
         self._episode_count += 1
 
-        binary = "sumo-gui" if self.use_gui else "sumo"
+        _sumo_home = os.environ.get("SUMO_HOME", r"C:\Program Files (x86)\Eclipse\Sumo")
+        _bin_name  = "sumo-gui.exe" if self.use_gui else "sumo.exe"
+        binary     = os.path.join(_sumo_home, "bin", _bin_name)
         traci.start([binary, "-c", SUMO_CFG, "--no-warnings", "--no-step-log"],
                     label=self._label)
         traci.switch(self._label)

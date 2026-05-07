@@ -196,7 +196,9 @@ def _tick_phases(action, phase_state, state_timer, cur_act, pend_act, green_time
 # ================= SIMULATION LOOP =================
 def run_sumo():
     try:
-        cmd = ["sumo-gui" if USE_GUI else "sumo", "-c", SUMO_CFG]
+        _sumo_home = os.environ.get("SUMO_HOME", r"C:\Program Files (x86)\Eclipse\Sumo")
+        _bin_name  = "sumo-gui.exe" if USE_GUI else "sumo.exe"
+        cmd = [os.path.join(_sumo_home, "bin", _bin_name), "-c", SUMO_CFG]
         traci.start(cmd)
         print("SUMO Started Successfully")
 
