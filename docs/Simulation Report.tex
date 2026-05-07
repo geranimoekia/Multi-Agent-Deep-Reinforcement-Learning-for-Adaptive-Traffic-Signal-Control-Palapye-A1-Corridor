@@ -312,7 +312,9 @@ Overall, research highlights actuated signal control as a substantial improvemen
 
 \subsection{Adaptive Control Method}
 
-The adaptive control method represents the latest and most advanced form of traffic signal management. They continuously monitor traffic density in real time and apply algorithmic models to optimize signals across networks \cite{mannion2016experimental}. The adaptive models reduce traffic delays and adapt to real time traffic densities. The adaptive models are divided into two types \cite{ye2019survey}.
+Adaptive control is the most capable category of traffic signal management. Unlike fixed-time and actuated methods, adaptive systems continuously monitor network-wide traffic density and apply algorithmic models to optimise signal timings across multiple intersections in real time \cite{mannion2016experimental}. The result is a controller that responds to conditions no preset schedule could anticipate --- sudden congestion, incidents, or atypical demand patterns that fall outside any programmed time-of-day profile.
+
+Adaptive methods split into two broad families \cite{ye2019survey}. Model-based systems build an explicit mathematical representation of traffic flow and solve an optimisation problem over that model at each control step. Model-free systems skip the model entirely and learn control policies directly from observed traffic data. The sections below cover both.
 
 \section{Model-Based Optimization Systems}
 
@@ -344,9 +346,9 @@ where:
 
 The stage cost $J(x,u)$ typically combines queue lengths, waiting times, or number of stops, while $J_f(x(N))$ serves as a terminal cost penalizing undesirable end states.
 
-\cite{8707103} found out that MPC can anticipate future conditions, explicitly handle multi-variable intersections and constraints, and achieves better performance compared to fixed and actuated control strategies. Distributed and hierarchical MPC variants also offer improved coordination among multiple intersections.
+MPC can anticipate future conditions, explicitly handle multi-variable intersections and constraints, and outperforms fixed and actuated control strategies \cite{8707103}. Distributed and hierarchical MPC variants also offer improved coordination across multiple intersections.
 
-However \cite{8707103} highlighted critical limitations of the MPC. Centralized MPC is poor at computational complexity that restricts real time feasibility in large urban networks, performance is highly dependent on the accuracy of traffic models, and most applications remain at the simulation stage, with few large-scale real-world deployments. Scalability and robustness to uncertainty remain open challenges \cite{8707103}.
+These benefits come with significant trade-offs. Centralised MPC carries a computational burden that restricts real-time feasibility in large urban networks, and its performance is heavily dependent on how accurately the underlying traffic model captures reality. Most applications remain at the simulation stage, with few large-scale real-world deployments to date. Scalability and robustness to uncertainty remain open challenges \cite{8707103}.
 
 \subsection{Dynamic Traffic Assignment (DTA)}
 
@@ -448,6 +450,7 @@ The Q-learning algorithm updates its knowledge of the optimal policy through the
 
 \begin{equation}
 Q(s,a) \leftarrow Q(s,a) + \alpha \big[ r + \gamma \max_{a'} Q(s',a') - Q(s,a) \big]
+\label{eq:qlearning}
 \end{equation}
 
 where:
@@ -507,14 +510,7 @@ In the RL framework, traffic control is represented as a Markov Decision Process
 
 \paragraph{Deep Q-Learning (DQN)}
 
-Deep Q-Learning is a value-based RL algorithm that approximates the action-value function $Q(s,a)$ using a deep neural network. It is effective for traffic signal control where actions (e.g., selecting the next phase) are discrete. The Q-function is updated using the Bellman equation:
-
-\begin{equation}
-Q(s,a) \leftarrow Q(s,a) + \alpha \left[r + \gamma \max_{a'}Q(s',a') - Q(s,a)\right]
-\label{eq:dqn}
-\end{equation}
-
-To enhance stability, DQN employs experience replay and a target network that updates slowly. Figure \ref{fig:dqn_block} shows the improved systems-engineering diagram for the DQN workflow.
+Deep Q-Learning approximates the action-value function $Q(s,a)$ using a deep neural network rather than a lookup table, which makes it practical for the high-dimensional state spaces that real traffic intersections produce. It applies the same Q-learning update rule (Equation~\ref{eq:qlearning}) but introduces two mechanisms to keep training stable: experience replay, which breaks the temporal correlation between consecutive samples by storing and randomly sampling past transitions; and a target network, a periodic copy of the Q-network whose weights are held fixed for several updates so the learning targets do not shift with every gradient step. Figure \ref{fig:dqn_block} shows the improved systems-engineering diagram for the DQN workflow.
 
 \begin{figure}[H]
 \centering
