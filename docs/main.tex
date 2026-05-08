@@ -834,6 +834,40 @@ During the simulation phase, a YOLOv8-based CameraVision system was developed to
 
 Python libraries such as TensorFlow, PyTorch, OpenCV, and scikit-learn were used to implement model training, visual data processing, and computational components. The TraCI interface was employed to link SUMO with Python in real time.
 
+Figure~\ref{fig:methodology_overview} shows the high-level flow of the methodology from network construction through to policy evaluation.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.9cm,
+    block/.style={rectangle, draw, rounded corners, minimum width=5.2cm, minimum height=1.0cm, align=center, drop shadow, fill=white},
+    decision/.style={diamond, draw, minimum width=3.2cm, minimum height=0.9cm, align=center, drop shadow, fill=white, aspect=2.5},
+    arrow/.style={-stealth, thick},
+]
+
+\node[block] (net)    {SUMO Network Construction\\(Palapye intersection geometry, routes)};
+\node[block, below=of net]  (data)   {Synthetic Dataset Generation\\(Traffic scenarios via SUMO)};
+\node[block, below=of data] (cam)    {CameraVision Module\\(YOLOv8 --- tested independently)};
+\node[block, below=of cam]  (train)  {PPO Agent Training\\(Stable-Baselines3 + TraCI)};
+\node[block, below=of train](eval)   {Policy Evaluation\\(Fixed-time vs PPO --- SUMO)};
+\node[block, below=of eval] (result) {Performance Analysis\\(Delay, Queue, Throughput, Pressure)};
+
+\draw[arrow] (net)    -- (data);
+\draw[arrow] (data)   -- (cam);
+\draw[arrow] (cam)    -- (train);
+\draw[arrow] (train)  -- (eval);
+\draw[arrow] (eval)   -- (result);
+
+% Side note for CameraVision
+\node[right=1.6cm of cam, align=left, text width=3.2cm, font=\small\itshape]
+    (sidenote) {Not integrated into\\SUMO loop ---\\future work};
+\draw[dashed, gray] (cam.east) -- (sidenote.west);
+
+\end{tikzpicture}
+\caption{High-level methodology flow: from network construction to performance evaluation.}
+\label{fig:methodology_overview}
+\end{figure}
+
 
 
 \section{System Architecture and Dashboard Design}
@@ -846,7 +880,46 @@ The implemented architecture is composed of the following major modules:
     \item Model Control Module (Proximal Policy Optimisation Agent)
 \end{itemize}
 
-The modules operate in a semi-closed loop during simulation: SUMO generates traffic, the DRL agent makes decisions, and SUMO updates traffic conditions accordingly. The CameraVision module was tested independently and is scheduled for full integration during the implementation phase.
+The modules operate in a semi-closed loop during simulation: SUMO generates traffic, the DRL agent makes decisions, and SUMO updates traffic conditions accordingly. The CameraVision module was tested independently and is scheduled for full integration during the implementation phase. Figure~\ref{fig:system_arch} illustrates how the three modules are connected.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.1cm and 1.8cm,
+    block/.style={rectangle, draw, rounded corners, minimum width=3.6cm, minimum height=1.1cm, align=center, drop shadow, fill=white},
+    subblock/.style={rectangle, draw, dashed, rounded corners, minimum width=3.0cm, minimum height=0.85cm, align=center, fill=white, font=\small},
+    arrow/.style={-stealth, thick},
+    dasharrow/.style={-stealth, thick, dashed, gray},
+]
+
+% Top-level modules
+\node[block] (sumo)  {SUMO Simulation\\Environment};
+\node[block, right=2.4cm of sumo] (ppo) {PPO Agent\\(Model Control)};
+\node[block, below=1.6cm of sumo] (data) {Dataset Training\\Module};
+\node[block, below=1.6cm of ppo]  (cam)  {CameraVision\\Module (YOLO)};
+
+% Sub-labels
+\node[subblock, below=0.3cm of data] (sumodata) {Route files, CSV export,\\scenario generation};
+\node[subblock, below=0.3cm of cam]  (camdata)  {Vehicle counts,\\queue estimates};
+
+% Arrows: SUMO <-> PPO (closed loop)
+\draw[arrow] (sumo.east) -- node[above, font=\small]{State $s_t$} (ppo.west);
+\draw[arrow] (ppo.west)  -- node[below, font=\small]{Action $a_t$} ([yshift=-0.25cm]sumo.east);
+
+% Arrows: Dataset module feeds into PPO pretraining
+\draw[arrow] (data.east) -- node[above, font=\small, sloped]{Pretraining data} (ppo.south west);
+
+% Dashed: CameraVision (future integration)
+\draw[dasharrow] (cam.north) -- node[right, font=\small]{Future} (ppo.south);
+\draw[dasharrow] (cam.west)  -- node[below, font=\small]{Future} (sumo.south east);
+
+% Data flows
+\draw[arrow] (sumo.south) -- (data.north);
+
+\end{tikzpicture}
+\caption{System architecture showing the three modules and their data flows. Dashed arrows indicate planned future integration of CameraVision.}
+\label{fig:system_arch}
+\end{figure}
 
 A system dashboard was also implemented to visualise:
 
@@ -1027,7 +1100,55 @@ The PPO agent interacts with the SUMO simulation using the TraCI (Traffic Contro
     \item \textbf{Environment transition:} The next state and reward are returned to the agent for learning and policy improvement.
 \end{enumerate}
 
-This closed-loop cycle continues for the duration of each episode, enabling the agent to iteratively refine its traffic signal control policy based on observed outcomes and accumulated rewards.
+This closed-loop cycle continues for the duration of each episode, enabling the agent to iteratively refine its traffic signal control policy based on observed outcomes and accumulated rewards. Figure~\ref{fig:traci_loop} shows the interaction cycle as a flowchart.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.85cm,
+    block/.style={rectangle, draw, rounded corners, minimum width=5.0cm, minimum height=1.0cm, align=center, drop shadow, fill=white},
+    decision/.style={diamond, draw, aspect=2.8, minimum width=4.0cm, minimum height=0.9cm, align=center, drop shadow, fill=white},
+    arrow/.style={-stealth, thick},
+]
+
+\node[block]    (init)   {Initialise PPO Agent \& Connect TraCI};
+\node[block,    below=of init]   (reset)  {Reset SUMO Episode\\Obtain initial state $s_0$};
+\node[block,    below=of reset]  (obs)    {Extract State $s_t$ from SUMO\\(queues, speeds, phase, pressure)};
+\node[block,    below=of obs]    (act)    {PPO Selects Action $a_t = \pi_\theta(s_t)$};
+\node[block,    below=of act]    (apply)  {Apply Signal Phase via TraCI};
+\node[block,    below=of apply]  (step)   {Advance SUMO Simulation ($\Delta t$ steps)};
+\node[block,    below=of step]   (reward) {Compute Reward $r_t$\\(throughput, queue, halt, switch penalties)};
+\node[block,    below=of reward] (store)  {Store $(s_t, a_t, r_t, s_{t+1})$ in Rollout Buffer};
+\node[decision, below=of store]  (done)   {Episode\\done?};
+\node[block,    below=of done]   (update) {Compute Advantages \& Update Policy $\pi_\theta$};
+\node[decision, below=of update] (conv)   {Training\\complete?};
+\node[block,    below=of conv]   (end)    {Disconnect TraCI --- Save Policy};
+
+% Vertical flow
+\draw[arrow] (init)   -- (reset);
+\draw[arrow] (reset)  -- (obs);
+\draw[arrow] (obs)    -- (act);
+\draw[arrow] (act)    -- (apply);
+\draw[arrow] (apply)  -- (step);
+\draw[arrow] (step)   -- (reward);
+\draw[arrow] (reward) -- (store);
+\draw[arrow] (store)  -- (done);
+\draw[arrow] (done)   -- node[right]{\small Yes} (update);
+\draw[arrow] (update) -- (conv);
+\draw[arrow] (conv)   -- node[right]{\small Yes} (end);
+
+% Loop back: episode not done -> back to obs
+\draw[arrow] (done.east) -- ++(1.6,0) node[above, font=\small]{No}
+    |- ([yshift=0.3cm]obs.north east) -- (obs.north);
+
+% Loop back: training not complete -> new episode
+\draw[arrow] (conv.west) -- ++(-1.8,0) node[above, font=\small]{No}
+    |- ([yshift=0.3cm]reset.north west) -- (reset.north);
+
+\end{tikzpicture}
+\caption{PPO--SUMO closed-loop training flowchart via TraCI.}
+\label{fig:traci_loop}
+\end{figure}
 
 \begin{algorithm}[H]
 \caption{PPO-Based Traffic Signal Control in SUMO}
@@ -1061,7 +1182,7 @@ Set simulation time $t \leftarrow 0$\;
 
         Compute reward $r_t$:\;
         \Indp
-            $r_t =$ outflow reward\;
+            $r_t =$ throughput reward\;
             $r_t \leftarrow r_t -$ queue penalty\;
             $r_t \leftarrow r_t -$ halting penalty\;
             $r_t \leftarrow r_t -$ switching penalty\;
