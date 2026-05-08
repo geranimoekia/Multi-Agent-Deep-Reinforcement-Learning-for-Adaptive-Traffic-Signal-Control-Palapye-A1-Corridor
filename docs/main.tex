@@ -361,22 +361,6 @@ F & $> 80$ \\
 
 LOS A represents free-flow conditions with negligible delay. LOS F indicates that demand exceeds capacity and queues grow without bound. The goal of traffic signal optimisation is to maintain LOS C or better on all approaches under typical demand conditions and to limit the extent and duration of LOS E or F during peak periods. The metrics tracked in this project --- waiting time, queue length, and throughput --- are direct proxies for LOS.
 
-\section{Traffic Simulation Tools}
-
-Evaluating traffic signal controllers in a real network before deployment is impractical: live intersections cannot be arbitrarily reconfigured, and collecting sufficient training data from physical sensors is expensive and time-consuming. Traffic micro-simulators address this by providing synthetic, controllable environments in which vehicles are modelled individually, each obeying car-following and lane-change rules. The simulator generates the state information that the controller receives and carries out the control decisions the agent issues, closing the loop in software. The quality of the simulator --- its fidelity to real vehicle behaviour, its supported interaction interfaces, and its scalability to large networks --- therefore directly determines the quality of the learned policy.
-
-\subsection{Overview of Traffic Simulators}
-
-Several simulators are used in the research literature. VISSIM (PTV Group) is a commercial tool widely used for engineering consulting and detailed capacity analysis; it provides high visual fidelity and is calibrated against real-world data, but its closed-source nature and licensing costs limit its use in RL research. AIMSUN (TSS Transport Simulation Systems) is similarly commercial and widely used by road authorities for planning and evaluation. SUMO (Simulation of Urban Mobility) is an open-source, cross-platform micro-simulator maintained by the German Aerospace Center (DLR); it supports arbitrary road network topologies, multiple vehicle classes, and real traffic signal logic, and provides a Python API (TraCI) for real-time programmatic control during simulation --- a critical requirement for reinforcement learning integration. CityFlow is a more recent open-source simulator designed specifically for RL-based traffic signal control research; it is faster than SUMO for large grid networks but less feature-complete for non-standard network geometries \cite{futuretransp5040137}.
-
-\subsection{SUMO as the Simulation Platform}
-
-SUMO was selected for this project on the basis of three properties. First, its road network editor (NETEDIT) supports import from OpenStreetMap, which allowed the actual Palapye A1 corridor geometry to be used as the simulation base rather than an abstract grid. Second, TraCI exposes full programmatic control over traffic light phases, vehicle insertion, and sensor queries at every simulation step, enabling the RL environment to read intersection state and issue phase commands with sub-second temporal resolution. Third, SUMO is free, well-documented, and has an active community that maintains Python bindings compatible with major RL libraries.
-
-SUMO models vehicle behaviour using the Krauss car-following model, which represents the longitudinal dynamics of each vehicle as a function of the gap to the vehicle ahead, the maximum deceleration, and a random perturbation term. Lane-change behaviour follows the SUMO lane-change model (LC2013), which decides when a vehicle changes lane based on strategic (reaching a destination lane), tactical (overtaking a slower vehicle), and safety constraints. Together these models produce realistic stop-and-go wave propagation and queue discharge behaviour that is qualitatively consistent with field observations at signalised intersections \cite{michailidis2025traffic}.
-
-The TraCI interface allows a Python process to connect to a running SUMO instance, step the simulation forward one time step at a time, and exchange commands and state information at each step. For traffic signal control, the relevant TraCI calls are: \texttt{trafficlight.setRedYellowGreenState} to set phase, \texttt{lanearea.getLastStepHaltingNumber} to read queue length per lane, and \texttt{lanearea.getLastStepMeanSpeed} to read mean approach speed. These three calls are the primary data sources for the observation vector fed to the MAPPO agents in this project.
-
 \section{Processing and Control Logic}
 
 \subsection{Fixed-Time Control Method}
