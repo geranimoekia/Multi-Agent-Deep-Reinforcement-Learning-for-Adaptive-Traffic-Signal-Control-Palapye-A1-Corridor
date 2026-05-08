@@ -14,7 +14,7 @@ async def push():
         ctx     = await browser.new_context(storage_state=storage)
         page    = await ctx.new_page()
         print("[PUSH] Navigating...")
-        await page.goto(PROJECT_URL, wait_until="networkidle", timeout=60000)
+        await page.goto(PROJECT_URL, wait_until="domcontentloaded", timeout=60000)
         await page.locator(".monaco-editor").first.wait_for(timeout=30000)
         await page.wait_for_timeout(8000)
 
