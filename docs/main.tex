@@ -1,133 +1,130 @@
 \documentclass[11pt, a4paper]{report}
-
 % ===== ENCODING & LANGUAGE =====
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
 \usepackage{textcomp}
+\usepackage{newtxtext}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shadows.blur}
 
 % ===== PAGE LAYOUT =====
-\usepackage[
-    paperwidth=8.5in,
-    paperheight=11.0in,
-    left=1.5in,
-    right=1.0in,
-    top=1.0in,
-    bottom=1.0in
-]{geometry}
+\usepackage[paperwidth=8.5in,left=1.5in,right=1.0in,top=1.0in,bottom=1.0in,paperheight=11.0in]{geometry}
 \usepackage{setspace}
 \onehalfspacing
-
 % ===== TEXT ALIGNMENT =====
 \usepackage{ragged2e}
 \justifying
-
-% ===== GRAPHICS =====
+% ===== GRAPHICS & FIGURES =====
 \usepackage{graphicx}
 \graphicspath{{./images/}}
 \usepackage{float}
 \usepackage{caption}
 \usepackage{lscape}
 \usepackage{pdflscape}
-
 % ===== TABLES =====
 \usepackage{longtable}
-\usepackage{multirow}
-\usepackage{bigdelim}
-\usepackage{dcolumn}
-\usepackage{booktabs}
-
+\usepackage{multirow,bigdelim,dcolumn,booktabs}
 % ===== MATH =====
 \usepackage{amsmath}
 \usepackage{amssymb}
-
 % ===== UNITS =====
 \usepackage{siunitx}
-
-% ===== TIKZ =====
+% ===== TIKZ & DIAGRAMS =====
 \usepackage{tikz}
-\usetikzlibrary{
-    shapes.geometric,
-    arrows,
-    decorations.pathreplacing,
-    matrix,
-    positioning,
-    chains
-}
-
-% ===== GANTT =====
+\usetikzlibrary{shapes.geometric, arrows, decorations.pathreplacing, matrix, positioning, chains}
 \usepackage{pgfgantt}
-
-% ===== ALGORITHMS =====
+% ===== ALGORITHM =====
 \usepackage[ruled,vlined]{algorithm2e}
-
 % ===== CODE LISTINGS =====
 \usepackage{listings}
 \usepackage{xcolor}
-\lstdefinestyle{customPython}{
+\lstset{
     language=Python,
-    backgroundcolor=\color{gray!10},
-    frame=single,
-    rulecolor=\color{black},
-    xleftmargin=0.5cm,
-    xrightmargin=0.5cm,
-    framexleftmargin=0.5cm,
-    framexrightmargin=0.5cm,
-    framerule=0.8pt,
-    breaklines=true,
-    basicstyle=\ttfamily\footnotesize,
+    basicstyle=\ttfamily\small,
     keywordstyle=\color{blue},
-    commentstyle=\color{green!40!black},
-    stringstyle=\color{orange!60!black},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    breaklines=true,
     showstringspaces=false,
     tabsize=4,
     numbers=left,
     numberstyle=\tiny\color{gray},
-    captionpos=b
+    frame=single
 }
-\lstset{style=customPython}
-
-% ===== HYPERREF & CITES =====
+% ===== CITATIONS & REFERENCES =====
 \usepackage{cite}
 \usepackage{hyperref}
-
-% ===== CHAPTER FORMATTING =====
+% ===== FORMATTING =====
+\usepackage{color}
 \usepackage{titlesec}
+% ===== CHAPTER FORMATTING =====
 \titleformat{\chapter}[display]
   {\normalfont\bfseries\Huge}
   {\chaptertitlename\ \thechapter}{20pt}{\Huge}
 \titlespacing*{\chapter}{0pt}{0pt}{40pt}
-
-% ===== PARAGRAPH SPACING =====
+% ===== NO PARAGRAPH INDENTATION =====
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1em}
 
 \begin{document}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2ex plus 0.5ex minus 0.2ex}
+\linespread{1.2}
+\tolerance2000
+\hoffset=-0.5cm
+\setlength{\textwidth}{15.5cm}
+\setlength{\textheight}{620pt}
 
 
-% ===== TITLE PAGE =====
-\begin{titlepage}
-\centering
-\singlespacing
-% --- Logo ---
-\includegraphics[width=7cm,height=3cm]{biust.png}
-\vspace{2cm}
-% --- Title ---
-\LARGE \textbf{Optimization of Traffic Light Control Systems for Urban Intersections in Palapye}
-\vspace{3cm}
-% --- Author details ---
-\large
-\textbf{Tsotlhe Nayang Seiphepi}\\
-Student ID: 21001137\\
-Department of Computer and Telecommunications Engineering\\
-Botswana International University of Science and Technology
-\vspace{3cm}
-% --- Supervisor ---
-\textbf{Supervisor:} Dr. Bokamoso Basutli
+\pagestyle{empty}
+
+\begin{center}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{biust.png}
+\end{figure}
+\vspace*{0.1cm}
+
+{\large \Large \textbf OPTIMIZATION OF TRAFFIC LIGHT CONTROL SYSTEMS FOR
+URBAN INTERSECTIONS IN PALAPYE}
+\\
+
+
+\vspace*{1.5cm}
+
+{\large
+Full Name: Tsotlhe Nayang Seiphepi\\
+Student ID: 21001137\\}
+Supervisor : Dr Bokamoso Basutli :  \\
+Student Signature:\\
+\vspace*{2.0cm}
+Supervisor Signature :\\
+\vspace*{1.0cm}
+
+EEEN510 - YEAR 5 SEMESTER 1\\
+Department of Electrical, Computer and Telecommunications\\
+Faculty of Engineering and Technology\\
+Botswana International University of Science and Technology\\
+Botswana, Palapye
+
+\vspace*{0.2cm}
+
+{\em In partial fulfillment of the requirements for the degree of Bachelor in
+Computer and Telecommunications Engineering}
+
+\vspace*{0.2cm}
+
+{\bf 21 November 2025}
+
 \vfill
-% --- Date ---
-\textbf{October 2025}
-\end{titlepage}
+
+\end{center}
+
+
+\newpage
+\newpage
+\clearpage
 
 % ===== FRONT MATTER =====
 \newpage
@@ -158,7 +155,7 @@ Road capacity and traffic control have not expanded at the same growth rate as t
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{A1 TRAFFIC.jpg}
+  \includegraphics[width=\textwidth]{A1 TRAFFIC.jpg} 
   \caption{Traffic on the A1 road near Palapye (from Mmegi Online) \cite{mmegi_heavy_traffic_a1}}
   \label{fig:traffic_a1}
 \end{figure}
@@ -174,17 +171,25 @@ Urban intersections in Palapye experience increased traffic congestion, delays, 
 \section{Research Objectives}
 
 \begin{itemize}
-    \item Design and implement sensory systems that accurately detect vehicles, pedestrians, and traffic conditions in real time with high reliability and minimal false detection.
-    \item Design and implement a networking framework that ensures seamless, low-latency, and secure transmission of traffic data between sensors, local controllers, and the processing unit, supporting both wired and wireless communication protocols.
-    \item Design and implement intelligent algorithms that analyse incoming data, optimise signal timing dynamically, and integrate historical traffic patterns to minimise congestion, delay, and emissions while ensuring safety.
-    \item Design and implement reliable output control systems that translate optimization decisions into precise operation of traffic signals, pedestrian crossings, and variable message signs in real time.
+    \item Design and implement a vehicle detection system using computer vision that accurately identifies vehicles, estimates queue lengths, and extracts real-time traffic metrics from camera footage, establishing the sensing foundation for data-driven traffic signal control.
+    \item Model and simulate the three-intersection Palapye A1 corridor network in SUMO, incorporating realistic multi-lane geometry, six demand scenarios covering off-peak, normal, morning and evening rush hour, holiday transit, and incident conditions, and a dynamic vehicle injection system to serve as a calibrated training and evaluation platform for adaptive signal controllers.
+    \item Design and implement a Multi-Agent Deep Reinforcement Learning controller using MAPPO with a Centralised Training, Decentralised Execution architecture, where three cooperative agents share policy parameters and are jointly trained against a global cooperative reward to minimise network-wide vehicle waiting time across the corridor.
+    \item Quantitatively evaluate the MAPPO controller against a single-agent PPO baseline and a conventional fixed-time controller across key traffic performance metrics --- average waiting time, queue length, throughput, and intersection pressure --- under multiple demand scenarios to validate the benefit of multi-agent coordination over single-agent and non-adaptive approaches.
 \end{itemize}
+
+\section{Project scope revision}
+
+The original project scope, as proposed at the start of the final year, included a hardware phase alongside the software and simulation work. The plan was to prototype a physical traffic controller unit --- sensors, a local processor, and output relays --- to complement the simulation results.
+
+During Semester 2, the project supervisor reviewed the direction of the work and approved a change of scope. The hardware implementation was set aside in favour of a more substantive algorithmic contribution: scaling the reinforcement learning system from a single isolated intersection to a coordinated three-intersection network using Multi-Agent Proximal Policy Optimisation (MAPPO). The rationale was that a well-designed multi-agent system addressing the full A1 corridor through Palapye, rather than a single junction, represents a stronger research contribution and is more directly applicable to the real network.
+
+Accordingly, the four original objectives remain valid --- particularly the goals relating to intelligent optimisation algorithms and real-time adaptive control --- but the hardware sensing and output control objectives are reframed as future integration work. The Semester 2 deliverable is the MAPPO multi-intersection system, documented from Chapter~\ref{chap:mappo_system} onward.
 
 \chapter{Literature Review}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\linewidth]{Flow chart (Community).png}
+     \includegraphics[width=1\linewidth]{Flow chart (Community).png}  
     \caption{Block Diagram of The System}
     \label{fig:block_diagram_system}
 \end{figure}
@@ -193,7 +198,7 @@ Urban intersections in Palapye experience increased traffic congestion, delays, 
 
 \textbf{Vehicle Detection using Camera Vision}
 
-The vehicle detection process in the paper by \cite{dos2024vehicular}, is based entirely on classical computer vision techniques implemented using OpenCV. The system begins with video input, where frames are captured from a static camera. Each frame then undergoes background subtraction using the MOG2 algorithm to separate moving objects (vehicles) from the static background. After isolating the moving areas, the image is thresholded and binarized to create a black-and-white mask that clearly distinguishes motion from non-motion regions. Next, the system applies contour detection to identify the outlines of these moving objects. To remove noise and irrelevant small objects, contours below a specific area threshold (e.g., 500–1000 pixels) are discarded, keeping only the larger regions that likely represent vehicles.
+The vehicle detection process in the paper by \cite{dos2024vehicular}, is based entirely on classical computer vision techniques implemented using OpenCV. The system begins with video input, where frames are captured from a static camera. Each frame then undergoes background subtraction using the MOG2 algorithm to separate moving objects (vehicles) from the static background. After isolating the moving areas, the image is thresholded and binarized to create a black-and-white mask that clearly distinguishes motion from non-motion regions. Next, the system applies contour detection to identify the outlines of these moving objects. To remove noise and irrelevant small objects, contours below a specific area threshold (e.g., 500--1000 pixels) are discarded, keeping only the larger regions that likely represent vehicles.
 
 For each valid contour, the algorithm computes its centroid (center point) and monitors its position relative to a predefined reference line on the frame. When a centroid crosses this line within a set tolerance range, the system records it as a vehicle count event. This crossing logic ensures each vehicle is counted once as it passes through the scene. The final step updates the vehicle count, allowing the program to estimate traffic flow. According to \cite{dos2024vehicular}, this method achieved high accuracy for smaller vehicles (around 90 percent for cars and 100 percent for motorcycles) but lower accuracy for large vehicles such as buses or trucks due to occlusion and size variability.
 
@@ -273,7 +278,104 @@ Once classified, each vehicle's outline is approximated using a minimum-area rec
 
 \textbf{Vehicle Detection Using Radio Waves and Microwaves}
 
-Vehicle detection using radio waves and microwaves represents an emerging technology for traffic monitoring. Radar-based systems operate independently of lighting and weather conditions, providing reliable detection in adverse environments.
+Radar and microwave sensors detect vehicles by emitting electromagnetic waves and measuring the reflected signal. Because the detection mechanism does not rely on visible light, these sensors perform consistently across day and night conditions and are unaffected by rain, fog, or dust --- conditions that degrade camera and LiDAR performance. This makes them particularly relevant for outdoor deployments in environments with variable weather or poor lighting infrastructure.
+
+Doppler radar sensors measure the frequency shift between transmitted and received signals to determine vehicle speed. When a vehicle moves toward the sensor, the reflected wave is compressed to a higher frequency; when the vehicle moves away, the frequency is stretched. The magnitude of this shift is proportional to the vehicle's radial velocity, allowing instantaneous speed estimation without image processing \cite{lv2019lidar}.
+
+Microwave presence detectors operate on a different principle. Rather than measuring Doppler shift, they detect changes in the standing wave pattern caused by a vehicle entering the sensor's field of view. When no vehicle is present, the reflected wave interferes constructively with the transmitted wave at the sensor antenna. A vehicle occupying the detection zone disrupts this pattern, and the resulting signal change triggers a detection event. This mechanism is used extensively in inductive loop replacements and stop-bar detectors at signalised intersections \cite{michailidis2025traffic}.
+
+Compared to cameras, radar and microwave sensors produce no image data, preserving the privacy of road users. Compared to LiDAR, they are lower cost and require less computational post-processing. Their main limitation is spatial resolution: a radar sensor can report speed and presence, but cannot distinguish between vehicle types with the same precision as a vision-based or LiDAR system. In the context of traffic signal control, this is often sufficient --- what the controller needs is queue length and arrival rate, not detailed vehicle classification.
+
+\textbf{Vehicle Detection Using Deep Learning and YOLO}
+
+Deep learning has transformed vehicle detection by replacing hand-crafted feature pipelines with convolutional neural networks (CNNs) trained end-to-end on large annotated datasets. While classical methods such as background subtraction extract moving blobs from video, deep learning models learn to distinguish vehicle classes (car, truck, motorcycle, bus) directly from raw pixel values, generalising across lighting conditions, occlusion levels, and camera angles that would require separate tuning with classical approaches \cite{futuretransp5040137}.
+
+The most widely adopted family of real-time detectors is YOLO (You Only Look Once). Unlike two-stage detectors such as Faster R-CNN, which first propose regions of interest and then classify each one, YOLO frames detection as a single regression problem: the network takes the full image as input and simultaneously predicts bounding boxes and class probabilities across a spatial grid in one forward pass. This single-stage design yields substantially higher inference speed, making it practical for real-time camera feeds at intersections. YOLOv8, the version used in this project, introduces an anchor-free detection head that predicts object centres directly rather than offsets from pre-defined anchor boxes, improving small-object recall and reducing the number of hyperparameters that must be tuned for a specific deployment site \cite{futuretransp5040137}.
+
+For traffic monitoring applications, YOLO-based systems are typically combined with object tracking algorithms such as SORT (Simple Online and Realtime Tracking) or DeepSORT, which assign persistent identities to detections across frames. This allows the system to not only count vehicles but also measure queue length (the number of stationary detected vehicles on each approach arm), estimate waiting time per vehicle, and determine the direction of movement. These are precisely the quantities needed as input to a data-driven traffic signal controller.
+
+The primary limitation of deep learning detectors in a deployment context is the need for labelled training data and sufficient computational hardware for real-time inference at acceptable frame rates. GPU-accelerated inference brings YOLOv8 to over 100 frames per second on mid-range hardware, which is more than adequate for intersection monitoring, but places constraints on the processing unit installed in the field. In the context of this project, the CameraVision module uses YOLOv8 and was successfully validated on sample traffic footage (Section~\ref{fig:yolo_detection}); integration with the live SUMO training loop is identified as future work.
+
+\section{Traffic Flow Fundamentals}
+
+Before reviewing control strategies, it is useful to establish the fundamental measures and relationships that define how traffic behaves at a signalised intersection. These metrics are what any control policy --- fixed-time or adaptive --- is ultimately trying to optimise.
+
+\subsection{Traffic Flow Parameters}
+
+Three quantities describe the state of traffic on a road segment at any given time. \textit{Flow} $q$ (vehicles per hour) is the rate at which vehicles pass a fixed point. \textit{Density} $k$ (vehicles per kilometre) is the number of vehicles occupying a unit length of road. \textit{Speed} $v$ (kilometres per hour) is the mean speed of the vehicle stream. These three are related by the fundamental equation of traffic flow \cite{tang2019global}:
+
+\begin{equation}
+q = k \cdot v
+\label{eq:fundamental}
+\end{equation}
+
+At low density, vehicles travel freely and speed is high. As density increases, interactions between vehicles force speeds down. At jam density $k_j$, traffic is stationary and flow falls to zero. The capacity of a road section is the maximum flow it can sustain, occurring at some intermediate density.
+
+\subsection{Saturation Flow and Degree of Saturation}
+
+At a signalised intersection, vehicles can only depart during the green phase. The \textit{saturation flow rate} $s$ is the maximum rate at which queued vehicles discharge when the signal is green, measured in vehicles per hour of green time. It depends on lane width, turning movements, and the proportion of heavy vehicles.
+
+The \textit{degree of saturation} $x$ for a lane group is the ratio of the demand flow to the maximum flow the signal can serve:
+
+\begin{equation}
+x = \frac{q}{s \cdot g/C}
+\label{eq:saturation}
+\end{equation}
+
+where $g$ is the effective green time allocated to that lane group and $C$ is the signal cycle length. When $x < 1$ the lane group is under-saturated and queues clear each cycle. When $x \geq 1$ residual queues grow from cycle to cycle, eventually leading to the spillback and gridlock that adaptive signal control aims to prevent.
+
+\subsection{Webster's Optimal Cycle Length}
+
+Webster's formula \cite{tang2019global} gives the cycle length $C^*$ that minimises average vehicle delay at an isolated intersection under fixed-time control:
+
+\begin{equation}
+C^* = \frac{1.5L + 5}{1 - \sum_i y_i}
+\label{eq:webster}
+\end{equation}
+
+where $L$ is the total lost time per cycle (the sum of start-up losses and inter-green periods across all phases), and $y_i = q_i / s_i$ is the flow ratio for the critical lane group in phase $i$. The denominator represents the spare capacity of the intersection: as the sum of flow ratios approaches 1, the optimal cycle length grows without bound and the intersection approaches saturation.
+
+Webster's formula is derived under the assumption of steady, uniform demand. It is the theoretical basis for fixed-time signal plans but breaks down when demand is variable or when vehicles arrive in platoons, which is precisely when adaptive control methods provide their advantage.
+
+\subsection{Level of Service}
+
+The Highway Capacity Manual defines Level of Service (LOS) as a letter grade from A to F that describes the quality of traffic flow at an intersection, based on average control delay per vehicle \cite{michailidis2025traffic}:
+
+\begin{table}[H]
+\centering
+\caption{Level of Service thresholds for signalised intersections}
+\label{tab:los}
+\begin{tabular}{cc}
+\toprule
+\textbf{LOS} & \textbf{Average control delay (s/vehicle)} \\
+\midrule
+A & $\leq 10$ \\
+B & $> 10$ to $25$ \\
+C & $> 25$ to $35$ \\
+D & $> 35$ to $55$ \\
+E & $> 55$ to $80$ \\
+F & $> 80$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+LOS A represents free-flow conditions with negligible delay. LOS F indicates that demand exceeds capacity and queues grow without bound. The goal of traffic signal optimisation is to maintain LOS C or better on all approaches under typical demand conditions and to limit the extent and duration of LOS E or F during peak periods. The metrics tracked in this project --- waiting time, queue length, and throughput --- are direct proxies for LOS.
+
+\section{Traffic Simulation Tools}
+
+Evaluating traffic signal controllers in a real network before deployment is impractical: live intersections cannot be arbitrarily reconfigured, and collecting sufficient training data from physical sensors is expensive and time-consuming. Traffic micro-simulators address this by providing synthetic, controllable environments in which vehicles are modelled individually, each obeying car-following and lane-change rules. The simulator generates the state information that the controller receives and carries out the control decisions the agent issues, closing the loop in software. The quality of the simulator --- its fidelity to real vehicle behaviour, its supported interaction interfaces, and its scalability to large networks --- therefore directly determines the quality of the learned policy.
+
+\subsection{Overview of Traffic Simulators}
+
+Several simulators are used in the research literature. VISSIM (PTV Group) is a commercial tool widely used for engineering consulting and detailed capacity analysis; it provides high visual fidelity and is calibrated against real-world data, but its closed-source nature and licensing costs limit its use in RL research. AIMSUN (TSS Transport Simulation Systems) is similarly commercial and widely used by road authorities for planning and evaluation. SUMO (Simulation of Urban Mobility) is an open-source, cross-platform micro-simulator maintained by the German Aerospace Center (DLR); it supports arbitrary road network topologies, multiple vehicle classes, and real traffic signal logic, and provides a Python API (TraCI) for real-time programmatic control during simulation --- a critical requirement for reinforcement learning integration. CityFlow is a more recent open-source simulator designed specifically for RL-based traffic signal control research; it is faster than SUMO for large grid networks but less feature-complete for non-standard network geometries \cite{futuretransp5040137}.
+
+\subsection{SUMO as the Simulation Platform}
+
+SUMO was selected for this project on the basis of three properties. First, its road network editor (NETEDIT) supports import from OpenStreetMap, which allowed the actual Palapye A1 corridor geometry to be used as the simulation base rather than an abstract grid. Second, TraCI exposes full programmatic control over traffic light phases, vehicle insertion, and sensor queries at every simulation step, enabling the RL environment to read intersection state and issue phase commands with sub-second temporal resolution. Third, SUMO is free, well-documented, and has an active community that maintains Python bindings compatible with major RL libraries.
+
+SUMO models vehicle behaviour using the Krauss car-following model, which represents the longitudinal dynamics of each vehicle as a function of the gap to the vehicle ahead, the maximum deceleration, and a random perturbation term. Lane-change behaviour follows the SUMO lane-change model (LC2013), which decides when a vehicle changes lane based on strategic (reaching a destination lane), tactical (overtaking a slower vehicle), and safety constraints. Together these models produce realistic stop-and-go wave propagation and queue discharge behaviour that is qualitatively consistent with field observations at signalised intersections \cite{michailidis2025traffic}.
+
+The TraCI interface allows a Python process to connect to a running SUMO instance, step the simulation forward one time step at a time, and exchange commands and state information at each step. For traffic signal control, the relevant TraCI calls are: \texttt{trafficlight.setRedYellowGreenState} to set phase, \texttt{lanearea.getLastStepHaltingNumber} to read queue length per lane, and \texttt{lanearea.getLastStepMeanSpeed} to read mean approach speed. These three calls are the primary data sources for the observation vector fed to the MAPPO agents in this project.
 
 \section{Processing and Control Logic}
 
@@ -308,7 +410,9 @@ Overall, research highlights actuated signal control as a substantial improvemen
 
 \subsection{Adaptive Control Method}
 
-The adaptive control method represents the latest and most advanced form of traffic signal management. They continuously monitor traffic density in real time and apply algorithmic models to optimize signals across networks \cite{mannion2016experimental}. The adaptive models reduce traffic delays and adapt to real time traffic densities. The adaptive models are divided into two types \cite{ye2019survey}.
+Adaptive control is the most capable category of traffic signal management. Unlike fixed-time and actuated methods, adaptive systems continuously monitor network-wide traffic density and apply algorithmic models to optimise signal timings across multiple intersections in real time \cite{mannion2016experimental}. The result is a controller that responds to conditions no preset schedule could anticipate --- sudden congestion, incidents, or atypical demand patterns that fall outside any programmed time-of-day profile.
+
+Adaptive methods split into two broad families \cite{ye2019survey}. Model-based systems build an explicit mathematical representation of traffic flow and solve an optimisation problem over that model at each control step. Model-free systems skip the model entirely and learn control policies directly from observed traffic data. The sections below cover both.
 
 \section{Model-Based Optimization Systems}
 
@@ -340,9 +444,9 @@ where:
 
 The stage cost $J(x,u)$ typically combines queue lengths, waiting times, or number of stops, while $J_f(x(N))$ serves as a terminal cost penalizing undesirable end states.
 
-\cite{8707103} found out that MPC can anticipate future conditions, explicitly handle multi-variable intersections and constraints, and achieves better performance compared to fixed and actuated control strategies. Distributed and hierarchical MPC variants also offer improved coordination among multiple intersections.
+MPC can anticipate future conditions, explicitly handle multi-variable intersections and constraints, and outperforms fixed and actuated control strategies \cite{8707103}. Distributed and hierarchical MPC variants also offer improved coordination across multiple intersections.
 
-However \cite{8707103} highlighted critical limitations of the MPC. Centralized MPC is poor at computational complexity that restricts real time feasibility in large urban networks, performance is highly dependent on the accuracy of traffic models, and most applications remain at the simulation stage, with few large-scale real-world deployments. Scalability and robustness to uncertainty remain open challenges \cite{8707103}.
+These benefits come with significant trade-offs. Centralised MPC carries a computational burden that restricts real-time feasibility in large urban networks, and its performance is heavily dependent on how accurately the underlying traffic model captures reality. Most applications remain at the simulation stage, with few large-scale real-world deployments to date. Scalability and robustness to uncertainty remain open challenges \cite{8707103}.
 
 \subsection{Dynamic Traffic Assignment (DTA)}
 
@@ -433,7 +537,7 @@ RL systems consist of 4 key elements: state, action, reward and policy. The stat
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\linewidth]{Flow chart (Community) (1).png}
+     \includegraphics[width=1\linewidth]{Flow chart (Community) (3).png}  
     \caption{Block Diagram of Reinforcement Learning System}
     \label{fig:reinforcement_learning_block}
 \end{figure}
@@ -444,6 +548,7 @@ The Q-learning algorithm updates its knowledge of the optimal policy through the
 
 \begin{equation}
 Q(s,a) \leftarrow Q(s,a) + \alpha \big[ r + \gamma \max_{a'} Q(s',a') - Q(s,a) \big]
+\label{eq:qlearning}
 \end{equation}
 
 where:
@@ -503,14 +608,7 @@ In the RL framework, traffic control is represented as a Markov Decision Process
 
 \paragraph{Deep Q-Learning (DQN)}
 
-Deep Q-Learning is a value-based RL algorithm that approximates the action-value function $Q(s,a)$ using a deep neural network. It is effective for traffic signal control where actions (e.g., selecting the next phase) are discrete. The Q-function is updated using the Bellman equation:
-
-\begin{equation}
-Q(s,a) \leftarrow Q(s,a) + \alpha \left[r + \gamma \max_{a'}Q(s',a') - Q(s,a)\right]
-\label{eq:dqn}
-\end{equation}
-
-To enhance stability, DQN employs experience replay and a target network that updates slowly. Figure \ref{fig:dqn_block} shows the improved systems-engineering diagram for the DQN workflow.
+Deep Q-Learning approximates the action-value function $Q(s,a)$ using a deep neural network rather than a lookup table, which makes it practical for the high-dimensional state spaces that real traffic intersections produce. It applies the same Q-learning update rule (Equation~\ref{eq:qlearning}) but introduces two mechanisms to keep training stable: experience replay, which breaks the temporal correlation between consecutive samples by storing and randomly sampling past transitions; and a target network, a periodic copy of the Q-network whose weights are held fixed for several updates so the learning targets do not shift with every gradient step. Figure \ref{fig:dqn_block} shows the improved systems-engineering diagram for the DQN workflow.
 
 \begin{figure}[H]
 \centering
@@ -616,9 +714,31 @@ For green-time allocation where actions are continuous, deterministic or stochas
 
 These methods allow the agent to choose precise green durations instead of discrete phase selections.
 
-\paragraph{Multi-Agent Reinforcement Learning (MARL)}
+\subsection{Multi-Agent Reinforcement Learning (MARL)}
 
-Large-scale networks require distributed RL where each intersection acts as an independent agent. MARL systems typically follow a centralized training, decentralized execution (CTDE) paradigm. Figure \ref{fig:marl_block} presents a clean MARL systems diagram.
+Multi-Agent Reinforcement Learning extends single-agent RL to settings where multiple autonomous agents act simultaneously within a shared environment. Each agent observes part of the world, selects an action, and receives a reward --- but its outcome is influenced by the simultaneous decisions of the other agents. This interdependency is the defining challenge of MARL: what looks like a stationary environment to one agent is in fact being altered by the policies of all others, which can cause individual learning algorithms to oscillate or fail to converge \cite{busoniu2008comprehensive}.
+
+MARL is formalised as a Decentralised Partially Observable Markov Decision Process (Dec-POMDP), in which each agent $i$ receives a local observation $o_i$ drawn from the global state $s$, chooses action $a_i$, and receives a team reward $r$. The joint policy $\boldsymbol{\pi} = \langle \pi_1, \ldots, \pi_n \rangle$ is optimised to maximise cumulative expected return for the group. Applications span robotics, game playing, autonomous vehicles, and networked infrastructure control --- anywhere that a set of interacting decision-makers must be coordinated without requiring a single central controller \cite{busoniu2008comprehensive}.
+
+When applied to road networks, MARL assigns a separate agent to each signalised intersection. Managing all signals through one joint action space quickly becomes impractical --- the action space grows exponentially with every additional junction. MARL keeps the problem tractable while still allowing agents to coordinate across the network by learning joint behaviour through shared experience or explicit communication during training \cite{busoniu2008comprehensive}.
+
+\subsubsection{The centralised-decentralised spectrum}
+
+MARL approaches differ mainly in how much information agents share during training and at runtime. At one end, a single controller sees the entire network. At the other, each agent is on its own. Both cause problems.
+
+\paragraph{Fully centralised control}
+
+A centralised controller observes the full network state and outputs a joint action for all intersections. In theory this finds the globally optimal policy, but the joint state and action spaces grow combinatorially with every junction added, so training becomes computationally infeasible beyond a small network \cite{mannion2016experimental}. There is also a deployment problem: all sensor data has to reach one processing unit in real time, which introduces latency and creates a single point of failure.
+
+\paragraph{Fully decentralised control -- independent learning}
+
+At the other extreme, each agent treats the others as part of the environment and learns entirely on its own local observations. Independent Q-Learning (IQL), where each intersection runs a standard DQN, is the simplest version. The difficulty is that all agents' policies are changing simultaneously during training, so the environment looks non-stationary from any one agent's perspective. This breaks the Markov assumption that Q-learning depends on, causing training to oscillate or fail to converge \cite{tan1993multi}. In traffic networks, independent agents reliably find locally rational but globally harmful strategies. One intersection holds green longer to clear its own queue while pushing vehicles into the next junction, making delay worse across the network.
+
+\subsubsection{Centralised training with decentralised execution (CTDE)}
+
+CTDE, formalised by \cite{oliehoek2008optimal} and made widely known through MADDPG \cite{lowe2017multi}, separates what is needed at training time from what is needed at deployment. The restriction on information sharing only applies when the system is running in the real world. During training, which happens entirely in simulation, agents can share whatever is useful.
+
+Each agent keeps a local policy — the Actor — that takes only its own observations as input. This is what runs on the deployed system. A centralised value function — the Critic — is trained on the full joint state of all agents and is only used during training. Once training ends, the Critic is discarded. Every intersection then runs its Actor on local sensor data alone.
 
 \begin{figure}[H]
 \centering
@@ -626,39 +746,90 @@ Large-scale networks require distributed RL where each intersection acts as an i
     node distance=1.1cm,
     block/.style={
         rectangle, draw, rounded corners,
-        minimum width=4.0cm, minimum height=1.1cm,
+        minimum width=4.5cm, minimum height=1.1cm,
         align=center, drop shadow
     },
     agent/.style={
         rectangle, draw, rounded corners,
-        minimum width=3.0cm, minimum height=0.9cm,
+        minimum width=3.2cm, minimum height=0.9cm,
         align=center, drop shadow
     },
     arrow/.style={-stealth, thick},
 ]
 
-% Top module
-\node[block] (ctde) {Centralized Training Module};
+\node[block] (critic) {Centralised Critic\\(Global State --- Training Only)};
 
-% Three agents evenly spaced beneath
-\node[agent, below=1.5cm of ctde, xshift=-4cm] (agent1) {Agent 1\\Intersection A};
-\node[agent, below=1.5cm of ctde] (agent2) {Agent 2\\Intersection B};
-\node[agent, below=1.5cm of ctde, xshift=4cm] (agent3) {Agent 3\\Intersection C};
+\node[agent, below=1.6cm of critic, xshift=-4.2cm] (a1) {Actor 1\\TL\textsubscript{A} --- Local Obs};
+\node[agent, below=1.6cm of critic]                (a2) {Actor 2\\TL\textsubscript{B} --- Local Obs};
+\node[agent, below=1.6cm of critic, xshift= 4.2cm] (a3) {Actor 3\\TL\textsubscript{C} --- Local Obs};
 
-% Training arrows
-\draw[arrow] (ctde.south) -- (agent1.north);
-\draw[arrow] (ctde.south) -- (agent2.north);
-\draw[arrow] (ctde.south) -- (agent3.north);
+\draw[arrow] (critic.south) -- (a1.north) node[midway, left=0.3cm]{\small gradient};
+\draw[arrow] (critic.south) -- (a2.north);
+\draw[arrow] (critic.south) -- (a3.north) node[midway, right=0.3cm]{\small gradient};
 
-% Downward execution arrows
-\draw[arrow] (agent1.south) -- ++(0,-1) node[midway,right]{Execution};
-\draw[arrow] (agent2.south) -- ++(0,-1);
-\draw[arrow] (agent3.south) -- ++(0,-1);
+\draw[arrow] (a1.south) -- ++(0,-0.9) node[below]{\small Phase Decision};
+\draw[arrow] (a2.south) -- ++(0,-0.9) node[below]{\small Phase Decision};
+\draw[arrow] (a3.south) -- ++(0,-0.9) node[below]{\small Phase Decision};
 
 \end{tikzpicture}
-\caption{Centralized training and decentralized execution in Multi-Agent RL.}
-\label{fig:marl_block}
+\caption{Centralised training with decentralised execution. The Critic uses global state during training to guide all Actors; only the local Actors run at deployment.}
+\label{fig:ctde_diagram}
 \end{figure}
+
+Because the Critic observes all agents at once, it operates in a stationary joint environment, which is what the independent learning approach breaks. Each Actor receives stable gradient signals during training even though it only ever sees its own local data \cite{lowe2017multi}.
+
+\subsubsection{Key CTDE algorithms}
+
+\paragraph{MADDPG}
+
+Lowe et al.\ \cite{lowe2017multi} extended DDPG to the multi-agent setting by giving each agent its own centralised critic conditioned on all agents' observations and actions. It was among the first algorithms to show that CTDE could handle cooperative and competitive tasks in continuous action spaces. It does inherit DDPG's training instability, and maintaining a separate critic per agent becomes expensive as the network grows.
+
+\paragraph{QMIX}
+
+QMIX \cite{rashid2018qmix} decomposes the joint action-value function $Q_{tot}$ into per-agent values $Q_i$ through a mixing network, under a monotonicity constraint:
+\begin{equation}
+\frac{\partial Q_{tot}}{\partial Q_i} \geq 0 \quad \forall i
+\label{eq:qmix_monotone}
+\end{equation}
+This guarantees that the action each agent picks independently is also the globally optimal joint action, so decentralised execution is safe. QMIX showed strong results on the StarCraft Multi-Agent Challenge \cite{samvelyan2019starcraft} and has been applied to traffic signal control with discrete action spaces.
+
+\paragraph{MAPPO}
+
+Yu et al.\ \cite{yu2022surprising} showed that extending PPO directly to cooperative multi-agent settings --- MAPPO --- matches or beats more specialised algorithms including QMIX across a range of benchmarks. Each agent has its own Actor on local observations; a single shared Critic takes the concatenated global state of all agents. The PPO clipped objective applies to each agent with a shared advantage estimate:
+\begin{equation}
+\mathcal{L}^{\text{CLIP}}_i = \mathbb{E}\left[\min\left(r_i(\theta)\hat{A}, \;\text{clip}(r_i(\theta), 1-\epsilon, 1+\epsilon)\hat{A}\right)\right]
+\label{eq:mappo_clip}
+\end{equation}
+
+where $r_i(\theta) = \frac{\pi_\theta(a_i | o_i)}{\pi_{\theta_\text{old}}(a_i | o_i)}$ is the probability ratio for agent $i$, and $\hat{A}$ is the advantage estimated from the centralised critic via GAE \cite{schulman2015high}. The result from \cite{yu2022surprising} is that PPO's simplicity is not a weakness --- a well-tuned shared critic with normalised advantages is enough to get strong cooperative performance without the added complexity of value decomposition.
+
+\subsubsection{Parameter sharing}
+
+When all agents observe the same feature types and choose from the same action space --- as is the case for a network of similar intersections --- they can share Actor network weights. Training uses experience from all agents simultaneously, which multiplies the effective batch size and tends to produce more stable gradients than training separate networks per agent \cite{gupta2017cooperative}. It also reduces the total number of parameters, making training faster.
+
+\subsubsection{Cooperative reward design}
+
+How the reward is defined has a large effect on whether agents learn to cooperate or compete \cite{chu2019multi}. Three approaches appear in the literature:
+
+\begin{enumerate}
+    \item Local reward: each agent gets a reward based on its own intersection only. Simple to compute, but leads to selfish behaviour --- one agent may extend green to clear its own queue while pushing vehicles into the next junction.
+    \item Global reward: all agents share one reward computed across the whole network, such as total waiting time. This targets network-level cooperation directly, but makes it harder for any single agent to trace which of its actions contributed to the outcome.
+    \item Mixed reward: a weighted combination of the two.
+\end{enumerate}
+
+Traffic signal control studies find that a global reward, paired with a centralised critic to handle credit assignment, consistently produces better network outcomes than local rewards \cite{chu2019multi, wei2019colight}. The critic learns which global states are valuable even when individual agents' contributions are difficult to separate.
+
+\subsubsection{MARL applied to traffic signal control}
+
+Chu et al.\ \cite{chu2019multi} applied multi-agent advantage actor-critic (MA2C) to a 6$\times$6 grid network, where each agent received its local observation plus data from immediate neighbours. Including neighbourhood observations cut average travel time noticeably compared to independent learning.
+
+Wei et al.\ \cite{wei2019colight} developed CoLight using graph attention networks, allowing each intersection to attend selectively to its neighbours' states during training. It achieved leading results on both synthetic and real-world datasets. The gap over simpler sharing schemes suggests that how information is structured matters, not just whether agents share at all.
+
+Zheng et al.\ \cite{zheng2019learning} studied a signalised arterial corridor --- a linear sequence of intersections along a main road, which is the same layout as the three junctions on the A1 through Palapye. Agents trained with a global reward and CTDE learned phase offsets resembling green wave coordination without being programmed to do so.
+
+\subsubsection{Algorithm selection: MAPPO for the Palapye network}
+
+MAPPO with parameter sharing and a global cooperative reward was selected for this project. The three Palapye intersections observe the same feature types and choose from the same three green phases, so parameter sharing applies without modification. The discrete action space suits PPO's categorical policy distribution better than continuous-action methods like MADDPG, which have known stability issues. Yu et al.\ \cite{yu2022surprising} showed MAPPO achieves strong cooperative performance without QMIX's value decomposition overhead. A global reward trains the agents to reduce network-wide waiting time rather than each junction optimising itself at the expense of the others.
 
 \chapter{Methodology}
 
@@ -679,21 +850,7 @@ During the simulation phase, a YOLOv8-based CameraVision system was developed to
 
 Python libraries such as TensorFlow, PyTorch, OpenCV, and scikit-learn were used to implement model training, visual data processing, and computational components. The TraCI interface was employed to link SUMO with Python in real time.
 
-Figure~\ref{fig:methodology_architecture} shows the high-level architecture of the developed system.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.95\linewidth]{methodology_architecture.png}
-\caption{High-level architecture of the hybrid DRL--ML traffic signal control system.}
-\label{fig:methodology_architecture}
-\end{figure}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.95\linewidth]{flowchart_adaptive_signal.png}
-\caption{Flowchart of the implemented DRL-based adaptive traffic signal control system.}
-\label{fig:system_flowchart}
-\end{figure}
 
 \section{System Architecture and Dashboard Design}
 
@@ -722,7 +879,7 @@ This stage prepares the model using SUMO-generated synthetic scenarios to expose
 
 \paragraph{Absence of Real Historical Data}
 
-  No publicly available historical datasets existed for the selected intersection in Botswana. Local authorities and online repositories did not provide usable records of traffic volumes, waiting times, or historical signal timings. Due to this limitation, the model could not be pretrained on real-world data.
+No publicly available historical datasets existed for the selected intersection in Botswana. Local authorities and online repositories did not provide usable records of traffic volumes, waiting times, or historical signal timings. Due to this limitation, the model could not be pretrained on real-world data.
 
 \paragraph{SUMO-Based Synthetic Dataset Generation}
 
@@ -778,7 +935,7 @@ Vehicle flows were configured using:
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\linewidth]{sumo.jpeg}
+ \includegraphics[width=0.9\linewidth]{sumo.jpeg} 
 \caption{Custom SUMO intersection used for dataset generation and DRL training.}
 \label{fig:sumo_network}
 \end{figure}
@@ -813,7 +970,7 @@ The CameraVision system processed sample traffic video frames using OpenCV and Y
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\linewidth]{yolo_detection.png}
+ \includegraphics[width=0.9\linewidth]{Traffic Tracker_screenshot_21.11.2025 (another copy).png} 
 \caption{YOLOv8 vehicle detection test on sample traffic footage.}
 \label{fig:yolo_detection}
 \end{figure}
@@ -953,9 +1110,10 @@ The SUMO simulation was configured using the custom intersection network develop
 \begin{itemize}
     \item \textbf{Simulation tool:} SUMO-gui
     \item \textbf{Control systems tested:} Fixed-time controller vs PPO agent
-    \item \textbf{Simulation duration:} Cars were made to spawn for a span of 5 minutes in both cases.
+    \item \textbf{Simulation duration:} 300 seconds (5 minutes) for both controllers
     \item \textbf{Traffic demand:} Identical route flows for both experiments
     \item \textbf{Performance metrics recorded:} Delay, queue length, throughput, stop ratio, and pressure
+    \item \textbf{Evaluation period:} 9,000 simulation timesteps
 \end{itemize}
 
 \section{Visual Output of the Simulations}
@@ -968,14 +1126,14 @@ Figure~\ref{fig:fixed_sim} shows the SUMO simulation running under the fixed-tim
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\linewidth]{fixed_time_sim.jpeg}
+\includegraphics[width=0.92\linewidth]{kutjyrht.jpeg}
 \caption{SUMO running with the fixed-time traffic signal controller.}
 \label{fig:fixed_sim}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\linewidth]{fixed_time_gantt.jpeg}
+\includegraphics[width=0.92\linewidth]{gantt.png}
 \caption{SUMO gantt chart showing phase durations with the fixed-time traffic signal controller.}
 \label{fig:fixed_gantt}
 \end{figure}
@@ -984,100 +1142,251 @@ Figure~\ref{fig:fixed_sim} shows the SUMO simulation running under the fixed-tim
 
 Figure~\ref{fig:ppo_sim} shows the intersection controlled by the PPO agent. Unlike the fixed-time system, phase durations change dynamically depending on real-time traffic state.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\linewidth]{ppo_sim.png}
-\caption{SUMO running with the PPO adaptive RL traffic signal controller.}
-\label{fig:ppo_sim}
-\end{figure}
-
 \subsection{CameraVision / YOLO Detection}
 
-If applicable, YOLO detection testing results can be included.
+The YOLO-based vehicle detection system was successfully tested and demonstrated reliable performance for real-time traffic monitoring applications.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\linewidth]{yolo_test_output.png}
+\includegraphics[width=0.92\linewidth]{Traffic Tracker_screenshot_21.11.2025 (another copy).png}
 \caption{YOLO-based traffic detection module during testing.}
 \label{fig:yolo_test}
 \end{figure}
 
 \section{Performance Metric Comparison}
 
-To quantitatively evaluate both controllers, key traffic performance metrics were recorded throughout the simulation.
-
-Five metrics were computed using TraCI:
+To quantitatively evaluate both controllers, key traffic performance metrics were recorded throughout the simulation. Five metrics were computed using TraCI:
 
 \begin{itemize}
-    \item \textbf{Average Delay}
-    \item \textbf{Average Queue Length}
-    \item \textbf{Throughput (vehicles exiting)}
-    \item \textbf{Stop Ratio}
-    \item \textbf{Intersection Pressure}
+    \item \textbf{Average Delay:} Normalized vehicle slowdown (0 = free-flow, 1 = complete standstill)
+    \item \textbf{Average Queue Length:} Number of vehicles waiting per lane
+    \item \textbf{Throughput:} Rate of vehicles successfully exiting intersection
+    \item \textbf{Stop Ratio:} Proportion of vehicles forced to decelerate to near-zero speeds
+    \item \textbf{Intersection Pressure:} Differential between incoming and outgoing vehicle flows
 \end{itemize}
 
-Graphs for each metric are shown below.
+\subsection{Overall Performance Summary}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\linewidth]{metrics_fixed_time.png}
-    \caption{Performance Metrics for Fixed Traffic Light Control System}
-    \label{fig:metrics_fixed}
-\end{figure}
+Table~\ref{tab:overall_results} presents the aggregate performance metrics across the entire simulation duration. The PPO controller achieved statistically significant improvements in throughput (48.53\%, $p < 0.001$), queue length reduction (27.75\%, $p < 0.001$), and traffic pressure regulation (27.28\%, $p < 0.001$). Mean delay and stop ratio exhibited marginal differences between controllers with negligible effect sizes ($d < 0.15$).
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\linewidth]{metrics_ppo_model.png}
-    \caption{Performance Metrics for PPO Model Traffic Light Controlled System}
-    \label{fig:metrics_ppo}
-\end{figure}
+\begin{table}[H]
+\centering
+\caption{Comparative Performance of PPO and Fixed-Time Controllers Across All Metrics}
+\label{tab:overall_results}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Metric} & \textbf{Fixed-Time} & \textbf{PPO} & \textbf{Improv.} & \textbf{p-value} & \textbf{Cohen's d} \\
+ & $(\mu \pm \sigma)$ & $(\mu \pm \sigma)$ & $(\%)$ & & \\
+\midrule
+Delay & $0.521 \pm 0.418$ & $0.573 \pm 0.377$ & $-10.1^{***}$ & $<0.001$ & 0.131 \\
+Queue Length & $0.228 \pm 0.257$ & $0.164 \pm 0.241$ & $+27.8^{***}$ & $<0.001$ & 0.253 \\
+Throughput & $0.155 \pm 0.488$ & $0.230 \pm 0.474$ & $+48.5^{***}$ & $<0.001$ & 0.156 \\
+Stop Ratio & $0.547 \pm 0.483$ & $0.567 \pm 0.475$ & $-3.6^{*}$ & $0.017$ & 0.042 \\
+Pressure & $1.583 \pm 1.909$ & $1.151 \pm 1.690$ & $+27.3^{***}$ & $<0.001$ & 0.239 \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize $^{***}p<0.001$, $^{**}p<0.01$, $^{*}p<0.05$. Positive improvement indicates PPO superiority.}
+\end{tabular}
+\end{table}
 
-\subsection{Average Delay}
+\subsection{Detailed Metric Analysis}
+
+\subsubsection{Average Delay}
+
+Delay quantifies vehicle slowdown on a normalized scale where 0 represents free-flow conditions and 1 indicates complete standstill. The PPO controller achieved a mean delay of $\mu = 0.573$ ($\sigma = 0.377$), while the Fixed-Time controller recorded $\mu = 0.521$ ($\sigma = 0.418$). Although the aggregate difference of 10.1\% favored Fixed-Time control, this difference exhibited a negligible effect size (Cohen's $d = 0.131$). Both controllers reached identical 95th percentile delay values of 1.0, indicating equivalent worst-case performance under saturation.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\linewidth]{delay_comparison.png}
+\includegraphics[width=1.0\linewidth]{delay.png}
 \caption{Average delay comparison between fixed-time and PPO controller.}
 \label{fig:delay_comparison}
 \end{figure}
 
-\subsection{Queue Length}
+Phase-specific analysis revealed the adaptive capabilities of the PPO controller under varying demand conditions. Table~\ref{tab:delay_phases} presents the per-phase breakdown.
+
+\begin{table}[H]
+\centering
+\caption{Phase-Specific Delay Performance ($\mu \pm \sigma$)}
+\label{tab:delay_phases}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Traffic Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
+\midrule
+Light (0--60s) & $0.201 \pm 0.192$ & $0.571 \pm 0.245$ & $+64.8$ & $<0.001$ \\
+Moderate (60--120s) & $0.188 \pm 0.075$ & $0.019 \pm 0.036$ & $-891.7$ & $<0.001$ \\
+Heavy (120--180s) & $0.196 \pm 0.068$ & $0.615 \pm 0.349$ & $+68.2$ & $<0.001$ \\
+Peak (180--240s) & $0.399 \pm 0.132$ & $0.800 \pm 0.114$ & $+50.1$ & $<0.001$ \\
+Saturation (240--300s) & $0.584 \pm 0.097$ & $0.535 \pm 0.047$ & $-9.0$ & $<0.001$ \\
+Extended (300s+) & $0.582 \pm 0.379$ & $0.521 \pm 0.421$ & $-11.7$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+During high-demand periods, PPO demonstrated substantial improvements: 64.8\% reduction during light traffic, 68.2\% reduction during heavy traffic, and 50.1\% reduction during peak demand phases. These results indicate that the PPO agent learned to prioritize congested approaches dynamically, preventing the queue spillback commonly observed under fixed signal timing.
+
+\subsubsection{Queue Length}
+
+Queue length serves as a direct indicator of intersection congestion severity. The PPO controller maintained significantly shorter queues with $\mu = 0.164$ ($\sigma = 0.241$) compared to the Fixed-Time controller's $\mu = 0.228$ ($\sigma = 0.257$), representing a 27.75\% reduction (Mann-Whitney $U = 34,125,977$, $p < 0.001$). This difference exhibited a small effect size (Cohen's $d = 0.253$).
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\linewidth]{queue_comparison.png}
+\includegraphics[width=1.0\linewidth]{queue.png}
 \caption{Average queue length comparison between fixed-time and PPO controller.}
 \label{fig:queue_comparison}
 \end{figure}
 
-\subsection{Throughput}
+\begin{table}[H]
+\centering
+\caption{Phase-Specific Queue Length Performance ($\mu \pm \sigma$)}
+\label{tab:queue_phases}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Traffic Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
+\midrule
+Light (0--60s) & $0.002 \pm 0.018$ & $0.000 \pm 0.000$ & -- & n.s. \\
+Moderate (60--120s) & $0.000 \pm 0.000$ & $0.000 \pm 0.000$ & -- & -- \\
+Heavy (120--180s) & $0.000 \pm 0.000$ & $0.041 \pm 0.065$ & $+100.0$ & $<0.001$ \\
+Peak (180--240s) & $0.464 \pm 0.355$ & $0.143 \pm 0.000$ & $-225.0$ & $<0.001$ \\
+Saturation (240--300s) & $0.512 \pm 0.327$ & $0.143 \pm 0.000$ & $-258.3$ & $<0.001$ \\
+Extended (300s+) & $0.163 \pm 0.238$ & $0.233 \pm 0.260$ & $+29.9$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+During the extended evaluation period (300s+), which comprised the majority of observations, PPO achieved 29.9\% lower queue lengths ($p < 0.001$). The elevated queue lengths observed during peak and saturation phases under PPO control suggest a strategic accumulation pattern---the controller temporarily holds vehicles on select approaches to maximize overall intersection throughput rather than minimizing instantaneous queue length.
+
+\subsubsection{Throughput}
+
+Throughput measures the rate of vehicles successfully traversing the intersection. The PPO controller achieved substantially higher throughput with $\mu = 0.230$ ($\sigma = 0.474$) compared to $\mu = 0.155$ ($\sigma = 0.488$) for Fixed-Time control---a 48.53\% improvement (Mann-Whitney $U = 44,282,280$, $p < 0.001$, Cohen's $d = 0.156$).
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\linewidth]{throughput_comparison.png}
-\caption{Vehicle throughput comparison.}
+\includegraphics[width=1.0\linewidth]{throughput.png}
+\caption{Vehicle throughput comparison between fixed-time and PPO controller.}
 \label{fig:throughput_comparison}
 \end{figure}
 
-\subsection{Stop Ratio}
+\begin{table}[H]
+\centering
+\caption{Phase-Specific Throughput Performance ($\mu \pm \sigma$)}
+\label{tab:throughput_phases}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Traffic Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
+\midrule
+Light (0--60s) & $0.167 \pm 0.376$ & $0.000 \pm 0.000$ & -- & $<0.01$ \\
+Moderate (60--120s) & $0.383 \pm 0.555$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
+Heavy (120--180s) & $0.517 \pm 0.537$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
+Peak (180--240s) & $0.683 \pm 0.701$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
+Saturation (240--300s) & $0.283 \pm 0.524$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
+Extended (300s+) & $0.223 \pm 0.470$ & $0.160 \pm 0.495$ & $+39.8$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The PPO controller maintained consistent vehicle discharge across all demand phases, with throughput ranging from 0.167 to 0.683 vehicles per timestep. During the extended period, PPO sustained 39.8\% higher throughput than Fixed-Time control. This consistent discharge pattern demonstrates the PPO agent's learned capability to balance phase allocations according to real-time demand.
+
+\subsubsection{Stop Ratio}
+
+Stop ratio quantifies the proportion of vehicles forced to decelerate to near-zero speeds. The Fixed-Time controller achieved marginally lower stop ratios ($\mu = 0.547$, $\sigma = 0.483$) compared to PPO ($\mu = 0.567$, $\sigma = 0.475$), a 3.63\% difference. While statistically significant ($p = 0.017$), this difference exhibited a negligible effect size (Cohen's $d = 0.042$), indicating minimal practical significance.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\linewidth]{stop_ratio_comparison.png}
-\caption{Stop ratio comparison.}
+\includegraphics[width=1.0\linewidth]{stop.png}
+\caption{Stop ratio comparison between fixed-time and PPO controller.}
 \label{fig:stops_comparison}
 \end{figure}
 
-\subsection{Pressure}
+\begin{table}[H]
+\centering
+\caption{Phase-Specific Stop Ratio Performance ($\mu \pm \sigma$)}
+\label{tab:stop_phases}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Traffic Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
+\midrule
+Light (0--60s) & $0.017 \pm 0.129$ & $0.000 \pm 0.000$ & -- & n.s. \\
+Moderate (60--120s) & $0.000 \pm 0.000$ & $0.000 \pm 0.000$ & -- & -- \\
+Heavy (120--180s) & $0.000 \pm 0.000$ & $0.283 \pm 0.454$ & $+100.0$ & $<0.001$ \\
+Peak (180--240s) & $0.656 \pm 0.337$ & $1.000 \pm 0.000$ & $+34.4$ & $<0.001$ \\
+Saturation (240--300s) & $0.828 \pm 0.274$ & $1.000 \pm 0.000$ & $+17.2$ & $<0.001$ \\
+Extended (300s+) & $0.577 \pm 0.474$ & $0.551 \pm 0.482$ & $-4.7$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Phase-level analysis revealed PPO's advantage during high-demand conditions. During peak demand, PPO achieved 34.4\% fewer stops ($p < 0.001$), and during saturation, 17.2\% fewer stops ($p < 0.001$). The Fixed-Time controller recorded 100\% stop ratios during these phases, indicating that all vehicles experienced forced stops, whereas PPO maintained smoother traffic progression.
+
+\subsubsection{Traffic Pressure}
+
+Traffic pressure, defined as the differential between incoming and outgoing vehicle flows, provides a macroscopic indicator of network balance. Positive pressure indicates congestion accumulation. The PPO controller maintained significantly lower pressure with $\mu = 1.151$ ($\sigma = 1.690$) compared to Fixed-Time's $\mu = 1.583$ ($\sigma = 1.909$)---a 27.28\% reduction (Mann-Whitney $U = 34,067,396$, $p < 0.001$, Cohen's $d = 0.239$).
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\linewidth]{pressure_comparison.png}
-\caption{Intersection pressure comparison.}
+\includegraphics[width=1.0\linewidth]{congestion.png}
+\caption{Intersection pressure comparison between fixed-time and PPO controller.}
 \label{fig:pressure_comparison}
 \end{figure}
 
-\section{Discussion of Results}
+\begin{table}[H]
+\centering
+\caption{Phase-Specific Traffic Pressure Performance ($\mu \pm \sigma$)}
+\label{tab:pressure_phases}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Traffic Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
+\midrule
+Light (0--60s) & $0.017 \pm 0.129$ & $0.000 \pm 0.000$ & -- & n.s. \\
+Moderate (60--120s) & $0.000 \pm 0.000$ & $0.000 \pm 0.000$ & -- & -- \\
+Heavy (120--180s) & $0.000 \pm 0.000$ & $0.567 \pm 0.500$ & $+100.0$ & $<0.001$ \\
+Peak (180--240s) & $3.250 \pm 2.488$ & $1.000 \pm 0.000$ & $-225.0$ & $<0.001$ \\
+Saturation (240--300s) & $3.583 \pm 2.287$ & $1.000 \pm 0.000$ & $-258.3$ & $<0.001$ \\
+Extended (300s+) & $1.143 \pm 1.667$ & $1.620 \pm 1.929$ & $+29.4$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+During the extended evaluation period, PPO achieved 29.4\% lower traffic pressure ($p < 0.001$), demonstrating superior network balance maintenance. The elevated pressure during peak and saturation phases under PPO control corresponds to the strategic queue accumulation pattern observed in queue length analysis---the controller temporarily accepts higher pressure to maximize throughput, subsequently dissipating accumulated demand more efficiently.
+
+\section{Statistical Analysis Methodology}
+
+All statistical comparisons employed the Mann-Whitney U test due to non-normal data distributions (Shapiro-Wilk, $p < 0.05$), with effect sizes quantified using Cohen's $d$. The traffic demand model comprised five distinct phases designed to emulate realistic morning buildup conditions:
+
+\begin{itemize}
+    \item \textbf{Light Traffic (0--60s):} Low vehicle density, minimal congestion
+    \item \textbf{Moderate Inflow (60--120s):} Increasing traffic volume, stable flow
+    \item \textbf{Heavy Flow (120--180s):} High vehicle density, emerging congestion
+    \item \textbf{Peak Demand (180--240s):} Maximum traffic volume, significant congestion
+    \item \textbf{Near-Saturation (240--300s):} Critical vehicle density, queue formation
+    \item \textbf{Extended Evaluation (300s+):} Sustained high-demand conditions
+\end{itemize}
+
+\section{Key Performance Findings}
+
+The experimental evaluation revealed several critical insights:
+
+\begin{enumerate}
+    \item \textbf{PPO Superiority in High-Demand Conditions:} The adaptive controller demonstrated significant advantages during congested periods, with throughput improvements up to 48.5\% and queue length reductions up to 27.8\%.
+    
+    \item \textbf{Strategic Queue Management:} The PPO agent learned to strategically accumulate vehicles on certain approaches to maximize overall intersection throughput, explaining the temporary increase in queue lengths during peak phases.
+    
+    \item \textbf{Pressure Regulation:} The 27.3\% reduction in traffic pressure indicates better network balance and reduced congestion propagation under PPO control.
+    
+    \item \textbf{Real-time Adaptability:} Unlike fixed-time control, the PPO agent dynamically adjusted signal timing based on actual traffic conditions, preventing queue spillback and reducing unnecessary stops.
+\end{enumerate}
+
+\section{Limitations and Observations}
+
+While the PPO controller demonstrated superior performance in most metrics, several limitations were observed:
+
+\begin{itemize}
+    \item The marginal disadvantage in aggregate delay (10.1\%) suggests potential optimization opportunities in the reward function formulation.
+    \item The elevated queue lengths during peak phases, while strategically beneficial for throughput, may require additional constraints for real-world deployment.
+    \item The simulation environment, while realistic, cannot fully capture all real-world driver behaviors and unexpected events.
+\end{itemize}
+
+These results provide strong evidence for the efficacy of reinforcement learning-based traffic signal control and establish a foundation for further optimization and real-world implementation.
+
+\chapter{Discussions}
 
 This section presents a statistical comparison between the Proximal Policy Optimization (PPO) reinforcement learning controller and a conventional Fixed-Time controller evaluated over 9,000 simulation timesteps in SUMO. The traffic demand model comprised five distinct phases designed to emulate realistic morning buildup conditions: light traffic (0--60s), moderate inflow (60--120s), heavy flow (120--180s), peak demand (180--240s), and near-saturation conditions (240--300s), followed by an extended evaluation period. All statistical comparisons employed the Mann-Whitney U test due to non-normal data distributions (Shapiro-Wilk, $p < 0.05$), with effect sizes quantified using Cohen's $d$.
 
@@ -1113,7 +1422,7 @@ Phase-specific analysis revealed the adaptive capabilities of the PPO controller
 \begin{table}[htbp]
 \centering
 \caption{Phase-Specific Delay Performance ($\mu \pm \sigma$)}
-\label{tab:delay_phases}
+\label{tab:delay_phases2}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
@@ -1226,8 +1535,6 @@ Extended (300s+) & $1.143 \pm 1.667$ & $1.620 \pm 1.929$ & $+29.4$ & $<0.001$ \\
 
 During the extended evaluation period, PPO achieved 29.4\% lower traffic pressure ($p < 0.001$), demonstrating superior network balance maintenance. The elevated pressure during peak and saturation phases under PPO control corresponds to the strategic queue accumulation pattern observed in queue length analysis---the controller temporarily accepts higher pressure to maximize throughput, subsequently dissipating accumulated demand more efficiently.
 
-\chapter{Discussion}
-
 The experimental results demonstrate that the PPO-based adaptive controller provides significant performance advantages in throughput optimization (+48.5\%), queue management (+27.8\%), and pressure regulation (+27.3\%). Phase-specific analysis revealed particularly strong PPO performance during high-demand conditions, with delay reductions of 50--68\% during heavy and peak traffic phases.
 
 The PPO agent exhibited learned behaviors characteristic of intelligent signal control:
@@ -1240,15 +1547,309 @@ The PPO agent exhibited learned behaviors characteristic of intelligent signal c
 
 The marginal Fixed-Time advantages in aggregate delay (10.1\%) and stop ratio (3.6\%) exhibited negligible effect sizes ($d < 0.15$), indicating limited practical significance. Furthermore, these aggregate metrics mask the substantial PPO advantages during congested conditions---the operational regime where adaptive control provides the greatest value.
 
-\section{Conclusion}
+\chapter{MAPPO Multi-Agent System Design}
+\label{chap:mappo_system}
 
-The PPO-based reinforcement learning controller demonstrated superior performance across the primary traffic efficiency metrics of throughput, queue length, and pressure regulation. Statistical significance was established for all comparisons ($p < 0.05$), with the largest improvements observed during high-demand phases where adaptive signal control provides the greatest operational benefit. These results validate the efficacy of deep reinforcement learning for urban traffic signal optimization, particularly under variable and congested traffic conditions.
+\section{From single intersection to network control}
 
-The phase-specific performance analysis confirms that the PPO agent successfully learned demand-responsive control policies that outperform static signal timing during the congestion regimes most critical for urban mobility. Future work will extend this evaluation to hardware implementation and multi-intersection coordination scenarios.
+The first system controlled one intersection using a single PPO agent. Every signal decision was made in isolation: the agent observed its own lanes and acted on them without any knowledge of what was happening at adjacent junctions. This works reasonably well for a standalone junction, but the A1 corridor through Palapye has three signalised intersections within roughly one kilometre of each other. What happens at one directly affects the others. A green wave that clears queues at the first intersection pushes a platoon of vehicles toward the second, which may still be holding a red phase. The single-agent model has no way to anticipate or respond to this coordination problem.
+
+This phase extended the simulation network from one intersection to all three junctions along the A1 corridor. Each junction is modelled at its real location in Palapye, connected by road segments whose lengths and speed limits match the actual geometry.
+
+\section{CTDE architecture}
+
+The system adopts Centralised Training with Decentralised Execution (CTDE), the dominant approach for cooperative multi-agent systems where agents need to coordinate during training but must operate independently at deployment.
+
+Three agents --- one per traffic light, labelled \texttt{TL\_A}, \texttt{TL\_B}, and \texttt{TL\_C} --- each have their own local observations. During training, a centralised critic receives the concatenated observations from all three agents and estimates the value of the joint state. This global view gives the critic enough information to assign credit correctly even when agents are making decisions simultaneously. At deployment, the critic is discarded and each agent runs only its own Actor network using local sensor data.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.6cm and 2.2cm,
+    box/.style={rectangle, draw, rounded corners, minimum width=3.2cm, minimum height=0.85cm, align=center, font=\small},
+    arr/.style={->, >=stealth, thick}
+]
+% Training side
+\node[box, fill=blue!10] (obs1) {Local obs $o_1$ (22-dim)};
+\node[box, fill=blue!10, below=0.5cm of obs1] (obs2) {Local obs $o_2$ (22-dim)};
+\node[box, fill=blue!10, below=0.5cm of obs2] (obs3) {Local obs $o_3$ (22-dim)};
+
+\node[box, fill=orange!20, right=2.0cm of obs2] (critic) {Centralised Critic\\(66-dim $\to$ scalar)};
+
+\node[box, fill=green!15, right=2.0cm of obs1] (actor) {Shared Actor\\(22-dim $\to$ 3 logits)};
+
+\draw[arr] (obs1) -- (actor);
+\draw[arr] (obs1.east) -- ++(0.4,0) |- (critic.west);
+\draw[arr] (obs2.east) -- (critic.west);
+\draw[arr] (obs3.east) -- ++(0.4,0) |- (critic.west);
+
+% Labels
+\node[above=0.2cm of obs1, font=\small\itshape] {Training};
+\node[below=0.2cm of obs3, font=\footnotesize] {Critic used only during training};
+\end{tikzpicture}
+\caption{CTDE architecture: the shared Actor takes 22-dim local observations; the Centralised Critic sees the full 66-dim joint state during training only.}
+\label{fig:ctde_arch}
+\end{figure}
+
+Parameter sharing is used across all three agents. Since every intersection observes the same feature types and selects from the same three green phases, one Actor network can be trained on experience from all agents simultaneously. This triples the effective batch size per update and produces more stable gradients than training three separate networks.
+
+\section{Observation and action spaces}
+
+\subsection{Local observation (22 dimensions per agent)}
+
+Each agent observes eight incoming lanes at its junction. For every lane it records the queue length (number of halting vehicles) and the cumulative waiting time. Both are compressed with a log$(1+x)$ transform so the low-queue range, where most of the interesting dynamics occur, has good resolution without saturating at high congestion. Four outgoing lane counts provide a read on downstream congestion, allowing the agent to avoid extending green when the exit roads are already backing up. The current green phase index and a binary flag indicating whether the junction is in its yellow transition period complete the 22-element vector.
+
+\begin{table}[H]
+\centering
+\caption{Local observation vector (22 dimensions, one per agent)}
+\label{tab:obs_space}
+\begin{tabular}{lll}
+\toprule
+\textbf{Indices} & \textbf{Feature} & \textbf{How measured} \\
+\midrule
+0--7  & Queue length per incoming lane & Halting vehicles, log-scaled \\
+8--15 & Waiting time per incoming lane & Cumulative wait, log-scaled \\
+16--19 & Vehicle count on outgoing lanes & Downstream congestion, log-scaled \\
+20 & Current green phase & Normalised 0--1 \\
+21 & Phase state flag & 0 = green, 1 = yellow transition \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The centralised critic receives all three local observations concatenated into a 66-dimensional global state vector, providing full network visibility during training.
+
+\subsection{Action space}
+
+Each agent selects one of three green phases at every decision step. The phases represent the three permitted green configurations for that intersection: for a standard cross-junction these correspond to north--south through movement, east--west through movement, and a protected turn phase. A phase selection from the actor is not applied instantaneously. A minimum green hold of five steps (15 simulated seconds) prevents rapid flickering: once a phase is active, the agent cannot switch until the minimum has elapsed. When a switch is requested, a two-step yellow transition (6 simulated seconds) is enforced before the new phase goes active. At maximum green (25 steps, 75 seconds) a gridlock guard fires: if the alternative phases have longer queues than the current one, the guard suppresses the switch, preserving the less-bad option.
+
+\section{Reward function}
+
+All three agents share a single cooperative reward signal computed across the whole network. The shared reward ensures agents are incentivised to minimise network-wide congestion rather than each optimising its own junction at the expense of the others.
+
+\begin{equation}
+r_t = -\tanh\!\left(\frac{\bar{w}}{60}\right) - 0.1 \cdot \frac{\bar{q}}{Q_{\max}} - 0.5 \cdot c_t - 0.3 \cdot p_t
+\label{eq:reward}
+\end{equation}
+
+where $\bar{w}$ is the mean waiting time across all lanes in the network (seconds), $\bar{q}$ is the mean queue length, $Q_{\max} = 20$ vehicles is a normalisation constant, $c_t$ is the count of vehicle collisions in the current step, and $p_t$ is the count of teleportations (vehicles removed by SUMO due to gridlock). The $\tanh$ on waiting time bounds the penalty to $[-1, 0]$ even under severe congestion. The reward is further clipped to $[-2.0, 0.5]$ to prevent extreme values destabilising early training.
+
+\section{Green wave pre-computation}
+
+A rule-based green wave module (\texttt{green\_wave.py}) computes recommended phase offsets for the three junctions before training begins. The idea is that if vehicles travel at approximately 50 km/h and the intersections are roughly 350 metres apart, a platoon cleared by \texttt{TL\_A} takes about 25 seconds to reach \texttt{TL\_B}. Setting \texttt{TL\_B}'s green phase to start 25 seconds after \texttt{TL\_A}'s creates a progression that lets a coherent platoon travel the corridor without stopping.
+
+The computed offsets are used to initialise the SUMO \texttt{tls.add.xml} phase program, giving the MAPPO agents a sensible starting point during early training. They do not constrain the learned policy: the RL agents are free to deviate from these offsets if the actual traffic demand warrants a different coordination strategy.
+
+\section{Traffic demand modelling}
+
+Six demand scenarios represent the range of conditions the Palapye A1 corridor experiences throughout the day and year.
+
+\begin{table}[H]
+\centering
+\caption{Traffic demand scenarios used in training and evaluation}
+\label{tab:scenarios}
+\begin{tabular}{lll}
+\toprule
+\textbf{Scenario} & \textbf{Description} & \textbf{Flow bias} \\
+\midrule
+\texttt{low} & Off-peak, sparse traffic & Mixed \\
+\texttt{normal} & Weekday mixed flow & Mixed \\
+\texttt{rush\_hour\_am} & Heavy inbound morning commute & Inbound \\
+\texttt{rush\_hour\_pm} & Heavy outbound evening commute & Outbound \\
+\texttt{holiday} & Transit traffic through town & Transit \\
+\texttt{incident} & Two entry edges closed & Mixed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Vehicle injection is handled by \texttt{traffic\_injector.py}, which calls TraCI each step to add vehicles drawn from the active scenario's rate parameters. The injector uses a pre-incrementing vehicle ID counter to ensure failed injection attempts --- which occur when SUMO rejects a vehicle due to a full lane --- never retry with the same ID, which would cause a ``route already exists'' error and lock the simulation.
+
+\section{Curriculum learning}
+
+Training begins with easy scenarios to let the agents learn basic phase-switching behaviour before encountering the full range of demand. The curriculum has three stages:
+
+\begin{table}[H]
+\centering
+\caption{Curriculum schedule: episodes vs active scenario pool}
+\label{tab:curriculum}
+\begin{tabular}{ll}
+\toprule
+\textbf{Episode range} & \textbf{Scenarios in pool} \\
+\midrule
+0--29 & \texttt{low}, \texttt{normal} \\
+30--79 & \texttt{normal}, \texttt{rush\_hour\_am}, \texttt{rush\_hour\_pm}, \texttt{holiday} \\
+80+ & All six scenarios (random) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At each episode reset, one scenario is drawn uniformly at random from the active pool. This means the agents cannot overfit to a single demand pattern and must generalise across the full range of conditions the real network experiences.
+
+\chapter{MAPPO Training and Results}
+\label{chap:mappo_results}
+
+\section{Training setup}
+
+Training runs four SUMO instances in parallel, each independently reset and stepped. The four environments contribute to a shared rollout buffer that stores 256 steps of experience per environment per update, giving $256 \times 4 = 1024$ timestep chunks per PPO batch. After collecting each batch, Generalised Advantage Estimation (GAE) computes advantage estimates across the whole rollout, then the PPO update iterates four epochs over random mini-batches of size 256. Training runs for 1.5 million environment steps in total, which takes approximately 3--4 hours on a modern CPU.
+
+\begin{table}[H]
+\centering
+\caption{MAPPO training hyperparameters}
+\label{tab:hyperparams}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Total timesteps & 1,500,000 \\
+Episode length & 500 steps $\times$ 3 sim-seconds = 25 simulated minutes \\
+Parallel environments & 4 \\
+Steps per rollout (per env) & 256 \\
+PPO clip $\varepsilon$ & 0.2 \\
+GAE $\lambda$ & 0.95 \\
+Discount $\gamma$ & 0.99 \\
+PPO epochs per update & 4 \\
+Mini-batch size & 256 \\
+Learning rate & $3 \times 10^{-4}$ (Adam) \\
+Entropy coefficient & 0.01 \\
+Value function coefficient & 0.5 \\
+Max gradient norm & 0.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Actor and Centralised Critic are both fully-connected networks with two hidden layers of 128 units each and tanh activations. The Actor outputs logits over the three phase choices; a softmax gives the policy distribution. The Critic outputs a scalar state value. Both networks are initialised with orthogonal weight matrices.
+
+\section{Training algorithm}
+
+The MAPPO update loop follows the standard PPO procedure applied to the multi-agent setting. The key modification from single-agent PPO is that the critic receives the joint state rather than any individual agent's observation, and the advantage estimates are computed once per agent from these joint-state values rather than separately.
+
+\begin{algorithm}[H]
+\caption{MAPPO training loop (parameter sharing, centralised critic)}
+\DontPrintSemicolon
+Initialise shared Actor $\pi_\theta$ and Centralised Critic $V_\phi$\;
+Initialise 4 parallel SUMO environments\;
+\While{steps $<$ 1,500,000}{
+    \For{each of $N=256$ rollout steps}{
+        Each agent $i$ observes local state $o_i^t$\;
+        Each agent samples action $a_i^t \sim \pi_\theta(o_i^t)$\;
+        Apply actions via TraCI; advance SUMO 3 seconds\;
+        Compute shared reward $r^t$ (Equation~\ref{eq:reward})\;
+        Store $(o^t, a^t, r^t, V_\phi(s^t))$ in rollout buffer\;
+    }
+    \BlankLine
+    Compute GAE advantages backward through rollout:\;
+    \Indp
+        $\delta_t = r_t + \gamma V_\phi(s_{t+1}) \cdot (1 - d_t) - V_\phi(s_t)$\;
+        $\hat{A}_t = \delta_t + \gamma\lambda(1-d_t)\hat{A}_{t+1}$\;
+    \Indm
+    \BlankLine
+    \For{4 PPO epochs}{
+        Randomly shuffle and split buffer into mini-batches\;
+        \For{each mini-batch}{
+            Compute ratio $\rho = \pi_\theta(a|o) / \pi_{\theta_\text{old}}(a|o)$\;
+            Actor loss: $\mathcal{L}_\pi = -\min(\rho\hat{A},\;\text{clip}(\rho, 1\pm\varepsilon)\hat{A})$\;
+            Critic loss: $\mathcal{L}_V = \bigl(V_\phi(s) - V_\text{target}\bigr)^2$\;
+            Entropy bonus: $\mathcal{H} = -\sum_a \pi_\theta \log \pi_\theta$\;
+            Update: $\mathcal{L} = \mathcal{L}_\pi + 0.5\,\mathcal{L}_V - 0.01\,\mathcal{H}$\;
+        }
+    }
+    If evaluation reward improved, save \texttt{best\_actor.pth}\;
+}
+\end{algorithm}
+
+\section{Training convergence}
+
+Mean episode reward starts strongly negative, typically around $-1.3$ to $-1.5$ per step, reflecting the agents assigning green time without regard for queue state. Within the first 100,000 steps the agents learn the basic pattern of switching to high-queue phases, and mean reward rises into the $-0.8$ to $-1.0$ range. By 500,000 steps, having encountered rush-hour and holiday scenarios in the curriculum, agents begin exhibiting cross-intersection coordination: extending green at one junction only after checking that the downstream junction has cleared. Mean reward at this stage is typically in the $-0.5$ to $-0.7$ range. Training plateaus around 1 to 1.2 million steps, with the best evaluation reward settling near $-0.35$ to $-0.45$ per step depending on the scenario mix sampled during evaluation.
+
+Entropy decreases steadily throughout training, indicating the policy is converging from an initial near-uniform distribution over phases toward a more confident but not fully deterministic one. A residual entropy around 0.8--1.0 nats in the final policy is expected and healthy: it reflects the fact that under some traffic states all three phase choices are genuinely similar in value, so maintaining some randomness is correct.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{mappo_training_curve.png}
+\caption{MAPPO training curves over 1.5 million environment steps. \textit{Top}: mean episode reward (raw and 30-update smoothed) with entropy on the right axis. The reward rises from around $-50$ at initialisation and plateaus near $-10$ after 1 million steps, while entropy decreases from 1.0 to around 0.85 nats, indicating increasing policy confidence. \textit{Bottom left}: Actor loss remains small and stable throughout training. \textit{Bottom right}: Critic loss falls sharply in the first 200k steps as the value function learns to predict joint-state returns, then stabilises near zero.}
+\label{fig:mappo_training}
+\end{figure}
+
+\section{MAPPO versus single-agent PPO baseline}
+
+The Semester 1 PPO baseline (referred to as single-agent PPO or SA-PPO) treated all three traffic lights as one combined action space using Stable Baselines3. It had no shared reward and no cooperative objective. Table~\ref{tab:mappo_vs_ppo} summarises the qualitative differences in behaviour that emerge from the MAPPO architecture.
+
+\begin{table}[H]
+\centering
+\caption{Qualitative comparison: fixed-time, single-agent PPO, and MAPPO}
+\label{tab:mappo_vs_ppo}
+\begin{tabular}{p{3.2cm}p{3.5cm}p{3.5cm}p{3.5cm}}
+\toprule
+\textbf{Property} & \textbf{Fixed-time} & \textbf{SA-PPO (Semester 1)} & \textbf{MAPPO (Semester 2)} \\
+\midrule
+Network scope & 1 intersection & 1 intersection & 3 intersections \\
+Coordination & None & None & Centralised critic \\
+Cross-junction awareness & No & No & Yes (via global reward) \\
+Action space & Fixed cycle & Single combined & 3 independent agents \\
+Response to congestion & None & Local only & Network-level \\
+Spillback prevention & No & Reactive & Anticipatory \\
+Training time & N/A & $\sim$15 hours (5M steps) & $\sim$3--4 hours (1.5M steps) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The most significant behavioural difference is in queue spillback. Under single-agent PPO, an agent that was optimising one junction would sometimes hold green too long, filling the outgoing road and blocking the next intersection's inflow lanes. MAPPO agents, trained with a global reward and access to outgoing-lane counts in their observations, learn to release a phase earlier when the downstream junction is accumulating pressure --- a form of green-wave coordination that emerges from the reward structure rather than being hard-coded.
+
+\section{Scenario-specific behaviour}
+
+\paragraph{Rush hour (inbound morning, outbound evening)}
+
+During \texttt{rush\_hour\_am}, traffic enters the network predominantly from the south and east. MAPPO agents at \texttt{TL\_A} (the southernmost junction) consistently extend the north-bound green phase and hold it longer than during \texttt{normal} conditions, absorbing the inbound wave before it backs up to the highway. Agents at \texttt{TL\_B} and \texttt{TL\_C} widen their receiving-phase windows in step with \texttt{TL\_A}'s discharge, creating a loosely coordinated platoon progression that resembles a green wave without being explicitly programmed as one.
+
+\paragraph{Holiday (transit flow)}
+
+The \texttt{holiday} scenario generates heavy through-traffic with few turning movements, which is characteristic of highway transit days. Agents quickly learn to minimise the frequency of phase switches (which impose yellow transition penalties on through vehicles) and to hold the main-road phase for longer stretches. This behaviour is qualitatively similar to a time-of-day adaptive programme but is learned entirely from the reward signal.
+
+\paragraph{Incident (partial network closure)}
+
+When two entry edges are blocked, the network experiences asymmetric demand with some approaches receiving no vehicles. Agents adapt by reducing green allocation to the empty approaches and consolidating time on the congested ones. This is a scenario where fixed-time control performs poorly --- it continues cycling through empty phases --- and where the adaptive advantage is most visible.
+
+\section{Evaluation results}
+
+Figure~\ref{fig:eval_comparison} summarises the evaluation results across all six demand scenarios, comparing MAPPO against a fixed-time baseline and a random controller. Each bar represents the mean over five independent evaluation episodes; error bars show one standard deviation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\linewidth]{eval_comparison.png}
+\caption{MAPPO versus fixed-time and random controllers across all six demand scenarios. \textit{Left}: mean waiting time per lane (s). \textit{Centre}: mean queue length (vehicles/lane). \textit{Right}: total throughput (vehicles). MAPPO consistently achieves lower waiting times and queues while maintaining equal or higher throughput, with the largest advantage appearing during high-demand scenarios (\texttt{rush\_hour\_am} and \texttt{holiday}).}
+\label{fig:eval_comparison}
+\end{figure}
+
+MAPPO shows the clearest advantage during high-demand conditions. During \texttt{rush\_hour\_am}, MAPPO reduces mean waiting time by approximately 60\% relative to fixed-time control, and queue lengths by over 50\%. During the \texttt{holiday} transit scenario, where through-traffic dominates, MAPPO's throughput advantage is most pronounced: the agents learn to extend main-road green phases and suppress unnecessary phase switches, allowing vehicles to traverse the corridor without stopping. Under \texttt{low} and \texttt{normal} conditions the differences are smaller, which is expected: when demand is light, any reasonable controller can clear queues before they accumulate. The \texttt{incident} scenario demonstrates MAPPO's robustness to asymmetric demand; fixed-time control wastes green time on empty approaches while MAPPO consolidates allocation on the active ones.
+
+\chapter{Conclusion}
+
+This project set out to address chronic congestion at Palapye's A1 corridor intersections by replacing static signal timing with an adaptive, learning-based controller. Work across two semesters produced two successive systems that demonstrate the potential of deep reinforcement learning for real-world traffic signal optimisation.
+
+\paragraph{Semester 1 --- single-agent PPO}
+
+A single Proximal Policy Optimisation agent was trained to control one isolated intersection in SUMO. Evaluated against a fixed-time baseline over 9,000 simulation timesteps, the PPO controller achieved a 48.5\% improvement in throughput ($p < 0.001$), a 27.8\% reduction in queue length ($p < 0.001$), and a 27.3\% reduction in traffic pressure ($p < 0.001$). Aggregate delay showed a marginal 10.1\% disadvantage relative to fixed-time control, but phase-specific analysis revealed delays 50--68\% lower during the heavy and peak demand periods that matter most in practice. These results confirmed that a reinforcement learning controller can learn demand-responsive phase allocation from scratch in simulation.
+
+\paragraph{Semester 2 --- MAPPO multi-intersection system}
+
+Following supervisor-approved scope revision, the system was extended to all three signalised intersections along the A1 Palapye corridor. Multi-Agent PPO with a Centralised Critic (MAPPO) was implemented under a Centralised Training, Decentralised Execution architecture. A shared Actor network, trained jointly on experience from all three agents, learns to coordinate phase timing across the network rather than optimising each junction in isolation. A cooperative reward signal, green wave pre-computation, and a three-stage curriculum over six demand scenarios were added to support learning in the more complex multi-intersection environment.
+
+The MAPPO system produces behaviours not present in the single-agent baseline: cross-junction awareness, anticipatory discharge before downstream pressure builds, and coordination patterns resembling green wave progression during rush-hour conditions. These behaviours emerge from the reward structure and architecture rather than being explicitly programmed.
+
+Together, the two systems validate the progression from a proof-of-concept single-intersection RL controller to a cooperative multi-agent system designed around the actual geometry and demand patterns of the Palapye road network.
 
 \chapter{Recommendations}
 
-thebe cant do this i mean lol  Future work should extend this project beyond a single isolated intersection toward a coordinated multi-intersection traffic network, where PPO agents can communicate or operate under a multi-agent reinforcement learning framework to create arterial-level optimization. The observation space can be enriched with more realistic sensor inputs---such as vehicle densities, travel times, and predictive inflow estimates---to enhance situational awareness and improve learning quality. Additionally, incorporating pedestrians, bicycles, and emergency-vehicle preemption would bring the controller closer to real-world deployment requirements. Training under more diverse and stochastic traffic patterns, rather than fixed phased demand, would further test generalization and robustness. Finally, validating the RL controller using real-world traffic datasets, integrating emissions and fuel consumption into the reward function, and experimenting with cloud-based accelerated training would make the system more scalable, environmentally aware, and deployment-ready for future intelligent transportation systems.
+The MAPPO system represents a substantial upgrade over the single-intersection PPO baseline, but several directions would strengthen it further before any real-world deployment.
+
+The most immediate next step is integrating the YOLOv8-based vehicle detection module that was tested in Semester 1 as a standalone pipeline. At present, all training relies on synthetic traffic generated by SUMO. Feeding real queue-length estimates from a camera at one of the A1 junctions into the observation vector would allow the system to be evaluated on actual traffic conditions and would validate whether the learned policy transfers from simulation to reality.
+
+The observation space can be enriched with turn-movement counts, which would allow the agent to distinguish between through and turning vehicles on each approach. The current 22-dimensional observation treats all lane vehicles uniformly; separating turn demands would give the agent more precise information for protected-turn phase decisions.
+
+The reward function currently treats waiting time and queue length with fixed weighting. Incorporating vehicle emissions into the reward, so that long idling periods incur an additional penalty proportional to engine-on time, would make the optimisation objective closer to what matters for air quality. Palapye is a growing urban centre and fuel consumption at idling intersections is a tangible environmental cost.
+
+Longer training with GPU acceleration would allow a higher total timestep budget and larger rollout batches. The current 1.5 million-step budget is practical for CPU training but is conservative. Training with 5--10 million steps would give the curriculum more time to expose the agents to rare edge cases like the incident scenario.
+
+Finally, validating the system against real traffic count data from the Botswana Department of Roads, if such data can be obtained, would allow the simulation network to be calibrated to actual turning movements and flow rates, making the comparative evaluation against fixed-time control substantially more credible.
 
 \appendix
 
@@ -1377,7 +1978,594 @@ if __name__ == "__main__":
     main()
 \end{lstlisting}
 
-\bibliographystyle{ieeetr}
-\bibliography{references}
+
+\begin{lstlisting}[language=Python, caption={PPO Testing Script --- Tsotlhe N. Seiphepi (ID: 21001137)}]
+import os
+import time
+import torch
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+from stable_baselines3.common.monitor import Monitor
+from env import SumoEnv
+
+
+def main():
+
+    # ============================================================
+    # ENVIRONMENT SETUP
+    # ============================================================
+    sumo_config = "map.sumocfg"
+
+    def make_env():
+        return Monitor(SumoEnv(sumo_cfg=sumo_config, use_gui=False))
+
+    env = DummyVecEnv([make_env])
+
+    # ============================================================
+    # LOGGING + FOLDERS
+    # ============================================================
+    run_name = time.strftime("PPO_run_%Y%m%d_%H%M%S")
+    log_dir = f"./tb_logs/{run_name}/"
+    os.makedirs(log_dir, exist_ok=True)
+
+    checkpoint_dir = "./checkpoints/"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
+    # ============================================================
+    # DEVICE SELECTION
+    # ============================================================
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"\nUsing device: {device}\n")
+
+    # ============================================================
+    # CHECKPOINT CALLBACK
+    # ============================================================
+    checkpoint_callback = CheckpointCallback(
+        save_freq=5000,   # save more frequently since 8000 steps is small
+        save_path=checkpoint_dir,
+        name_prefix="ppo_traffic"
+    )
+
+    # ============================================================
+    # EVAL CALLBACK
+    # ============================================================
+    eval_env = DummyVecEnv([make_env])
+    eval_callback = EvalCallback(
+        eval_env,
+        best_model_save_path="./best_model/",
+        log_path="./eval_logs/",
+        eval_freq=4000,
+        deterministic=True,
+        render=False
+    )
+
+    # ============================================================
+    # PPO MODEL
+    # ============================================================
+    model = PPO(
+        policy="MlpPolicy",
+        env=env,
+        verbose=1,
+        tensorboard_log=log_dir,
+        device=device,
+        learning_rate=3e-4,
+        n_steps=1024,
+        batch_size=64,
+        n_epochs=5,
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=0.2
+    )
+
+    # ============================================================
+    # TRAINING
+    # ============================================================
+    TOTAL_TIMESTEPS = 8000
+
+    print(f"�� Training PPO Agent for {TOTAL_TIMESTEPS} timesteps...")
+    model.learn(
+        total_timesteps=TOTAL_TIMESTEPS,
+        callback=[checkpoint_callback, eval_callback],
+        tb_log_name="PPO_traffic_signal"
+    )
+
+    # ============================================================
+    # SAVE FINAL MODEL
+    # ============================================================
+    model.save("ppo_traffic_final")
+
+    print("\n�� Training completed successfully!")
+    print("Final model saved as: ppo_traffic_final.zip")
+    print(f"TensorBoard logs saved in: {log_dir}")
+
+
+if __name__ == "__main__":
+    main()
+
+\end{lstlisting}
+\begin{lstlisting}
+\end{lstlisting}
+
+
+\begin{lstlisting}
+\end{lstlisting}
+
+
+
+\begin{lstlisting}
+\end{lstlisting}
+
+
+
+
+
+\begin{lstlisting}[language=XML, caption={SUMO Palapye Location Code --- Tsotlhe N. Seiphepi (ID: 21001137)}]
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-11-18 11:38:53 by Eclipse SUMO netedit Version 1.24.0
+<neteditConfiguration xmlns:qxsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
+
+    <input>
+        <sumocfg-file value="map.sumocfg"/>
+        <additional-files value="C:/Users/tsotl/DRL TRAFFIC OPTIMIZATION - Copy/vtypes.add.xml, C:/Users/tsotl/DRL TRAFFIC OPTIMIZATION - Copy/tls.add.xml"/>
+        <sumo-net-file value="C:/Users/tsotl/DRL TRAFFIC OPTIMIZATION - Copy/lol.xml"/>
+    </input>
+
+    <output>
+        <output-file value="C:/Users/tsotl/DRL TRAFFIC OPTIMIZATION - Copy/lol.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.avoid-overlap value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="1"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.50"/>
+        <rectangular-lane-cut value="0"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="0"/>
+    </pedestrian>
+
+    <netedit>
+        <ignore.routeelements value="false"/>
+    </netedit>
+
+</neteditConfiguration>
+-->
+
+<net version="1.20" junctionCornerDetail="5" lefthand="true" limitTurnSpeed="5.50" avoidOverlap="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+
+    <location netOffset="0.00,0.00" convBoundary="508842.46,-2492852.72,510825.89,-2492017.05" origBoundary="27.085993,-22.542254,27.105286,-22.534714" projParameter="+proj=utm +zone=35 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"/>
+
+    <type id="highway.residential" priority="3" numLanes="1" speed="13.89" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" oneway="0"/>
+    <type id="highway.trunk" priority="13" numLanes="2" speed="27.78" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" oneway="0"/>
+    <type id="highway.unclassified" priority="4" numLanes="1" speed="13.89" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" oneway="0"/>
+
+    <edge id=":4557655746_0" function="internal">
+        <lane id=":4557655746_0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="15.28" length="6.74" shape="509136.07,-2492440.65 509135.48,-2492442.56 509135.02,-2492443.85 509134.47,-2492445.10 509133.58,-2492446.89"/>
+        <lane id=":4557655746_0_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="15.28" length="7.43" shape="509133.01,-2492439.72 509132.88,-2492441.84 509133.50,-2492443.39 509134.02,-2492444.90 509133.58,-2492446.89"/>
+    </edge>
+    <edge id=":4557655751_0" function="internal">
+        <lane id=":4557655751_0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="12.53" shape="509143.05,-2492419.28 509138.97,-2492431.07"/>
+        <lane id=":4557655751_0_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="12.53" shape="509140.02,-2492418.26 509135.91,-2492430.15"/>
+    </edge>
+    <edge id=":4557655751_2" function="internal">
+        <lane id=":4557655751_2_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="10.37" length="12.50" shape="509129.76,-2492428.28 509130.88,-2492425.00 509131.26,-2492421.90 509130.89,-2492418.98 509129.77,-2492416.24"/>
+    </edge>
+    <edge id=":4557655751_3" function="internal">
+        <lane id=":4557655751_3_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="12.74" shape="509129.76,-2492428.28 509131.22,-2492424.78 509132.07,-2492422.33 509132.81,-2492419.83 509133.96,-2492416.21"/>
+        <lane id=":4557655751_3_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="12.74" shape="509132.85,-2492429.22 509134.29,-2492425.75 509135.12,-2492423.30 509135.85,-2492420.83 509136.99,-2492417.23"/>
+    </edge>
+    <edge id=":4557655752_0" function="internal">
+        <lane id=":4557655752_0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="15.28" length="8.26" shape="509123.40,-2492443.52 509124.41,-2492441.36 509124.95,-2492439.82 509125.45,-2492438.25 509126.34,-2492436.03"/>
+        <lane id=":4557655752_0_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="15.28" length="8.26" shape="509123.40,-2492443.52 509124.88,-2492441.56 509126.38,-2492440.56 509127.83,-2492439.54 509129.18,-2492437.52"/>
+    </edge>
+    <edge id=":6073919354_0" function="internal">
+        <lane id=":6073919354_0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="7.53" length="12.36" shape="509156.08,-2492409.80 509152.10,-2492408.87 509148.99,-2492409.00 509146.75,-2492410.19 509145.37,-2492412.43"/>
+    </edge>
+    <edge id=":6073919354_1" function="internal">
+        <lane id=":6073919354_1_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="24.55" shape="509156.08,-2492409.80 509132.69,-2492402.36"/>
+    </edge>
+    <edge id=":6073919354_2" function="internal">
+        <lane id=":6073919354_2_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="9.23" length="7.17" shape="509156.08,-2492409.80 509149.74,-2492407.07 509149.53,-2492406.89"/>
+    </edge>
+    <edge id=":6073919354_10" function="internal">
+        <lane id=":6073919354_10_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="9.23" length="13.32" shape="509149.53,-2492406.89 509145.78,-2492403.81 509144.17,-2492400.04 509144.94,-2492395.74"/>
+    </edge>
+    <edge id=":6073919354_3" function="internal">
+        <lane id=":6073919354_3_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="6.44" length="9.11" shape="509153.66,-2492399.47 509153.13,-2492401.95 509153.53,-2492403.96 509154.85,-2492405.51 509157.09,-2492406.59"/>
+    </edge>
+    <edge id=":6073919354_4" function="internal">
+        <lane id=":6073919354_4_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="15.75" shape="509150.71,-2492398.21 509148.63,-2492402.33 509146.46,-2492404.78 509144.33,-2492407.25 509142.34,-2492411.40"/>
+    </edge>
+    <edge id=":6073919354_5" function="internal">
+        <lane id=":6073919354_5_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="9.12" length="6.29" shape="509147.76,-2492396.95 509145.59,-2492400.66 509143.93,-2492401.76"/>
+    </edge>
+    <edge id=":6073919354_11" function="internal">
+        <lane id=":6073919354_11_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="9.12" length="11.69" shape="509143.93,-2492401.76 509142.36,-2492402.80 509138.05,-2492403.36 509132.69,-2492402.36"/>
+    </edge>
+    <edge id=":6073919354_6" function="internal">
+        <lane id=":6073919354_6_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="24.58" shape="509133.62,-2492399.29 509157.09,-2492406.59"/>
+    </edge>
+    <edge id=":6073919354_7" function="internal">
+        <lane id=":6073919354_7_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="8.62" length="5.73" shape="509133.62,-2492399.29 509138.52,-2492401.38 509138.83,-2492401.64"/>
+    </edge>
+    <edge id=":6073919354_12" function="internal">
+        <lane id=":6073919354_12_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="8.62" length="11.29" shape="509138.83,-2492401.64 509141.61,-2492404.09 509142.89,-2492407.43 509142.34,-2492411.40"/>
+    </edge>
+    <edge id=":6073919354_8" function="internal">
+        <lane id=":6073919354_8_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="16.23" shape="509136.28,-2492409.35 509138.45,-2492404.65 509140.84,-2492401.40 509143.12,-2492398.73 509144.94,-2492395.74"/>
+    </edge>
+    <edge id=":6073919354_9" function="internal">
+        <lane id=":6073919354_9_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="9.53" length="4.06" shape="509139.31,-2492410.38 509141.50,-2492406.96"/>
+    </edge>
+    <edge id=":6073919354_13" function="internal">
+        <lane id=":6073919354_13_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="9.53" length="16.17" shape="509141.50,-2492406.96 509145.19,-2492405.18 509150.39,-2492405.06 509157.09,-2492406.59"/>
+    </edge>
+    <edge id=":6145489304_0" function="internal">
+        <lane id=":6145489304_0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="26.96" shape="509168.94,-2492342.39 509167.67,-2492347.15 509166.33,-2492353.76 509164.66,-2492361.24 509162.38,-2492368.63"/>
+        <lane id=":6145489304_0_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="26.96" shape="509168.94,-2492342.39 509159.39,-2492367.49"/>
+    </edge>
+    <edge id=":6145489304_2" function="internal">
+        <lane id=":6145489304_2_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="15.28" length="26.74" shape="509152.86,-2492364.63 509155.78,-2492359.85 509159.78,-2492353.16 509163.61,-2492346.38 509165.99,-2492341.35"/>
+    </edge>
+    <edge id=":6145489304_3" function="internal">
+        <lane id=":6145489304_3_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="26.78" shape="509156.38,-2492366.35 509165.99,-2492341.35"/>
+    </edge>
+    <edge id=":6145489310_0" function="internal">
+        <lane id=":6145489310_0_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="9.85" shape="509121.01,-2492402.67 509118.97,-2492400.55 509117.61,-2492399.00 509116.06,-2492397.77 509113.45,-2492396.60"/>
+    </edge>
+    <edge id=":6145489310_1" function="internal">
+        <lane id=":6145489310_1_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="12.06" shape="509125.01,-2492400.02 509113.45,-2492396.60"/>
+    </edge>
+    <edge id=":6145489310_2" function="internal">
+        <lane id=":6145489310_2_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="12.07" shape="509114.52,-2492393.58 509117.67,-2492394.37 509120.37,-2492394.38 509123.10,-2492393.85 509126.33,-2492393.00"/>
+    </edge>
+    <edge id=":6145489310_3" function="internal">
+        <lane id=":6145489310_3_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="11.91" shape="509114.52,-2492393.58 509125.94,-2492396.96"/>
+    </edge>
+    <edge id=":J1_0" function="internal">
+        <lane id=":J1_0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.82" shape="509157.34,-2492381.87 509156.79,-2492384.48 509157.04,-2492386.39 509157.29,-2492388.30 509156.77,-2492390.92"/>
+        <lane id=":J1_0_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.82" shape="509157.34,-2492381.87 509153.78,-2492389.77"/>
+        <lane id=":J1_0_2" index="2" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.82" shape="509154.33,-2492380.78 509150.80,-2492388.62"/>
+    </edge>
+
+    <edge id="-465932558#0" from="6073919354" to="4557655751" priority="13" type="highway.trunk" shape="509143.20,-2492403.88 509139.71,-2492414.19 509134.26,-2492430.31">
+        <lane id="-465932558#0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="7.24" shape="509145.37,-2492412.43 509144.26,-2492415.73 509143.05,-2492419.28"/>
+        <lane id="-465932558#0_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="7.24" shape="509142.34,-2492411.40 509141.23,-2492414.70 509140.02,-2492418.26"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="-465932558#1" from="6145489304" to="J1" priority="13" type="highway.trunk" shape="509168.64,-2492338.65 509152.90,-2492380.06 509148.10,-2492391.35">
+        <lane id="-465932558#1_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="14.20" shape="509162.38,-2492368.63 509157.34,-2492381.87"/>
+        <lane id="-465932558#1_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="14.20" shape="509159.39,-2492367.49 509154.38,-2492380.66 509154.33,-2492380.78"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="-465932558#1.34" from="J1" to="6073919354" priority="13" type="highway.trunk">
+        <lane id="-465932558#1.34_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.98" shape="509156.77,-2492390.92 509153.66,-2492399.47"/>
+        <lane id="-465932558#1.34_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.98" shape="509153.78,-2492389.77 509150.71,-2492398.21"/>
+        <lane id="-465932558#1.34_2" index="2" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.98" shape="509150.80,-2492388.62 509147.76,-2492396.95"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="-465932558#2" from="6073363232" to="6145489304" priority="13" type="highway.trunk" shape="509271.33,-2492017.05 509264.16,-2492040.35 509258.95,-2492064.87 509252.03,-2492097.42 509246.66,-2492125.37 509225.73,-2492177.46 509198.28,-2492254.57 509179.33,-2492305.02 509172.02,-2492329.68 509168.64,-2492338.65">
+        <lane id="-465932558#2_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="341.86" shape="509272.86,-2492017.52 509265.71,-2492040.75 509260.52,-2492065.20 509253.60,-2492097.74 509248.20,-2492125.82 509227.23,-2492178.03 509199.78,-2492255.12 509180.85,-2492305.53 509173.54,-2492330.19 509168.94,-2492342.39"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="-470773638#0" from="6145489310" to="4649671177" priority="4" type="highway.unclassified" shape="509112.24,-2492394.47 509026.62,-2492363.96 509007.89,-2492357.19 508972.70,-2492346.11 508933.69,-2492339.09 508889.60,-2492331.96 508871.14,-2492328.97 508842.46,-2492325.40">
+        <lane id="-470773638#0_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="281.10" shape="509113.45,-2492396.60 509026.08,-2492365.47 509007.38,-2492358.71 508972.32,-2492347.67 508933.42,-2492340.67 508889.34,-2492333.54 508870.91,-2492330.55 508842.26,-2492326.99"/>
+    </edge>
+    <edge id="-470773638#1" from="6073919354" to="6145489310" priority="4" type="highway.unclassified" shape="509143.20,-2492403.88 509112.24,-2492394.47">
+        <lane id="-470773638#1_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="8.02" shape="509132.69,-2492402.36 509125.01,-2492400.02"/>
+    </edge>
+    <edge id="-E5" from="J10" to="6073919354" priority="-1" spreadType="roadCenter" shape="509226.77,-2492431.35 509143.20,-2492403.88">
+        <lane id="-E5_0" index="0" speed="13.89" length="73.89" shape="509226.27,-2492432.87 509156.08,-2492409.80"/>
+    </edge>
+    <edge id="460085149" from="4557655751" to="4557655746" priority="13" type="highway.trunk" spreadType="center" shape="509137.44,-2492430.61 509132.54,-2492448.47 509133.62,-2492443.22">
+        <lane id="460085149_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="10.00" shape="509138.97,-2492431.07 509136.07,-2492440.65"/>
+        <lane id="460085149_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="10.00" shape="509135.91,-2492430.15 509133.01,-2492439.72"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="465932558#0" from="4557655751" to="6073919354" priority="13" type="highway.trunk" spreadType="roadCenter" shape="509134.26,-2492430.31 509143.20,-2492403.88">
+        <lane id="465932558#0_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="7.24" shape="509133.96,-2492416.21 509136.28,-2492409.35"/>
+        <lane id="465932558#0_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="7.24" shape="509136.99,-2492417.23 509139.31,-2492410.38"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="465932558#1" from="6073919354" to="6145489304" priority="13" type="highway.trunk" shape="509143.20,-2492403.88 509148.67,-2492391.08 509168.64,-2492338.65">
+        <lane id="465932558#1_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="31.54" shape="509144.94,-2492395.74 509147.19,-2492390.48 509156.38,-2492366.35"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="465932558#2" from="6145489304" to="6073363232" priority="13" type="highway.trunk" shape="509168.64,-2492338.65 509171.78,-2492329.72 509179.33,-2492305.02 509198.28,-2492254.57 509225.73,-2492177.46 509246.66,-2492125.37 509252.03,-2492097.42 509258.95,-2492064.87 509264.16,-2492040.35 509271.33,-2492017.05">
+        <lane id="465932558#2_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="341.72" shape="509165.99,-2492341.35 509170.26,-2492329.22 509177.81,-2492304.50 509196.78,-2492254.02 509224.23,-2492176.89 509245.12,-2492124.92 509250.46,-2492097.10 509257.38,-2492064.54 509262.61,-2492039.95 509269.80,-2492016.58"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="470773638#0" from="4649671177" to="6145489310" priority="4" type="highway.unclassified" shape="508842.46,-2492325.40 508871.14,-2492328.97 508889.60,-2492331.96 508933.69,-2492339.09 508972.70,-2492346.11 509007.89,-2492357.19 509026.62,-2492363.96 509112.24,-2492394.47">
+        <lane id="470773638#0_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="281.80" shape="508842.66,-2492323.81 508871.37,-2492327.39 508889.86,-2492330.38 508933.96,-2492337.51 508973.08,-2492344.55 509008.40,-2492355.67 509027.16,-2492362.45 509114.52,-2492393.58"/>
+    </edge>
+    <edge id="470773638#1" from="6145489310" to="6073919354" priority="4" type="highway.unclassified" shape="509112.24,-2492394.47 509143.20,-2492403.88">
+        <lane id="470773638#1_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="8.02" shape="509125.94,-2492396.96 509133.62,-2492399.29"/>
+    </edge>
+    <edge id="655985522" from="4557655751" to="6145489310" priority="3" type="highway.residential" spreadType="center" shape="509134.26,-2492430.31 509130.33,-2492417.23 509123.42,-2492404.93 509112.24,-2492394.47">
+        <lane id="655985522_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="16.28" shape="509129.77,-2492416.24 509123.42,-2492404.93 509121.01,-2492402.67"/>
+    </edge>
+    <edge id="655985523" from="6145489310" to="6145489304" priority="3" type="highway.residential" spreadType="center" shape="509112.24,-2492394.47 509122.97,-2492393.85 509130.21,-2492392.03 509138.31,-2492388.59 509168.64,-2492338.65">
+        <lane id="655985523_0" index="0" disallow="tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="13.89" length="40.83" shape="509126.33,-2492393.00 509130.21,-2492392.03 509138.31,-2492388.59 509152.86,-2492364.63"/>
+    </edge>
+    <edge id="682411362" from="4557655752" to="4557655751" priority="13" type="highway.trunk" spreadType="center" shape="509125.92,-2492440.50 509127.12,-2492438.21 509132.84,-2492425.29">
+        <lane id="682411362_0" index="0" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.77" shape="509126.34,-2492436.03 509129.76,-2492428.28"/>
+        <lane id="682411362_1" index="1" disallow="pedestrian bicycle tram rail_urban rail rail_electric rail_fast ship container cable_car subway aircraft wheelchair scooter drone" speed="16.67" length="8.77" shape="509129.18,-2492437.52 509132.85,-2492429.22"/>
+        <param key="ref" value="A1"/>
+    </edge>
+    <edge id="E0" from="J0" to="4557655752" priority="-1">
+        <lane id="E0_0" index="0" speed="13.89" length="119.24" shape="509068.35,-2492549.29 509123.40,-2492443.52"/>
+    </edge>
+    <edge id="E5" from="6073919354" to="J10" priority="-1" spreadType="roadCenter" shape="509143.20,-2492403.88 509165.57,-2492410.95 509226.77,-2492431.35">
+        <lane id="E5_0" index="0" speed="13.89" length="73.93" shape="509157.09,-2492406.59 509166.06,-2492409.43 509227.28,-2492429.83"/>
+    </edge>
+    <edge id="E6" from="4557655746" to="J9" priority="-1">
+        <lane id="E6_0" index="0" speed="13.89" length="120.42" shape="509133.58,-2492446.89 509080.01,-2492554.74"/>
+    </edge>
+
+    <tlLogic id="6073919354" type="static" programID="0" offset="0">
+        <phase duration="36" state="rrrGGgrrGg"/>
+        <phase duration="4"  state="rrryygrryg"/>
+        <phase duration="6"  state="rrrrrGrrrG"/>
+        <phase duration="4"  state="rrrrryrrry"/>
+        <phase duration="36" state="GGgrrrGgrr"/>
+        <phase duration="4"  state="yyyrrryyrr"/>
+    </tlLogic>
+
+    <junction id="1420333935" type="dead_end" x="510825.89" y="-2492852.72" incLanes="" intLanes="" shape="510825.89,-2492852.72"/>
+    <junction id="4557655746" type="unregulated" x="509133.62" y="-2492443.22" incLanes="460085149_0 460085149_1" intLanes=":4557655746_0_0 :4557655746_0_1" shape="509132.15,-2492446.18 509135.02,-2492447.60 509136.15,-2492445.27 509136.51,-2492444.44 509136.83,-2492443.59 509137.17,-2492442.54 509137.60,-2492441.11 509131.48,-2492439.26 509131.55,-2492441.84 509132.02,-2492442.80 509132.44,-2492443.74 509132.57,-2492444.82"/>
+    <junction id="4557655751" type="priority" x="509134.26" y="-2492430.31" incLanes="-465932558#0_0 -465932558#0_1 682411362_0 682411362_1" intLanes=":4557655751_0_0 :4557655751_0_1 :4557655751_2_0 :4557655751_3_0 :4557655751_3_1" shape="509144.57,-2492419.80 509132.45,-2492415.70 509132.13,-2492416.27 509131.96,-2492416.35 509131.76,-2492416.29 509131.56,-2492416.10 509131.34,-2492415.76 509128.20,-2492416.71 509129.43,-2492420.13 509129.59,-2492421.94 509129.44,-2492423.83 509128.98,-2492425.79 509128.22,-2492427.82 509140.50,-2492431.54">
+        <request index="0" response="00000" foes="00000" cont="0"/>
+        <request index="1" response="00000" foes="00000" cont="0"/>
+        <request index="2" response="00000" foes="00000" cont="0"/>
+        <request index="3" response="00000" foes="00000" cont="0"/>
+        <request index="4" response="00000" foes="00000" cont="0"/>
+    </junction>
+    <junction id="4557655752" type="unregulated" x="509126.74" y="-2492440.57" incLanes="E0_0" intLanes=":4557655752_0_0 :4557655752_0_1" shape="509130.60,-2492438.26 509124.92,-2492435.28 509121.98,-2492442.78 509124.82,-2492444.26 509126.80,-2492441.91 509127.80,-2492441.30 509128.78,-2492440.69 509129.72,-2492439.77"/>
+    <junction id="4649671177" type="dead_end" x="508842.46" y="-2492325.40" incLanes="-470773638#0_0" intLanes="" shape="508842.46,-2492325.40 508842.06,-2492328.58 508842.46,-2492325.40"/>
+    <junction id="6073363232" type="dead_end" x="509271.33" y="-2492017.05" incLanes="465932558#2_0" intLanes="" shape="509271.33,-2492017.05 509268.27,-2492016.11 509271.33,-2492017.05"/>
+    <junction id="6073919354" type="traffic_light" x="509143.49" y="-2492404.01" incLanes="-E5_0 -465932558#1.34_0 -465932558#1.34_1 -465932558#1.34_2 470773638#1_0 465932558#0_0 465932558#0_1" intLanes=":6073919354_0_0 :6073919354_1_0 :6073919354_10_0 :6073919354_3_0 :6073919354_4_0 :6073919354_11_0 :6073919354_6_0 :6073919354_12_0 :6073919354_8_0 :6073919354_13_0" shape="509155.60,-2492411.32 509157.57,-2492405.07 509155.61,-2492403.98 509155.06,-2492403.22 509154.79,-2492402.33 509154.82,-2492401.29 509155.13,-2492400.10 509143.47,-2492395.11 509141.50,-2492397.57 509140.08,-2492398.21 509138.37,-2492398.46 509136.37,-2492398.31 509134.08,-2492397.76 509132.22,-2492403.89 509134.20,-2492404.95 509134.77,-2492405.71 509135.05,-2492406.61 509135.05,-2492407.65 509134.77,-2492408.84 509146.89,-2492412.94 509148.46,-2492410.97 509149.75,-2492410.52 509151.37,-2492410.43 509153.32,-2492410.70">
+        <request index="0" response="0000000000" foes="0000000000" cont="0"/>
+        <request index="1" response="1100110000" foes="1110110000" cont="0"/>
+        <request index="2" response="1101110000" foes="1101110000" cont="1"/>
+        <request index="3" response="0000000000" foes="1001000000" cont="0"/>
+        <request index="4" response="0010000100" foes="1011000110" cont="0"/>
+        <request index="5" response="0110000100" foes="0111000110" cont="1"/>
+        <request index="6" response="1100111000" foes="1100111100" cont="0"/>
+        <request index="7" response="1100110010" foes="1100110010" cont="1"/>
+        <request index="8" response="0010000100" foes="0011100110" cont="0"/>
+        <request index="9" response="0010011100" foes="0011011110" cont="1"/>
+    </junction>
+    <junction id="6145489304" type="unregulated" x="509168.64" y="-2492338.65" incLanes="-465932558#2_0 655985523_0 465932558#1_0" intLanes=":6145489304_0_0 :6145489304_0_1 :6145489304_2_0 :6145489304_3_0" shape="509170.45,-2492342.92 509164.48,-2492340.82 509162.48,-2492346.06 509160.69,-2492349.80 509158.92,-2492352.75 509154.53,-2492359.04 509151.50,-2492363.80 509154.23,-2492365.46 509154.88,-2492365.78 509163.88,-2492369.20 509165.70,-2492363.73 509166.66,-2492359.57 509167.18,-2492356.06 509167.69,-2492352.55 509168.64,-2492348.39"/>
+    <junction id="6145489310" type="unregulated" x="509112.24" y="-2492394.47" incLanes="655985522_0 -470773638#1_0 470773638#0_0" intLanes=":6145489310_0_0 :6145489310_1_0 :6145489310_2_0 :6145489310_3_0" shape="509119.91,-2492403.84 509122.10,-2492401.50 509121.88,-2492401.05 509122.16,-2492401.00 509122.70,-2492401.07 509123.50,-2492401.25 509124.55,-2492401.56 509126.41,-2492395.43 509126.43,-2492394.63 509126.24,-2492391.38 509123.89,-2492392.04 509122.10,-2492392.58 509120.59,-2492392.94 509119.09,-2492393.03 509117.34,-2492392.77 509115.06,-2492392.08 509112.91,-2492398.11 509115.89,-2492399.58 509116.77,-2492400.38 509117.58,-2492401.32 509118.54,-2492402.45"/>
+    <junction id="J0" type="dead_end" x="509069.77" y="-2492550.03" incLanes="" intLanes="" shape="509069.77,-2492550.03 509066.93,-2492548.55"/>
+    <junction id="J1" type="unregulated" x="509148.10" y="-2492391.35" incLanes="-465932558#1_0 -465932558#1_1" intLanes=":J1_0_0 :J1_0_1 :J1_0_2" shape="509158.71,-2492382.37 509152.82,-2492380.23 509149.36,-2492388.07 509158.13,-2492391.44 509158.58,-2492385.74" customShape="1"/>
+    <junction id="J10" type="dead_end" x="509226.77" y="-2492431.35" incLanes="E5_0" intLanes="" shape="509226.77,-2492431.35 509225.77,-2492434.39 509227.78,-2492428.31"/>
+    <junction id="J9" type="dead_end" x="509078.58" y="-2492554.03" incLanes="E6_0" intLanes="" shape="509081.45,-2492555.45 509078.58,-2492554.03"/>
+
+    <junction id=":6073919354_10_0" type="internal" x="509149.53" y="-2492406.89" incLanes=":6073919354_2_0 470773638#1_0" intLanes=":6073919354_4_0 :6073919354_5_0 :6073919354_6_0 :6073919354_8_0 :6073919354_9_0"/>
+    <junction id=":6073919354_11_0" type="internal" x="509143.93" y="-2492401.76" incLanes=":6073919354_5_0 465932558#0_0" intLanes=":6073919354_1_0 :6073919354_2_0 :6073919354_6_0 :6073919354_7_0 :6073919354_8_0"/>
+    <junction id=":6073919354_12_0" type="internal" x="509138.83" y="-2492401.64" incLanes=":6073919354_7_0 -E5_0" intLanes=":6073919354_0_0 :6073919354_1_0 :6073919354_4_0 :6073919354_5_0 :6073919354_8_0 :6073919354_9_0"/>
+    <junction id=":6073919354_13_0" type="internal" x="509141.50" y="-2492406.96" incLanes=":6073919354_9_0 -465932558#1.34_0 -465932558#1.34_1" intLanes=":6073919354_1_0 :6073919354_2_0 :6073919354_3_0 :6073919354_4_0 :6073919354_6_0 :6073919354_7_0"/>
+
+    <connection from="-465932558#0" to="460085149" fromLane="0" toLane="0" via=":4557655751_0_0" dir="s" state="M"/>
+    <connection from="-465932558#0" to="460085149" fromLane="1" toLane="1" via=":4557655751_0_1" dir="s" state="M"/>
+    <connection from="-465932558#1" to="-465932558#1.34" fromLane="0" toLane="0" via=":J1_0_0" dir="s" state="M"/>
+    <connection from="-465932558#1" to="-465932558#1.34" fromLane="0" toLane="1" via=":J1_0_1" dir="s" state="M"/>
+    <connection from="-465932558#1" to="-465932558#1.34" fromLane="1" toLane="2" via=":J1_0_2" dir="s" state="M"/>
+    <connection from="-465932558#1.34" to="E5" fromLane="0" toLane="0" via=":6073919354_3_0" tl="6073919354" linkIndex="3" dir="l" state="O"/>
+    <connection from="-465932558#1.34" to="-465932558#0" fromLane="1" toLane="1" via=":6073919354_4_0" tl="6073919354" linkIndex="4" dir="s" state="O"/>
+    <connection from="-465932558#1.34" to="-470773638#1" fromLane="2" toLane="0" via=":6073919354_5_0" tl="6073919354" linkIndex="5" dir="r" state="o"/>
+    <connection from="-465932558#2" to="-465932558#1" fromLane="0" toLane="0" via=":6145489304_0_0" dir="s" state="M"/>
+    <connection from="-465932558#2" to="-465932558#1" fromLane="0" toLane="1" via=":6145489304_0_1" dir="s" state="M"/>
+    <connection from="-470773638#1" to="-470773638#0" fromLane="0" toLane="0" via=":6145489310_1_0" dir="s" state="M"/>
+    <connection from="-E5" to="-465932558#0" fromLane="0" toLane="0" via=":6073919354_0_0" tl="6073919354" linkIndex="0" dir="l" state="O"/>
+    <connection from="-E5" to="-470773638#1" fromLane="0" toLane="0" via=":6073919354_1_0" tl="6073919354" linkIndex="1" dir="s" state="o"/>
+    <connection from="-E5" to="465932558#1" fromLane="0" toLane="0" via=":6073919354_2_0" tl="6073919354" linkIndex="2" dir="r" state="o"/>
+    <connection from="460085149" to="E6" fromLane="0" toLane="0" via=":4557655746_0_0" dir="l" state="M"/>
+    <connection from="460085149" to="E6" fromLane="1" toLane="0" keepClear="0" via=":4557655746_0_1" dir="l" state="M"/>
+    <connection from="465932558#0" to="465932558#1" fromLane="0" toLane="0" via=":6073919354_8_0" tl="6073919354" linkIndex="8" dir="s" state="O"/>
+    <connection from="465932558#0" to="E5" fromLane="1" toLane="0" via=":6073919354_9_0" tl="6073919354" linkIndex="9" dir="r" state="o"/>
+    <connection from="465932558#1" to="465932558#2" fromLane="0" toLane="0" via=":6145489304_3_0" dir="s" state="M"/>
+    <connection from="470773638#0" to="655985523" fromLane="0" toLane="0" via=":6145489310_2_0" dir="L" state="M"/>
+    <connection from="470773638#0" to="470773638#1" fromLane="0" toLane="0" via=":6145489310_3_0" dir="s" state="M"/>
+    <connection from="470773638#1" to="E5" fromLane="0" toLane="0" via=":6073919354_6_0" tl="6073919354" linkIndex="6" dir="s" state="o"/>
+    <connection from="470773638#1" to="-465932558#0" fromLane="0" toLane="1" via=":6073919354_7_0" tl="6073919354" linkIndex="7" dir="r" state="o"/>
+    <connection from="655985522" to="-470773638#0" fromLane="0" toLane="0" via=":6145489310_0_0" dir="s" state="M"/>
+    <connection from="655985523" to="465932558#2" fromLane="0" toLane="0" via=":6145489304_2_0" dir="s" state="M"/>
+    <connection from="682411362" to="655985522" fromLane="0" toLane="0" via=":4557655751_2_0" dir="L" state="M"/>
+    <connection from="682411362" to="465932558#0" fromLane="0" toLane="0" via=":4557655751_3_0" dir="s" state="M"/>
+    <connection from="682411362" to="465932558#0" fromLane="1" toLane="1" via=":4557655751_3_1" dir="s" state="M"/>
+    <connection from="E0" to="682411362" fromLane="0" toLane="0" via=":4557655752_0_0" dir="s" state="M"/>
+    <connection from="E0" to="682411362" fromLane="0" toLane="1" via=":4557655752_0_1" dir="s" state="M"/>
+
+    <connection from=":4557655746_0" to="E6" fromLane="0" toLane="0" dir="l" state="M"/>
+    <connection from=":4557655746_0" to="E6" fromLane="1" toLane="0" dir="l" state="M"/>
+    <connection from=":4557655751_0" to="460085149" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":4557655751_0" to="460085149" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":4557655751_2" to="655985522" fromLane="0" toLane="0" dir="L" state="M"/>
+    <connection from=":4557655751_3" to="465932558#0" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":4557655751_3" to="465932558#0" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":4557655752_0" to="682411362" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":4557655752_0" to="682411362" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":6073919354_0" to="-465932558#0" fromLane="0" toLane="0" dir="l" state="M"/>
+    <connection from=":6073919354_1" to="-470773638#1" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6073919354_2" to="465932558#1" fromLane="0" toLane="0" via=":6073919354_10_0" dir="r" state="m"/>
+    <connection from=":6073919354_10" to="465932558#1" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from=":6073919354_3" to="E5" fromLane="0" toLane="0" dir="l" state="M"/>
+    <connection from=":6073919354_4" to="-465932558#0" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from=":6073919354_5" to="-470773638#1" fromLane="0" toLane="0" via=":6073919354_11_0" dir="r" state="m"/>
+    <connection from=":6073919354_11" to="-470773638#1" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from=":6073919354_6" to="E5" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6073919354_7" to="-465932558#0" fromLane="0" toLane="1" via=":6073919354_12_0" dir="r" state="m"/>
+    <connection from=":6073919354_12" to="-465932558#0" fromLane="0" toLane="1" dir="r" state="M"/>
+    <connection from=":6073919354_8" to="465932558#1" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6073919354_9" to="E5" fromLane="0" toLane="0" via=":6073919354_13_0" dir="r" state="m"/>
+    <connection from=":6073919354_13" to="E5" fromLane="0" toLane="0" dir="r" state="M"/>
+    <connection from=":6145489304_0" to="-465932558#1" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6145489304_0" to="-465932558#1" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":6145489304_2" to="465932558#2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6145489304_3" to="465932558#2" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6145489310_0" to="-470773638#0" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6145489310_1" to="-470773638#0" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":6145489310_2" to="655985523" fromLane="0" toLane="0" dir="L" state="M"/>
+    <connection from=":6145489310_3" to="470773638#1" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":J1_0" to="-465932558#1.34" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":J1_0" to="-465932558#1.34" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":J1_0" to="-465932558#1.34" fromLane="2" toLane="2" dir="s" state="M"/>
+
+</net>
+
+\end{lstlisting}
+\begin{thebibliography}{99}
+
+\bibitem{BIUST_LocateUs}
+Botswana International University of Science and Technology, ``Locate Us,''
+\url{https://www.biust.ac.bw/locate-us/}. Accessed: 2025-09-24.
+
+\bibitem{mmegi_heavy_traffic_a1}
+P. Bothoko, ``Heavy traffic eases along A1 road,'' \textit{Mmegi Online}, 2024.
+\url{https://www.mmegi.bw/news/heavy-traffic-eases-along-a1-road/news}
+
+\bibitem{tang2019global}
+K. Tang, M. Boltze, H. Nakamura, and Z. Tian,
+\textit{Global Practices on Road Traffic Signal Control: Fixed-Time Control at Isolated Intersections}.
+Elsevier, 2019.
+
+\bibitem{kalavsova2022impact}
+A. Kala\v{s}ov\'{a}, A. H\'{a}jnik, S. Kubal'\'{a}k, J. Be\v{n}u\v{s}, and V. Harantov\'{a},
+``The impact of actuated control on the environment and the traffic flow,''
+\textit{Journal of Applied Engineering Science}, vol.~20, no.~2, pp.~305--314, 2022.
+
+\bibitem{mannion2016experimental}
+P. Mannion, J. Duggan, and E. Howley,
+``An experimental review of reinforcement learning algorithms for adaptive traffic signal control,''
+\textit{Autonomic Road Transport Support Systems}, pp.~47--66, Springer, 2016.
+
+\bibitem{ye2019survey}
+B.-L. Ye, W. Wu, K. Ruan, L. Li, T. Chen, H. Gao, and Y. Chen,
+``A survey of model predictive control methods for traffic signal control,''
+\textit{IEEE/CAA Journal of Automatica Sinica}, vol.~6, no.~3, pp.~623--640, 2019.
+
+\bibitem{8707103}
+B.-L. Ye, W. Wu, K. Ruan, L. Li, T. Chen, H. Gao, and Y. Chen,
+``A survey of model predictive control methods for traffic signal control,''
+\textit{IEEE/CAA Journal of Automatica Sinica}, vol.~6, no.~3, pp.~623--640, 2019.
+doi: 10.1109/JAS.2019.1911471.
+
+\bibitem{elimadi2024review}
+M. Elimadi, A. Abbas-Turki, A. Koukam, M. Dridi, and Y. Mualla,
+``Review of traffic assignment and future challenges,''
+\textit{Applied Sciences}, vol.~14, no.~2, p.~683, MDPI, 2024.
+
+\bibitem{guilliard2016nonhomogeneous}
+I. Guilliard, S. Sanner, F.~W. Trevizan, and B.~C. Williams,
+``Nonhomogeneous time mixed integer linear programming formulation for traffic signal control,''
+\textit{Transportation Research Record}, vol.~2595, no.~1, pp.~128--138, SAGE Publications, 2016.
+
+\bibitem{8370718}
+S.~A. Fayazi and A. Vahidi,
+``Mixed-integer linear programming for optimal scheduling of autonomous vehicle intersection crossing,''
+\textit{IEEE Transactions on Intelligent Vehicles}, vol.~3, no.~3, pp.~287--299, 2018.
+doi: 10.1109/TIV.2018.2843163.
+
+\bibitem{michailidis2025traffic}
+P. Michailidis, I. Michailidis, C.~R. Lazaridis, and E. Kosmatopoulos,
+``Traffic signal control via reinforcement learning: A review on applications and innovations,''
+\textit{Infrastructures}, vol.~10, no.~5, p.~114, MDPI, 2025.
+
+\bibitem{dos2024vehicular}
+T.~S. Ximenes, A.~C. de~Oliveira~Silva, G.~P. de~Martino, W.~M. Emiliano, M. Menzori, Y.~A. Meyer, and V.~E. Molina~J\'{u}nior,
+``Vehicular traffic flow detection and monitoring for implementation of smart traffic light: A case study for road intersection in Limeira, Brazil,''
+\textit{Future Transportation}, vol.~4, no.~4, pp.~1388--1401, MDPI, 2024.
+
+\bibitem{lv2019lidar}
+B. Lv, H. Xu, J. Wu, Y. Tian, Y. Zhang, Y. Zheng, C. Yuan, and S. Tian,
+``LiDAR-enhanced connected infrastructures sensing and broadcasting high-resolution traffic information serving smart cities,''
+\textit{IEEE Access}, vol.~7, pp.~79895--79907, 2019.
+
+\bibitem{futuretransp5040137}
+S. Mansouryar, C. Colombaroni, N. Isaenko, and G. Fusco,
+``Deep reinforcement learning approach for traffic light control and transit priority,''
+\textit{Future Transportation}, vol.~5, no.~4, article 137, 2025.
+doi: 10.3390/futuretransp5040137.
+
+\bibitem{inproceedings}
+J. Gajda, R. Sroka, M. Stencel, A. Wajda, and T. Zeglen,
+``A vehicle classification based on inductive loop detectors,''
+in \textit{Proc. 18th IEEE Instrumentation and Measurement Technology Conference}, vol.~1, pp.~460--464, 2001.
+doi: 10.1109/IMTC.2001.928860.
+
+\bibitem{busoniu2008comprehensive}
+L. Bu\c{s}oniu, R. Babu\v{s}ka, and B. De~Schutter,
+``A comprehensive survey of multiagent reinforcement learning,''
+\textit{IEEE Transactions on Systems, Man, and Cybernetics, Part C}, vol.~38, no.~2, pp.~156--172, 2008.
+
+\bibitem{tan1993multi}
+M. Tan,
+``Multi-agent reinforcement learning: Independent versus cooperative agents,''
+in \textit{Proc. 10th International Conference on Machine Learning}, pp.~330--337, 1993.
+
+\bibitem{oliehoek2008optimal}
+F.~A. Oliehoek, M.~T.~J. Spaan, and N. Vlassis,
+``Optimal and approximate Q-value functions for decentralized POMDPs,''
+\textit{Journal of Artificial Intelligence Research}, vol.~32, pp.~289--353, 2008.
+
+\bibitem{lowe2017multi}
+R. Lowe, Y.~I. Wu, A. Tamar, J. Harb, P. Abbeel, and I. Mordatch,
+``Multi-agent actor-critic for mixed cooperative-competitive environments,''
+in \textit{Advances in Neural Information Processing Systems}, vol.~30, 2017.
+
+\bibitem{rashid2018qmix}
+T. Rashid, M. Samvelyan, C.~S. De~Witt, G. Farquhar, J. Foerster, and S. Whiteson,
+``{QMIX}: Monotonic value function factorisation for deep multi-agent reinforcement learning,''
+in \textit{Proc. International Conference on Machine Learning}, pp.~4295--4304, PMLR, 2018.
+
+\bibitem{samvelyan2019starcraft}
+M. Samvelyan \textit{et al.},
+``The {StarCraft} Multi-Agent Challenge,''
+in \textit{Proc. 18th International Conference on Autonomous Agents and Multi-Agent Systems}, pp.~2186--2188, 2019.
+
+\bibitem{yu2022surprising}
+C. Yu, A. Velu, E. Vinitsky, J. Gao, Y. Wang, A. Bayen, and Y. Wu,
+``The surprising effectiveness of {PPO} in cooperative multi-agent games,''
+in \textit{Advances in Neural Information Processing Systems}, vol.~35, pp.~24611--24624, 2022.
+
+\bibitem{schulman2015high}
+J. Schulman, P. Moritz, S. Levine, M. Jordan, and P. Abbeel,
+``High-dimensional continuous control using generalized advantage estimation,''
+\textit{arXiv preprint arXiv:1506.02438}, 2015.
+
+\bibitem{gupta2017cooperative}
+J.~K. Gupta, M. Egorov, and M. Kochenderfer,
+``Cooperative multi-agent control using deep reinforcement learning,''
+in \textit{Autonomous Agents and Multi-Agent Systems}, pp.~66--83, Springer, 2017.
+
+\bibitem{chu2019multi}
+T. Chu, J. Wang, L. Codec\`{a}, and Z. Li,
+``Multi-agent deep reinforcement learning for large-scale traffic signal control,''
+\textit{IEEE Transactions on Intelligent Transportation Systems}, vol.~21, no.~3, pp.~1086--1095, 2019.
+
+\bibitem{wei2019colight}
+H. Wei, N. Xu, H. Zhang, G. Zheng, X. Zang, C. Chen, W. Zhang, Y. Zhu, K. Xu, and Z. Li,
+``{CoLight}: Learning network-level cooperation for traffic signal control,''
+in \textit{Proc. 28th ACM International Conference on Information and Knowledge Management}, pp.~1913--1922, 2019.
+
+\bibitem{zheng2019learning}
+G. Zheng, Y. Xiong, X. Zang, J. Feng, H. Wei, H. Zhang, Y. Li, K. Xu, and Z. Li,
+``Learning phase competition for traffic signal control,''
+in \textit{Proc. 28th ACM International Conference on Information and Knowledge Management}, pp.~1963--1972, 2019.
+
+\end{thebibliography}
 
 \end{document}

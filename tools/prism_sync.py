@@ -194,7 +194,7 @@ async def watch(tex_file: str, project_url: str):
         sys.exit(1)
 
     async with async_playwright() as p:
-        browser, context = await load_context(p, headless=False)
+        browser, context = await load_context(p, headless=True)
 
         loop    = asyncio.get_event_loop()
         handler = TexHandler(tex_path, loop, context, project_url)
