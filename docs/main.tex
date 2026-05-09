@@ -1130,12 +1130,12 @@ This closed-loop cycle continues for the duration of each episode, enabling the 
 \draw[arrow] (conv)   -- node[right]{\small Yes} (end);
 
 % Loop back: episode not done -> back to obs
-\draw[arrow] (done.east) -- ++(1.6,0) node[above, font=\small]{No}
-    |- ([yshift=0.3cm]obs.north east) -- (obs.north);
+\draw[arrow] (done.east) -- ++(2.2,0) node[above, font=\small]{No}
+    |- ([xshift=2.2cm]obs.east) -- (obs.east);
 
 % Loop back: training not complete -> new episode
 \draw[arrow] (conv.west) -- ++(-1.8,0) node[above, font=\small]{No}
-    |- ([yshift=0.3cm]reset.north west) -- (reset.north);
+    -- ++(0,8.15) -- ([xshift=-1.8cm]reset.west) -- (reset.west);
 
 \end{tikzpicture}
 \caption{PPO--SUMO closed-loop training flowchart via TraCI.}
