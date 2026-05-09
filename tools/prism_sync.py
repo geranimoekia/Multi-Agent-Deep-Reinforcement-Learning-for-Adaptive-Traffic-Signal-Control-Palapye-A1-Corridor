@@ -87,36 +87,32 @@ async def push_to_prism(context: BrowserContext, project_url: str, content: str)
     try:
         print(f"[PRISM] Opening project...")
         await page.goto(project_url, wait_until="domcontentloaded", timeout=30_000)
-
-        # Prism uses Monaco (the VS Code editor). Update the editor model
-        # directly so the document is replaced in one operation.
         await page.locator(".monaco-editor").first.wait_for(timeout=30_000)
-        file_name = parse_qs(urlparse(project_url).query).get("m", [""])[0]
+        await page.wait_for_timeout(8000)
+
+        # Target the ACTIVE editor model — this is the file shown by the URL
+        # (not the largest/smallest model, which may be a different .tex file)
         replaced = await page.evaluate(
             """
-            ({ content, fileName }) => {
-                if (!window.monaco?.editor) return false;
-                const models = window.monaco.editor
-                    .getModels()
-                    .filter((model) => model.getLanguageId() === "latex");
-                if (!models.length) return false;
-
-                const target = fileName === "main.tex"
-                    ? models.reduce((best, model) =>
-                        model.getValueLength() < best.getValueLength() ? model : best
-                      )
-                    : models.find((model) => model.getValue().includes("\\\\documentclass")) || models[0];
-
-                target.setValue(content);
+            ({ content }) => {
+                const editors = window.monaco?.editor?.getEditors() || [];
+                if (!editors.length) return false;
+                const model = editors[0].getModel();
+                if (!model) return false;
+                model.setValue(content);
+                editors[0].focus();
                 return true;
             }
             """,
-            {"content": content, "fileName": file_name},
+            {"content": content},
         )
 
         if not replaced:
-            raise RuntimeError("Could not find a Prism Monaco LaTeX editor model")
+            raise RuntimeError("Could not find active Monaco editor model")
 
+        # Trigger save so Prism persists the change to its server
+        await page.keyboard.press("Control+s")
+        await page.wait_for_timeout(3000)
         print(f"[PRISM] Content pushed ({len(content)} chars)")
 
     except Exception as e:
@@ -167,7 +163,7 @@ async def watch(tex_file: str, project_url: str):
     if not tex_path.exists():
         print(f"[ERROR] File not found: {tex_path}")
         sys.exit(1)
-    if not SESSION_FILE.exists() and not PROFILE_DIR.exists():
+    if not SESSION_FILE.exists():
         print("[ERROR] No saved session. Run:  python prism_sync.py --setup")
         sys.exit(1)
 
@@ -192,10 +188,7 @@ async def watch(tex_file: str, project_url: str):
         finally:
             observer.stop()
             observer.join()
-            if browser is not None:
-                await browser.close()
-            else:
-                await context.close()
+            await browser.close()
 
 
 def main():
