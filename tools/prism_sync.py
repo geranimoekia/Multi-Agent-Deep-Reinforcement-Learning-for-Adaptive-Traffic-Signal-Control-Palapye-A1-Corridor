@@ -44,26 +44,9 @@ async def save_session(context: BrowserContext):
 
 
 async def load_context(playwright, headless: bool = True):
-    if PROFILE_DIR.exists():
-        context = await playwright.chromium.launch_persistent_context(
-            str(PROFILE_DIR),
-            executable_path=VIVALDI_EXE,
-            headless=headless,
-            args=["--disable-blink-features=AutomationControlled"],
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/131.0.0.0 Safari/537.36"
-            ),
-        )
-        await context.add_init_script(
-            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-        )
-        print("[PRISM] Loaded persistent browser profile (Vivaldi)")
-        return None, context
-
     browser = await playwright.chromium.launch(
-        executable_path=VIVALDI_EXE, headless=headless
+        executable_path=VIVALDI_EXE, headless=headless,
+        args=["--disable-blink-features=AutomationControlled"],
     )
     if SESSION_FILE.exists():
         storage = json.loads(SESSION_FILE.read_text())
@@ -79,31 +62,34 @@ async def load_context(playwright, headless: bool = True):
 
 async def setup():
     async with async_playwright() as p:
-        context = await p.chromium.launch_persistent_context(
-            str(PROFILE_DIR),
+        # Use a plain launch so Playwright doesn't pass persistent-context flags
+        # that cause Vivaldi to crash. The user logs in visibly; session is
+        # saved to prism_session.json for reuse in headless pushes.
+        browser = await p.chromium.launch(
             executable_path=VIVALDI_EXE,
             headless=False,
             args=["--disable-blink-features=AutomationControlled"],
+        )
+        context = await browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/131.0.0.0 Safari/537.36"
-            ),
+            )
         )
-        # Hide the navigator.webdriver flag that triggers security warnings
         await context.add_init_script(
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )
 
         page = await context.new_page()
         await page.goto(PRISM_URL)
-        print("\n[PRISM] Browser opened (no automation banner this time).")
+        print("\n[PRISM] Vivaldi opened.")
         print("  1. Log in to your OpenAI account")
         print("  2. Open your Prism project")
         print("  3. Press Enter here when you're ready\n")
         input("Press Enter to save session...")
         await save_session(context)
-        await context.close()
+        await browser.close()
     print("[PRISM] Setup complete. Run the script normally now.")
 
 
