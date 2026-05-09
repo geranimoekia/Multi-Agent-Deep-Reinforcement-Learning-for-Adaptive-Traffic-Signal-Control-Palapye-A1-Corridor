@@ -32,8 +32,6 @@ from playwright.async_api import async_playwright, BrowserContext
 
 PRISM_URL    = "https://prism.openai.com"
 SESSION_FILE = Path("prism_session.json")
-PROFILE_DIR  = Path("prism_profile")
-VIVALDI_EXE  = r"C:\Users\tsotl\AppData\Local\Vivaldi\Application\vivaldi.exe"
 
 # ── Playwright helpers ────────────────────────────────────────────────────────
 
@@ -44,32 +42,22 @@ async def save_session(context: BrowserContext):
 
 
 async def load_context(playwright, headless: bool = True):
-    browser = await playwright.chromium.launch(
-        executable_path=VIVALDI_EXE, headless=headless,
-        args=["--disable-blink-features=AutomationControlled"],
-    )
+    browser = await playwright.chromium.launch(headless=headless)
     if SESSION_FILE.exists():
         storage = json.loads(SESSION_FILE.read_text())
         context = await browser.new_context(storage_state=storage)
-        print("[PRISM] Loaded saved session (Vivaldi)")
+        print("[PRISM] Loaded saved session")
     else:
         context = await browser.new_context()
         print("[PRISM] No saved session — starting fresh")
     return browser, context
 
 
-# ── Setup: one-time login in a stealth browser ───────────────────────────────
+# ── Setup: one-time login ─────────────────────────────────────────────────────
 
 async def setup():
     async with async_playwright() as p:
-        # Use a plain launch so Playwright doesn't pass persistent-context flags
-        # that cause Vivaldi to crash. The user logs in visibly; session is
-        # saved to prism_session.json for reuse in headless pushes.
-        browser = await p.chromium.launch(
-            executable_path=VIVALDI_EXE,
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled"],
-        )
+        browser = await p.chromium.launch(headless=False)
         context = await browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -80,17 +68,16 @@ async def setup():
         await context.add_init_script(
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )
-
         page = await context.new_page()
         await page.goto(PRISM_URL)
-        print("\n[PRISM] Vivaldi opened.")
+        print("\n[PRISM] Browser opened.")
         print("  1. Log in to your OpenAI account")
         print("  2. Open your Prism project")
         print("  3. Press Enter here when you're ready\n")
         input("Press Enter to save session...")
         await save_session(context)
         await browser.close()
-    print("[PRISM] Setup complete. Run the script normally now.")
+    print("[PRISM] Setup complete. Run push_once.py to sync.")
 
 
 # ── Sync: push file content into the Prism editor ────────────────────────────
