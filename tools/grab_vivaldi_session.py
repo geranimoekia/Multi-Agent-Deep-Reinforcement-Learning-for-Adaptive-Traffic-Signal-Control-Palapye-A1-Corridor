@@ -56,9 +56,11 @@ def decrypt_cookie(aes_key: bytes, encrypted_value: bytes) -> str:
         sys.exit("[ERROR] Run: rl_env\\Scripts\\pip.exe install cryptography")
 
     if encrypted_value[:3] == b"v10" or encrypted_value[:3] == b"v11":
-        nonce  = encrypted_value[3:3+12]
-        cipher = encrypted_value[3+12:]
-        return AESGCM(aes_key).decrypt(nonce, cipher, None).decode("utf-8")
+        nonce     = encrypted_value[3:3+12]
+        cipher    = encrypted_value[3+12:]
+        plaintext = AESGCM(aes_key).decrypt(nonce, cipher, None)
+        # Vivaldi prepends 32 bytes of internal metadata before the actual value
+        return plaintext[32:].decode("utf-8")
     # Older DPAPI-encrypted value
     return dpapi_decrypt(encrypted_value).decode("utf-8")
 
@@ -92,10 +94,14 @@ def main():
             "       is_httponly, is_secure, samesite "
             "FROM cookies WHERE host_key LIKE '%openai.com%'"
         )
-        for host, name, enc_val, path, expires, httponly, secure, samesite in cur.fetchall():
+        rows = cur.fetchall()
+        print(f"[INFO] Found {len(rows)} raw cookie rows")
+        for host, name, enc_val, path, expires, httponly, secure, samesite in rows:
             try:
                 value = decrypt_cookie(aes_key, enc_val)
-            except Exception:
+            except Exception as e:
+                prefix = enc_val[:3] if enc_val else b""
+                print(f"  [WARN] Decrypt failed for {name} (prefix={prefix}): {e}")
                 value = ""
             samesite_map = {-1: "None", 0: "None", 1: "Lax", 2: "Strict"}
             cookies.append({
