@@ -33,6 +33,7 @@ from playwright.async_api import async_playwright, BrowserContext
 PRISM_URL    = "https://prism.openai.com"
 SESSION_FILE = Path("prism_session.json")
 PROFILE_DIR  = Path("prism_profile")
+VIVALDI_EXE  = r"C:\Users\tsotl\AppData\Local\Vivaldi\Application\vivaldi.exe"
 
 # ── Playwright helpers ────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ async def load_context(playwright, headless: bool = True):
     if PROFILE_DIR.exists():
         context = await playwright.chromium.launch_persistent_context(
             str(PROFILE_DIR),
+            executable_path=VIVALDI_EXE,
             headless=headless,
             args=["--disable-blink-features=AutomationControlled"],
             user_agent=(
@@ -57,14 +59,16 @@ async def load_context(playwright, headless: bool = True):
         await context.add_init_script(
             "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )
-        print("[PRISM] Loaded persistent browser profile")
+        print("[PRISM] Loaded persistent browser profile (Vivaldi)")
         return None, context
 
-    browser = await playwright.chromium.launch(headless=headless)
+    browser = await playwright.chromium.launch(
+        executable_path=VIVALDI_EXE, headless=headless
+    )
     if SESSION_FILE.exists():
         storage = json.loads(SESSION_FILE.read_text())
         context = await browser.new_context(storage_state=storage)
-        print("[PRISM] Loaded saved session")
+        print("[PRISM] Loaded saved session (Vivaldi)")
     else:
         context = await browser.new_context()
         print("[PRISM] No saved session — starting fresh")
@@ -77,6 +81,7 @@ async def setup():
     async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(
             str(PROFILE_DIR),
+            executable_path=VIVALDI_EXE,
             headless=False,
             args=["--disable-blink-features=AutomationControlled"],
             user_agent=(
