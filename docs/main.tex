@@ -177,14 +177,6 @@ Urban intersections in Palapye experience increased traffic congestion, delays, 
     \item Quantitatively evaluate the MAPPO controller against a single-agent PPO baseline and a conventional fixed-time controller across key traffic performance metrics --- average waiting time, queue length, throughput, and intersection pressure --- under multiple demand scenarios to validate the benefit of multi-agent coordination over single-agent and non-adaptive approaches.
 \end{itemize}
 
-\section{Project scope revision}
-
-The original project scope, as proposed at the start of the final year, included a hardware phase alongside the software and simulation work. The plan was to prototype a physical traffic controller unit --- sensors, a local processor, and output relays --- to complement the simulation results.
-
-During Semester 2, the project supervisor reviewed the direction of the work and approved a change of scope. The hardware implementation was set aside in favour of a more substantive algorithmic contribution: scaling the reinforcement learning system from a single isolated intersection to a coordinated three-intersection network using Multi-Agent Proximal Policy Optimisation (MAPPO). The rationale was that a well-designed multi-agent system addressing the full A1 corridor through Palapye, rather than a single junction, represents a stronger research contribution and is more directly applicable to the real network.
-
-Accordingly, the four original objectives remain valid --- particularly the goals relating to intelligent optimisation algorithms and real-time adaptive control --- but the hardware sensing and output control objectives are reframed as future integration work. The Semester 2 deliverable is the MAPPO multi-intersection system, documented from Chapter~\ref{chap:mappo_system} onward.
-
 \chapter{Literature Review}
 
 \begin{figure}[H]
