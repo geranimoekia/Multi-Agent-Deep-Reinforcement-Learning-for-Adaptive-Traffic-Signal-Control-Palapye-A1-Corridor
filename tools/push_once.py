@@ -5,12 +5,13 @@ from playwright.async_api import async_playwright
 
 SESSION_FILE = Path("prism_session.json")
 PROJECT_URL  = "https://prism.openai.com/?u=f2289688-d3b2-47dd-b269-f06eb24f6f0d&pg=1&m=main.tex"
+VIVALDI_EXE  = r"C:\Users\tsotl\AppData\Local\Vivaldi\Application\vivaldi.exe"
 content = Path("docs/main.tex").read_text(encoding="utf-8")
 
 async def push():
     async with async_playwright() as p:
         storage = json.loads(SESSION_FILE.read_text())
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(executable_path=VIVALDI_EXE, headless=True)
         ctx     = await browser.new_context(storage_state=storage)
         page    = await ctx.new_page()
         print("[PUSH] Navigating...")
