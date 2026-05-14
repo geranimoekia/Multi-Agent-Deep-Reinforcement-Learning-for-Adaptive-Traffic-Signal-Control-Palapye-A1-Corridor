@@ -40,7 +40,7 @@ def main():
     # CHECKPOINT CALLBACK
     # ============================================================
     checkpoint_callback = CheckpointCallback(
-        save_freq=5000,   # save more frequently since 8000 steps is small
+        save_freq=25000,
         save_path=checkpoint_dir,
         name_prefix="ppo_traffic"
     )
@@ -53,7 +53,7 @@ def main():
         eval_env,
         best_model_save_path="./best_model/",
         log_path="./eval_logs/",
-        eval_freq=4000,
+        eval_freq=10000,
         deterministic=True,
         render=False
     )
@@ -79,7 +79,7 @@ def main():
     # ============================================================
     # TRAINING
     # ============================================================
-    TOTAL_TIMESTEPS = 8000
+    TOTAL_TIMESTEPS = 200000
 
     print(f"🚦 Training PPO Agent for {TOTAL_TIMESTEPS} timesteps...")
     model.learn(

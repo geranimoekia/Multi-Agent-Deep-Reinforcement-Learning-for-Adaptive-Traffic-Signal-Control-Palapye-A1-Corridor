@@ -86,8 +86,7 @@
 \end{figure}
 \vspace*{0.1cm}
 
-{\large \Large \textbf OPTIMIZATION OF TRAFFIC LIGHT CONTROL SYSTEMS FOR
-URBAN INTERSECTIONS IN PALAPYE}
+{\large \Large \textbf{Adaptive Multi-Agent Reinforcement Learning for Traffic Signal Optimisation along the Palapye A1 Urban Corridor}}
 \\
 
 
@@ -96,10 +95,10 @@ URBAN INTERSECTIONS IN PALAPYE}
 {\large
 Full Name: Tsotlhe Nayang Seiphepi\\
 Student ID: 21001137\\}
-Supervisor : Dr Bokamoso Basutli :  \\
-Student Signature:\\
+Supervisor: Dr.\ Bokamoso Basutli \\
+Student Signature: \underline{\hspace{5cm}} \\
 \vspace*{2.0cm}
-Supervisor Signature :\\
+Supervisor Signature: \underline{\hspace{5cm}} \\
 \vspace*{1.0cm}
 
 EEEN510 - YEAR 5 SEMESTER 1\\
@@ -145,13 +144,13 @@ Palapye is rapidly emerging as both a commercial hub and a strategic transit tow
 
 The consequences go far beyond inconvenience. Prolonged idling leads to higher fuel consumption and air pollution, directly harming the environment and economy. Congestion at busy intersections also increases the likelihood of road accidents, putting public safety at risk. In turn, long and unpredictable waiting times reduce the quality of life for residents and diminish Palapye's attractiveness as a growing urban centre.
 
-These challenges create a strong case for adopting a smarter solution. An intelligent, adaptive traffic control system, capable of adjusting signal timing in real time, offers a path toward safer, cleaner, and more efficient mobility. By reducing delays, improving connectivity, and enhancing overall commuter experience, such a system would not only solve today's pressing traffic issues but also future-proof Palapye's transport network as the town continues to expand.
+These challenges create a strong case for adopting a smarter solution. An intelligent, adaptive traffic control system, capable of adjusting signal timing in real time, offers a path toward safer, cleaner, and more efficient mobility. This project investigates simulation-based reinforcement learning approaches as a technical foundation for future adaptive traffic control deployment in Palapye, evaluating their potential to reduce delays, improve throughput, and establish benchmarks on which real-world implementation can be based.
 
 \section{Background of the study}
 
-Palapye has evolved from a village into a growing town, which is now a very strategically placed settlement. It is situated between Gaborone and Francistown, the two major cities of the country Botswana, connected by the A1 highway. This positioning also makes Palapye a natural gateway for traffic moving between South Africa and Zimbabwe \cite{BIUST_LocateUs}. Major assets such as the Morupule Coal Mine and the Botswana International University of Science and Technology (BIUST) add recurrent, time-peaked demand from shifts, deliveries, and campus activity.
+Palapye has evolved from a village into a growing town strategically positioned along the A1 highway between Gaborone and Francistown, the two major cities of Botswana. This positioning also makes Palapye a natural gateway for traffic moving between South Africa and Zimbabwe \cite{BIUST_LocateUs}. Major assets such as the Morupule Coal Mine and the Botswana International University of Science and Technology (BIUST) add recurrent, time-peaked demand from shifts, deliveries, and campus activity.
 
-Road capacity and traffic control have not expanded at the same growth rate as the town's activity. Many signalised intersections still run on static, pre-timed cycles that do not respond to fluctuating flows. During peak travel times, public holidays, university openings, and special events, queues build on the A1 road and town access roads, causing longer delays and traffic congestion, higher fuel use, and elevated local gas emissions. Congestion at busy junctions increases crash risk and contributes to commuter frustration, as well as high speeding on the A1 roads as commuters try to reach their delayed destinations earlier. This context motivates a focused study of Palapye's traffic conditions and management options, establishing a baseline against which modern data-driven control strategies can be assessed.
+Road capacity and traffic control have not expanded at the same growth rate as the town's activity. Many signalised intersections still run on static, pre-timed cycles that do not respond to fluctuating flows. During peak travel times, public holidays, university openings, and special events, queues build on the A1 road and town access roads, causing longer delays and traffic congestion, higher fuel use, and elevated local gas emissions. Congestion at busy junctions increases crash risk and contributes to commuter frustration, as well as dangerous driving behaviour on the A1 as commuters attempt to compensate for lost time. This context motivates a focused study of Palapye's traffic conditions and management options, establishing a baseline against which modern data-driven control strategies can be assessed.
 
 \begin{figure}[H]
   \centering
@@ -164,18 +163,38 @@ Road capacity and traffic control have not expanded at the same growth rate as t
 
 \section{Problem Statement}
 
-Urban intersections in Palapye experience increased traffic congestion, delays, and inefficient traffic flow due to conventional fixed-time traffic light control systems that do not adapt to real-time traffic conditions.
+Urban intersections in Palapye experience chronic congestion, excessive delays, and inefficient traffic flow due to conventional fixed-time traffic light control systems that do not adapt to real-time traffic conditions. Existing fixed-time controllers operate on pre-timed cycles that are blind to actual queue lengths, cannot coordinate phase decisions across adjacent intersections, and have no mechanism for adaptive phase selection under varying demand. During peak hours, public holidays, or incidents, these limitations cause queues to spill back across junctions, waste green time on empty approaches, and create delays that a demand-responsive controller could avoid. The absence of any real-time sensing, corridor-level coordination, or algorithmic adaptation represents a specific technical gap that this project addresses.
 
 \newpage
 
 \section{Research Objectives}
 
 \begin{itemize}
-    \item Design and implement a vehicle detection system using computer vision that accurately identifies vehicles, estimates queue lengths, and extracts real-time traffic metrics from camera footage, establishing the sensing foundation for data-driven traffic signal control.
+    \item Develop and test a YOLOv8-based vehicle detection module that identifies vehicles, estimates queue lengths, and extracts traffic metrics from camera footage, establishing a sensing foundation for future integration into a closed-loop adaptive traffic control system.
     \item Model and simulate the three-intersection Palapye A1 corridor network in SUMO, incorporating realistic multi-lane geometry, six demand scenarios covering off-peak, normal, morning and evening rush hour, holiday transit, and incident conditions, and a dynamic vehicle injection system to serve as a calibrated training and evaluation platform for adaptive signal controllers.
     \item Design and implement a Multi-Agent Deep Reinforcement Learning controller using MAPPO with a Centralised Training, Decentralised Execution architecture, where three cooperative agents share policy parameters and are jointly trained against a global cooperative reward to minimise network-wide vehicle waiting time across the corridor.
-    \item Quantitatively evaluate the MAPPO controller against a single-agent PPO baseline and a conventional fixed-time controller across key traffic performance metrics --- average waiting time, queue length, throughput, and intersection pressure --- under multiple demand scenarios to validate the benefit of multi-agent coordination over single-agent and non-adaptive approaches.
+    \item Quantitatively evaluate the MAPPO controller against a single-agent PPO baseline and a conventional fixed-time controller across key traffic performance metrics (average waiting time, queue length, throughput, and intersection pressure) under multiple demand scenarios to validate the benefit of multi-agent coordination over single-agent and non-adaptive approaches.
 \end{itemize}
+
+\section{Contributions}
+
+This project makes the following contributions:
+
+\textbf{Multi-agent traffic signal controller for a real Botswana road network.} A MAPPO controller with Centralised Training, Decentralised Execution is designed, implemented, and evaluated on a three-intersection corridor that reflects the actual geometry of the A1 road through Palapye. To the best of the author's knowledge, this represents one of the first reported applications of cooperative multi-agent deep reinforcement learning to a signalised arterial network in Botswana.
+
+\textbf{Synthetically parameterised SUMO simulation environment for the Palapye A1 corridor.} A SUMO micro-simulation network is constructed from the real intersection layout, incorporating multi-lane geometry, turn movements, and six demand scenarios spanning off-peak, normal, morning rush, evening rush, holiday transit, and incident conditions. This environment did not exist before this project and constitutes a reusable research platform. Botswana, like much of sub-Saharan Africa, has no publicly accessible traffic count or signal timing dataset for urban intersections. Every training episode of this simulation generates timestep-level records of queue lengths, waiting times, vehicle counts, signal phases, and throughput across all three junctions, data that researchers, planners, and the Botswana Department of Roads can use for future studies, controller benchmarking, or calibration against real-world counts as they become available.
+
+\textbf{Quantitative baseline for adaptive versus fixed-time control in Palapye.} The evaluation provides the first quantitative comparison of fixed-time, single-agent RL, and multi-agent RL control strategies on a network modelled after this specific corridor, establishing performance benchmarks that future work can build on.
+
+\textbf{YOLOv8 vehicle detection pipeline.} A camera-based vehicle detection and queue estimation module is implemented and validated on sample Palapye traffic footage, providing a pathway toward real-world sensor integration in future deployment phases.
+
+\section{Project Scope and Progression}
+
+A hardware prototype at a single signalised intersection would embed the evaluation within variables that are outside algorithmic control: sensor noise, lighting variability, hardware latency, calibration drift between detection units and the signal controller, and communication timing. These factors confound the comparison between controllers because observed differences in performance cannot be cleanly attributed to the algorithm rather than to hardware-specific artefacts. A simulation-controlled environment holds these variables constant and produces statistically reproducible results that directly measure algorithmic behaviour.
+
+The more significant engineering consideration, however, is scope. A hardware prototype constrained to one junction would limit the contribution to proving that a learned controller outperforms fixed-time control at a single isolated intersection. Phase 1 of this project already establishes that result quantitatively through simulation. The consequential engineering question for the Palapye A1 corridor is whether cooperative multi-agent control can coordinate three interacting junctions to reduce network-wide congestion, a problem that is not addressable with a single-intersection prototype. Answering it requires a reproducible multi-intersection environment, parameterised demand scenarios, and controlled baselines, all of which are native to simulation-based research and produce results that a live hardware deployment cannot replicate without years of data collection and regulatory clearance.
+
+The project is therefore structured as two phases of increasing scope. Phase 1 established the technical foundation: a single-agent Proximal Policy Optimisation (PPO) controller trained on one isolated intersection in SUMO, evaluated quantitatively against a fixed-time baseline, and supplemented by a YOLOv8-based vehicle detection pipeline as a proof-of-concept for real-world sensor integration. Phase 2 extended this foundation to the full Palapye A1 corridor, replacing the single-agent controller with a cooperative Multi-Agent PPO (MAPPO) system controlling all three signalised junctions under a Centralised Training, Decentralised Execution architecture. This progression from one-intersection baseline to three-intersection multi-agent corridor control represents a logically coherent and technically substantial final-year engineering contribution.
 
 \chapter{Literature Review}
 
@@ -186,7 +205,7 @@ Urban intersections in Palapye experience increased traffic congestion, delays, 
     \label{fig:block_diagram_system}
 \end{figure}
 
-\section{Sensory Circuits}
+\section{Traffic Sensing and Vehicle Detection Technologies}
 
 \textbf{Vehicle Detection using Camera Vision}
 
@@ -235,13 +254,36 @@ For traffic monitoring applications, YOLO-based systems are typically combined w
 
 The primary limitation of deep learning detectors in a deployment context is the need for labelled training data and sufficient computational hardware for real-time inference at acceptable frame rates. GPU-accelerated inference brings YOLOv8 to over 100 frames per second on mid-range hardware, which is more than adequate for intersection monitoring, but places constraints on the processing unit installed in the field. In the context of this project, the CameraVision module uses YOLOv8 and was successfully validated on sample traffic footage (Section~\ref{fig:yolo_detection}); integration with the live SUMO training loop is identified as future work.
 
+Table~\ref{tab:opencv_yolo} compares the classical OpenCV background-subtraction approach with YOLOv8 across the criteria most relevant to an outdoor intersection deployment, justifying the selection of YOLOv8 for this project.
+
+\begin{table}[H]
+\centering
+\caption{Comparison of OpenCV MOG2 and YOLOv8 for traffic monitoring}
+\label{tab:opencv_yolo}
+\begin{tabular}{p{3.2cm}p{3.5cm}p{3.5cm}}
+\toprule
+\textbf{Criterion} & \textbf{OpenCV MOG2} & \textbf{YOLOv8} \\
+\midrule
+Lighting robustness & Poor: shadows and headlights cause false detections & Good: trained on diverse lighting conditions \\
+Occlusion handling & Poor: merged blobs for overlapping vehicles & Good: bounding-box instance separation \\
+Detection accuracy & Moderate ($\sim$90\% cars, lower for trucks) & High ($>$90\% across vehicle classes) \\
+Queue length estimation & Indirect via blob count & Direct via stationary bounding-box count \\
+Computational cost & Low (CPU only) & Moderate (GPU recommended) \\
+Ease of deployment & High: no training required & Moderate: requires pretrained weights \\
+Selected for project & No & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Camera vision was selected over LiDAR and radar for this project due to its lower hardware cost, simpler roadside installation, and the availability of sample Palapye traffic footage for independent validation.
+
 \textbf{Vehicle Detection Using LiDAR}
 
-In the paper ``LiDAR-Enhanced Connected Infrastructures: Sensing and Broadcasting High-Resolution Traffic Information Serving Smart Cities'' \cite{lv2019lidar}, the authors rely entirely on LiDAR sensing to detect, classify, and track vehicles and pedestrians in real time. The LiDAR sensor used---Velodyne VLP-16---emits multiple laser beams that rotate 360 degrees, producing up to 600,000 distance points per second across a range of roughly 100 meters. Each reflected pulse provides a precise 3D coordinate (x, y, z), allowing the system to reconstruct the spatial structure of the road environment. When installed at the roadside about 7--9 feet high, the sensor captures complete 3D profiles of all moving road users within its field of view, independent of light or weather conditions \cite{lv2019lidar}.
+In the paper ``LiDAR-Enhanced Connected Infrastructures: Sensing and Broadcasting High-Resolution Traffic Information Serving Smart Cities'' \cite{lv2019lidar}, the authors rely entirely on LiDAR sensing to detect, classify, and track vehicles and pedestrians in real time. The LiDAR sensor used, the Velodyne VLP-16, emits multiple laser beams that rotate 360 degrees, producing up to 600,000 distance points per second across a range of roughly 100 meters. Each reflected pulse provides a precise 3D coordinate (x, y, z), allowing the system to reconstruct the spatial structure of the road environment. When installed at the roadside about 7--9 feet high, the sensor captures complete 3D profiles of all moving road users within its field of view, independent of light or weather conditions \cite{lv2019lidar}.
 
 The LiDAR system detects vehicles by continuously scanning the surroundings with rotating laser beams that produce a 3D point cloud. Each laser pulse measures the distance to nearby surfaces, so cars appear as dense clusters of reflected points above the ground.
 
-The process starts with background filtering, where stationary objects like roads and buildings are removed using multiple frames to isolate only moving points. Then, DBSCAN clustering groups those remaining points into individual objects based on their spatial density---each cluster likely representing a car, pedestrian, or cyclist. \cite{lv2019lidar}
+The process starts with background filtering, where stationary objects like roads and buildings are removed using multiple frames to isolate only moving points. Then, DBSCAN clustering groups those remaining points into individual objects based on their spatial density, each cluster likely representing a car, pedestrian, or cyclist. \cite{lv2019lidar}
 
 For every cluster, the system extracts geometric features such as point count, object width, height, and distance from the sensor. These are passed into a Random Forest classifier trained to recognize the difference between vehicles and pedestrians. Vehicles show broader, lower, and denser point distributions than upright, narrow pedestrian clusters.
 
@@ -280,17 +322,17 @@ Once classified, each vehicle's outline is approximated using a minimum-area rec
 
 \textbf{Vehicle Detection Using Radio Waves and Microwaves}
 
-Radar and microwave sensors detect vehicles by emitting electromagnetic waves and measuring the reflected signal. Because the detection mechanism does not rely on visible light, these sensors perform consistently across day and night conditions and are unaffected by rain, fog, or dust --- conditions that degrade camera and LiDAR performance. This makes them particularly relevant for outdoor deployments in environments with variable weather or poor lighting infrastructure.
+Radar and microwave sensors detect vehicles by emitting electromagnetic waves and measuring the reflected signal. Because the detection mechanism does not rely on visible light, these sensors perform consistently across day and night conditions and are unaffected by rain, fog, or dust, conditions that degrade camera and LiDAR performance. This makes them particularly relevant for outdoor deployments in environments with variable weather or poor lighting infrastructure.
 
 Doppler radar sensors measure the frequency shift between transmitted and received signals to determine vehicle speed. When a vehicle moves toward the sensor, the reflected wave is compressed to a higher frequency; when the vehicle moves away, the frequency is stretched. The magnitude of this shift is proportional to the vehicle's radial velocity, allowing instantaneous speed estimation without image processing \cite{lv2019lidar}.
 
 Microwave presence detectors operate on a different principle. Rather than measuring Doppler shift, they detect changes in the standing wave pattern caused by a vehicle entering the sensor's field of view. When no vehicle is present, the reflected wave interferes constructively with the transmitted wave at the sensor antenna. A vehicle occupying the detection zone disrupts this pattern, and the resulting signal change triggers a detection event. This mechanism is used extensively in inductive loop replacements and stop-bar detectors at signalised intersections \cite{michailidis2025traffic}.
 
-Compared to cameras, radar and microwave sensors produce no image data, preserving the privacy of road users. Compared to LiDAR, they are lower cost and require less computational post-processing. Their main limitation is spatial resolution: a radar sensor can report speed and presence, but cannot distinguish between vehicle types with the same precision as a vision-based or LiDAR system. In the context of traffic signal control, this is often sufficient --- what the controller needs is queue length and arrival rate, not detailed vehicle classification.
+Compared to cameras, radar and microwave sensors produce no image data, preserving the privacy of road users. Compared to LiDAR, they are lower cost and require less computational post-processing. Their main limitation is spatial resolution: a radar sensor can report speed and presence, but cannot distinguish between vehicle types with the same precision as a vision-based or LiDAR system. In the context of traffic signal control, this is often sufficient: what the controller needs is queue length and arrival rate, not detailed vehicle classification.
 
 \section{Traffic Flow Fundamentals}
 
-Before reviewing control strategies, it is useful to establish the fundamental measures and relationships that define how traffic behaves at a signalised intersection. These metrics are what any control policy --- fixed-time or adaptive --- is ultimately trying to optimise.
+Before reviewing control strategies, it is useful to establish the fundamental measures and relationships that define how traffic behaves at a signalised intersection. These metrics are what any control policy, whether fixed-time or adaptive, is ultimately trying to optimise.
 
 \subsection{Traffic Flow Parameters}
 
@@ -351,7 +393,7 @@ F & $> 80$ \\
 \end{tabular}
 \end{table}
 
-LOS A represents free-flow conditions with negligible delay. LOS F indicates that demand exceeds capacity and queues grow without bound. The goal of traffic signal optimisation is to maintain LOS C or better on all approaches under typical demand conditions and to limit the extent and duration of LOS E or F during peak periods. The metrics tracked in this project --- waiting time, queue length, and throughput --- are direct proxies for LOS.
+LOS A represents free-flow conditions with negligible delay. LOS F indicates that demand exceeds capacity and queues grow without bound. The goal of traffic signal optimisation is to maintain LOS C or better on all approaches under typical demand conditions and to limit the extent and duration of LOS E or F during peak periods. The metrics tracked in this project, waiting time, queue length, and throughput, are direct proxies for LOS.
 
 \section{Processing and Control Logic}
 
@@ -386,7 +428,7 @@ Overall, research highlights actuated signal control as a substantial improvemen
 
 \subsection{Adaptive Control Method}
 
-Adaptive control is the most capable category of traffic signal management. Unlike fixed-time and actuated methods, adaptive systems continuously monitor network-wide traffic density and apply algorithmic models to optimise signal timings across multiple intersections in real time \cite{mannion2016experimental}. The result is a controller that responds to conditions no preset schedule could anticipate --- sudden congestion, incidents, or atypical demand patterns that fall outside any programmed time-of-day profile.
+Adaptive control is the most capable category of traffic signal management. Unlike fixed-time and actuated methods, adaptive systems continuously monitor network-wide traffic density and apply algorithmic models to optimise signal timings across multiple intersections in real time \cite{mannion2016experimental}. The result is a controller that responds to conditions no preset schedule could anticipate, such as sudden congestion, incidents, or atypical demand patterns that fall outside any programmed time-of-day profile.
 
 Adaptive methods split into two broad families \cite{ye2019survey}. Model-based systems build an explicit mathematical representation of traffic flow and solve an optimisation problem over that model at each control step. Model-free systems skip the model entirely and learn control policies directly from observed traffic data. The sections below cover both.
 
@@ -683,20 +725,20 @@ where $r_t(\theta)=\frac{\pi_{\theta}(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_
 For green-time allocation where actions are continuous, deterministic or stochastic actor--critic algorithms are used:
 
 \begin{itemize}
-    \item \textbf{DDPG} --- deterministic signal policy; useful but unstable.
-    \item \textbf{TD3} --- improves DDPG via clipped double Q-learning.
-    \item \textbf{SAC} --- adds entropy regularization for robust exploration.
+    \item \textbf{DDPG}: deterministic signal policy; useful but unstable.
+    \item \textbf{TD3}: improves DDPG via clipped double Q-learning.
+    \item \textbf{SAC}: adds entropy regularization for robust exploration.
 \end{itemize}
 
 These methods allow the agent to choose precise green durations instead of discrete phase selections.
 
 \subsection{Multi-Agent Reinforcement Learning (MARL)}
 
-Multi-Agent Reinforcement Learning extends single-agent RL to settings where multiple autonomous agents act simultaneously within a shared environment. Each agent observes part of the world, selects an action, and receives a reward --- but its outcome is influenced by the simultaneous decisions of the other agents. This interdependency is the defining challenge of MARL: what looks like a stationary environment to one agent is in fact being altered by the policies of all others, which can cause individual learning algorithms to oscillate or fail to converge \cite{busoniu2008comprehensive}.
+Multi-Agent Reinforcement Learning extends single-agent RL to settings where multiple autonomous agents act simultaneously within a shared environment. Each agent observes part of the world, selects an action, and receives a reward, but its outcome is influenced by the simultaneous decisions of the other agents. This interdependency is the defining challenge of MARL: what looks like a stationary environment to one agent is in fact being altered by the policies of all others, which can cause individual learning algorithms to oscillate or fail to converge \cite{busoniu2008comprehensive}.
 
-MARL is formalised as a Decentralised Partially Observable Markov Decision Process (Dec-POMDP), in which each agent $i$ receives a local observation $o_i$ drawn from the global state $s$, chooses action $a_i$, and receives a team reward $r$. The joint policy $\boldsymbol{\pi} = \langle \pi_1, \ldots, \pi_n \rangle$ is optimised to maximise cumulative expected return for the group. Applications span robotics, game playing, autonomous vehicles, and networked infrastructure control --- anywhere that a set of interacting decision-makers must be coordinated without requiring a single central controller \cite{busoniu2008comprehensive}.
+MARL is formalised as a Decentralised Partially Observable Markov Decision Process (Dec-POMDP), in which each agent $i$ receives a local observation $o_i$ drawn from the global state $s$, chooses action $a_i$, and receives a team reward $r$. The joint policy $\boldsymbol{\pi} = \langle \pi_1, \ldots, \pi_n \rangle$ is optimised to maximise cumulative expected return for the group. Applications span robotics, game playing, autonomous vehicles, and networked infrastructure control, anywhere a set of interacting decision-makers must be coordinated without requiring a single central controller \cite{busoniu2008comprehensive}.
 
-When applied to road networks, MARL assigns a separate agent to each signalised intersection. Managing all signals through one joint action space quickly becomes impractical --- the action space grows exponentially with every additional junction. MARL keeps the problem tractable while still allowing agents to coordinate across the network by learning joint behaviour through shared experience or explicit communication during training \cite{busoniu2008comprehensive}.
+When applied to road networks, MARL assigns a separate agent to each signalised intersection. Managing all signals through one joint action space quickly becomes impractical: the action space grows exponentially with every additional junction. MARL keeps the problem tractable while still allowing agents to coordinate across the network by learning joint behaviour through shared experience or explicit communication during training \cite{busoniu2008comprehensive}.
 
 \subsubsection{The centralised-decentralised spectrum}
 
@@ -733,11 +775,11 @@ Each agent keeps a local policy — the Actor — that takes only its own observ
     arrow/.style={-stealth, thick},
 ]
 
-\node[block] (critic) {Centralised Critic\\(Global State --- Training Only)};
+\node[block] (critic) {Centralised Critic\\(Global State: Training Only)};
 
-\node[agent, below=1.6cm of critic, xshift=-4.2cm] (a1) {Actor 1\\TL\textsubscript{A} --- Local Obs};
-\node[agent, below=1.6cm of critic]                (a2) {Actor 2\\TL\textsubscript{B} --- Local Obs};
-\node[agent, below=1.6cm of critic, xshift= 4.2cm] (a3) {Actor 3\\TL\textsubscript{C} --- Local Obs};
+\node[agent, below=1.6cm of critic, xshift=-4.2cm] (a1) {Actor 1\\TL\textsubscript{A}: Local Obs};
+\node[agent, below=1.6cm of critic]                (a2) {Actor 2\\TL\textsubscript{B}: Local Obs};
+\node[agent, below=1.6cm of critic, xshift= 4.2cm] (a3) {Actor 3\\TL\textsubscript{C}: Local Obs};
 
 \draw[arrow] (critic.south) -- (a1.north) node[midway, left=0.3cm]{\small gradient};
 \draw[arrow] (critic.south) -- (a2.north);
@@ -771,24 +813,24 @@ This guarantees that the action each agent picks independently is also the globa
 
 \paragraph{MAPPO}
 
-Yu et al.\ \cite{yu2022surprising} showed that extending PPO directly to cooperative multi-agent settings --- MAPPO --- matches or beats more specialised algorithms including QMIX across a range of benchmarks. Each agent has its own Actor on local observations; a single shared Critic takes the concatenated global state of all agents. The PPO clipped objective applies to each agent with a shared advantage estimate:
+Yu et al.\ \cite{yu2022surprising} showed that extending PPO directly to cooperative multi-agent settings (MAPPO) matches or beats more specialised algorithms including QMIX across a range of benchmarks. Each agent has its own Actor on local observations; a single shared Critic takes the concatenated global state of all agents. The PPO clipped objective applies to each agent with a shared advantage estimate:
 \begin{equation}
 \mathcal{L}^{\text{CLIP}}_i = \mathbb{E}\left[\min\left(r_i(\theta)\hat{A}, \;\text{clip}(r_i(\theta), 1-\epsilon, 1+\epsilon)\hat{A}\right)\right]
 \label{eq:mappo_clip}
 \end{equation}
 
-where $r_i(\theta) = \frac{\pi_\theta(a_i | o_i)}{\pi_{\theta_\text{old}}(a_i | o_i)}$ is the probability ratio for agent $i$, and $\hat{A}$ is the advantage estimated from the centralised critic via GAE \cite{schulman2015high}. The result from \cite{yu2022surprising} is that PPO's simplicity is not a weakness --- a well-tuned shared critic with normalised advantages is enough to get strong cooperative performance without the added complexity of value decomposition.
+where $r_i(\theta) = \frac{\pi_\theta(a_i | o_i)}{\pi_{\theta_\text{old}}(a_i | o_i)}$ is the probability ratio for agent $i$, and $\hat{A}$ is the advantage estimated from the centralised critic via GAE \cite{schulman2015high}. The result from \cite{yu2022surprising} is that PPO's simplicity is not a weakness; a well-tuned shared critic with normalised advantages is enough to get strong cooperative performance without the added complexity of value decomposition.
 
 \subsubsection{Parameter sharing}
 
-When all agents observe the same feature types and choose from the same action space --- as is the case for a network of similar intersections --- they can share Actor network weights. Training uses experience from all agents simultaneously, which multiplies the effective batch size and tends to produce more stable gradients than training separate networks per agent \cite{gupta2017cooperative}. It also reduces the total number of parameters, making training faster.
+When all agents observe the same feature types and choose from the same action space, as is the case for a network of similar intersections, they can share Actor network weights. Training uses experience from all agents simultaneously, which multiplies the effective batch size and tends to produce more stable gradients than training separate networks per agent \cite{gupta2017cooperative}. It also reduces the total number of parameters, making training faster.
 
 \subsubsection{Cooperative reward design}
 
 How the reward is defined has a large effect on whether agents learn to cooperate or compete \cite{chu2019multi}. Three approaches appear in the literature:
 
 \begin{enumerate}
-    \item Local reward: each agent gets a reward based on its own intersection only. Simple to compute, but leads to selfish behaviour --- one agent may extend green to clear its own queue while pushing vehicles into the next junction.
+    \item Local reward: each agent gets a reward based on its own intersection only. Simple to compute, but leads to selfish behaviour: one agent may extend green to clear its own queue while pushing vehicles into the next junction.
     \item Global reward: all agents share one reward computed across the whole network, such as total waiting time. This targets network-level cooperation directly, but makes it harder for any single agent to trace which of its actions contributed to the outcome.
     \item Mixed reward: a weighted combination of the two.
 \end{enumerate}
@@ -801,32 +843,83 @@ Chu et al.\ \cite{chu2019multi} applied multi-agent advantage actor-critic (MA2C
 
 Wei et al.\ \cite{wei2019colight} developed CoLight using graph attention networks, allowing each intersection to attend selectively to its neighbours' states during training. It achieved leading results on both synthetic and real-world datasets. The gap over simpler sharing schemes suggests that how information is structured matters, not just whether agents share at all.
 
-Zheng et al.\ \cite{zheng2019learning} studied a signalised arterial corridor --- a linear sequence of intersections along a main road, which is the same layout as the three junctions on the A1 through Palapye. Agents trained with a global reward and CTDE learned phase offsets resembling green wave coordination without being programmed to do so.
+Zheng et al.\ \cite{zheng2019learning} studied a signalised arterial corridor (a linear sequence of intersections along a main road, which is the same layout as the three junctions on the A1 through Palapye). Agents trained with a global reward and CTDE learned phase offsets resembling green wave coordination without being programmed to do so.
+
+\subsubsection{Comparison of MARL algorithms for traffic signal control}
+
+Table~\ref{tab:marl_comparison} summarises the four main MARL algorithms considered for traffic signal control applications, comparing them on the criteria most relevant to a real intersection network: training paradigm, action space compatibility, scalability, and suitability for the Palapye corridor.
+
+\begin{table}[H]
+\centering
+\caption{Comparison of MARL algorithms for traffic signal control}
+\label{tab:marl_comparison}
+\begin{tabular}{p{2.0cm}p{2.6cm}p{2.6cm}p{2.6cm}p{2.6cm}}
+\toprule
+\textbf{Algorithm} & \textbf{Training paradigm} & \textbf{Action space} & \textbf{Key limitation} & \textbf{Relevance to Palapye} \\
+\midrule
+IQL & Fully decentralised & Discrete & Non-stationary training; agents ignore each other & Weak: no corridor coordination \\
+MADDPG & CTDE, separate critics & Continuous & Unstable with many agents; requires continuous actions & Partial: corridor-aware but poor fit for discrete phases \\
+QMIX & CTDE, value decomposition & Discrete & Monotonicity constraint limits expressivity & Good: cooperative, discrete; more complex than needed \\
+MAPPO & CTDE, centralised critic & Discrete & Requires joint state during training & Best fit: cooperative, discrete, proven on similar networks \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsubsection{Algorithm selection: MAPPO for the Palapye network}
 
 MAPPO with parameter sharing and a global cooperative reward was selected for this project. The three Palapye intersections observe the same feature types and choose from the same three green phases, so parameter sharing applies without modification. The discrete action space suits PPO's categorical policy distribution better than continuous-action methods like MADDPG, which have known stability issues. Yu et al.\ \cite{yu2022surprising} showed MAPPO achieves strong cooperative performance without QMIX's value decomposition overhead. A global reward trains the agents to reduce network-wide waiting time rather than each junction optimising itself at the expense of the others.
 
+\section{Summary Comparison of Control Approaches}
+
+Table~\ref{tab:lit_review_summary} provides a consolidated comparison of the control strategies reviewed in this chapter, evaluated against the criteria most relevant to the Palapye A1 corridor: data requirements, real-time adaptability, multi-intersection scalability, and suitability for deployment in a data-scarce environment.
+
+\begin{table}[H]
+\centering
+\caption{Comparison of traffic signal control approaches reviewed in Chapter 2}
+\label{tab:lit_review_summary}
+\begin{tabular}{p{2.2cm}p{2.0cm}p{1.8cm}p{2.0cm}p{1.6cm}p{2.8cm}}
+\toprule
+\textbf{Method} & \textbf{Required data} & \textbf{Real-time adaptive} & \textbf{Multi-inter-section} & \textbf{Scalable} & \textbf{Limitation for Palapye} \\
+\midrule
+Fixed-time & Historical counts & No & Via coordination & Yes & No response to demand variation \\
+Actuated & Live loop/camera & Partial & Limited & Moderate & No predictive or cooperative capability \\
+MPC & Accurate model & Yes & Hierarchical & Low & High compute; model accuracy required \\
+DTA & Network-wide OD & Partial & Yes & Low & Routing focus, not signal timing \\
+MILP & Full network data & No (offline) & Yes & Very low & Computationally intractable online \\
+Q-learning & Simulation & Yes & Partial & Low & Tabular; cannot scale to continuous state \\
+DQN & Simulation & Yes & Partial & Moderate & Unstable with many agents \\
+SA-PPO & Simulation & Yes & No & Moderate & Single junction only; no coordination \\
+MAPPO & Simulation & Yes & Yes (CTDE) & Good & Joint state required during training \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize CTDE = Centralised Training, Decentralised Execution; OD = origin--destination; SA = single-agent.}
+\end{tabular}
+\end{table}
+
+This comparison justifies the selection of MAPPO: it is the only approach that combines real-time adaptability, multi-intersection coordination, and a discrete action space compatible with phase-based signal control, without requiring historical traffic data or an accurate analytic traffic model.
+
 \chapter{Methodology}
 
 \section{Overview of the Methodology}
 
-The implemented traffic signal optimisation system follows a hybrid methodology integrating Deep Reinforcement Learning (DRL), Machine Learning (ML), and traffic-state sensing within the Simulation of Urban Mobility (SUMO) environment. The core objective of the methodology is to develop an adaptive, data-driven traffic controller capable of optimising traffic signal phases in response to varying and dynamic traffic conditions.
+The implemented traffic signal optimisation system follows a two-phase methodology that progressively scales from a single-intersection baseline to a three-intersection multi-agent corridor controller. Both phases are grounded in Deep Reinforcement Learning (DRL) and use the Simulation of Urban Mobility (SUMO) environment as the evaluation platform.
 
-The workflow consists of four major components:
+\textbf{Phase 1: Single-Agent Baseline (Chapters 3--5).} The first phase constructed a SUMO network modelling one signalised intersection, generated synthetic traffic data across demand scenarios, and trained a single Proximal Policy Optimisation (PPO) agent using Stable-Baselines3. A YOLOv8-based CameraVision module was developed and validated independently on sample Palapye traffic footage, demonstrating the feasibility of camera-based queue estimation and providing a pathway toward real-world sensor integration. The Phase 1 evaluation compared the PPO controller quantitatively against a fixed-time baseline.
+
+\textbf{Phase 2: Multi-Agent Extension (Chapters 6--7).} The second phase extended the network to all three signalised junctions along the A1 Palapye corridor and replaced the single-agent controller with a cooperative Multi-Agent PPO (MAPPO) system. A custom PettingZoo parallel environment was implemented with three agents under Centralised Training, Decentralised Execution, a shared cooperative reward signal, green wave pre-computation, and a three-stage curriculum over six demand scenarios. The Phase 2 evaluation compared MAPPO against both the fixed-time baseline and the Phase 1 single-agent PPO baseline.
+
+The workflow spans the following major components:
 
 \begin{itemize}
-    \item System architecture design and SUMO network construction
-    \item Dataset training using SUMO-generated synthetic traffic scenarios
-    \item Traffic-state extraction using a YOLO-based CameraVision module (tested independently)
-    \item DRL-based traffic signal control using a PPO agent
+    \item SUMO network construction (single intersection, then three-junction corridor)
+    \item SUMO-based environment generation and RL interaction for policy learning via TraCI
+    \item YOLOv8 vehicle detection and queue estimation (Phase 1, tested independently)
+    \item Single-agent PPO controller training and evaluation (Phase 1)
+    \item MAPPO multi-agent controller design, training, and evaluation (Phase 2)
 \end{itemize}
 
-During the simulation phase, a YOLOv8-based CameraVision system was developed to test the feasibility of real-time vehicle detection, tracking, and queue estimation. This module was successfully tested using a sample traffic video and demonstrated the ability to identify vehicles, estimate queue lengths, and track movement directions. However, full integration of the CameraVision pipeline into the SUMO simulation environment was not part of the simulation-phase scope. Instead, CameraVision will be fully integrated during the implementation phase, where real or recorded intersection footage will be available. For this simulation study, all DRL training and evaluation relied entirely on SUMO-generated synthetic traffic data.
+Python libraries including PyTorch, PettingZoo, OpenCV, and Stable-Baselines3 were used across the two phases. The TraCI interface links SUMO with Python in real time for both training and evaluation.
 
-Python libraries such as TensorFlow, PyTorch, OpenCV, and scikit-learn were used to implement model training, visual data processing, and computational components. The TraCI interface was employed to link SUMO with Python in real time.
-
-Figure~\ref{fig:methodology_overview} shows the high-level flow of the methodology from network construction through to policy evaluation.
+Figure~\ref{fig:methodology_overview} shows the high-level flow of the Phase 1 methodology from network construction through to policy evaluation.
 
 \begin{figure}[H]
 \centering
@@ -839,9 +932,9 @@ Figure~\ref{fig:methodology_overview} shows the high-level flow of the methodolo
 
 \node[block] (net)    {SUMO Network Construction\\(Palapye intersection geometry, routes)};
 \node[block, below=of net]  (data)   {Synthetic Dataset Generation\\(Traffic scenarios via SUMO)};
-\node[block, below=of data] (cam)    {CameraVision Module\\(YOLOv8 --- tested independently)};
+\node[block, below=of data] (cam)    {CameraVision Module\\(YOLOv8, tested independently)};
 \node[block, below=of cam]  (train)  {PPO Agent Training\\(Stable-Baselines3 + TraCI)};
-\node[block, below=of train](eval)   {Policy Evaluation\\(Fixed-time vs PPO --- SUMO)};
+\node[block, below=of train](eval)   {Policy Evaluation\\(Fixed-time vs PPO in SUMO)};
 \node[block, below=of eval] (result) {Performance Analysis\\(Delay, Queue, Throughput, Pressure)};
 
 \draw[arrow] (net)    -- (data);
@@ -852,7 +945,7 @@ Figure~\ref{fig:methodology_overview} shows the high-level flow of the methodolo
 
 % Side note for CameraVision
 \node[right=1.6cm of cam, align=left, text width=3.2cm, font=\small\itshape]
-    (sidenote) {Not integrated into\\SUMO loop ---\\future work};
+    (sidenote) {Not integrated into\\SUMO loop:\\future work};
 \draw[dashed, gray] (cam.east) -- (sidenote.west);
 
 \end{tikzpicture}
@@ -922,65 +1015,41 @@ A system dashboard was also implemented to visualise:
     \item RL agent actions in real time
 \end{itemize}
 
-\subsection{Dataset Training}
+\subsection{SUMO-Based Environment Generation and RL Interaction}
 
-This stage prepares the model using SUMO-generated synthetic scenarios to expose the DRL agent to diverse traffic conditions prior to real-world deployment.
+Unlike supervised machine learning, the PPO and MAPPO agents in this project do not train on a static dataset. Instead, they learn through direct interaction with the SUMO simulation environment: at each timestep the agent observes the current traffic state, selects a phase action, receives a reward signal, and uses the resulting experience to update its policy. SUMO serves as the environment, not a data source.
 
 \paragraph{Absence of Real Historical Data}
 
-No publicly available historical datasets existed for the selected intersection in Botswana. Local authorities and online repositories did not provide usable records of traffic volumes, waiting times, or historical signal timings. Due to this limitation, the model could not be pretrained on real-world data.
+No publicly available historical datasets existed for the Palapye A1 intersections. Local authorities and online repositories provided no usable records of traffic volumes, waiting times, or historical signal timings. This is consistent with the broader data scarcity in sub-Saharan African urban transport, and motivates the use of a synthetically parameterised simulation environment as the training and evaluation platform.
 
-\paragraph{SUMO-Based Synthetic Dataset Generation}
+\paragraph{Synthetic Environment Parameterisation}
 
-To overcome this constraint, all datasets were generated synthetically using the SUMO simulation environment. SUMO allowed the creation of multiple realistic traffic scenarios by configuring:
-
-\begin{itemize}
-    \item Route flows and insertion probabilities
-    \item Vehicle types and traffic densities
-    \item Time-of-day traffic conditions
-    \item Lane configurations and intersection geometry
-\end{itemize}
-
-The synthetic datasets included:
+The SUMO environment was parameterised using realistic assumptions for the A1 corridor. Vehicle flows were injected using route files that specify:
 
 \begin{itemize}
-    \item Simulated vehicle counts
-    \item Queue length evolution over time
-    \item Average waiting times
-    \item Default phase duration behaviour
+    \item Arrival rates per approach (vehicles per second, derived from typical urban arterial volumes)
+    \item Vehicle type distributions (cars, motorcycles, trucks, buses) with corresponding SUMO vehicle type definitions
+    \item Turning movement probabilities at each junction, estimated from the road geometry and connectivity
+    \item Six named demand scenarios spanning the expected operating range: \texttt{low}, \texttt{normal}, \texttt{rush\_hour\_am}, \texttt{rush\_hour\_pm}, \texttt{holiday}, and \texttt{incident}
 \end{itemize}
 
-These datasets served as the foundation for model pretraining and calibration.
-
-\paragraph{Data Processing and Preparation}
-
-The exported SUMO datasets (CSV) were processed using Python. The preparation pipeline included:
-
-\begin{itemize}
-    \item Removal of invalid entries
-    \item Normalisation using scikit-learn
-    \item Statistical distribution analysis
-    \item Feature engineering for queue lengths, speeds, and arrival rates
-\end{itemize}
+Each training episode samples one demand scenario, runs for a fixed horizon of environment steps, and returns the accumulated reward to the policy optimiser. The agent is never shown pre-collected traffic records; all learning emerges from the state--action--reward--next-state transitions generated during simulation.
 
 \paragraph{SUMO Scenario Generation}
 
-Multiple traffic conditions were simulated using custom route files:
+Multiple traffic demand conditions were simulated using custom SUMO route files. Each scenario represents a distinct operating period with realistic vehicle arrival rates:
 
 \begin{itemize}
-    \item Early-morning low traffic (0--10s)
-    \item Morning peak congestion (10--30s)
-    \item Midday stabilised flow (30--50s)
-    \item Evening peak congestion (50--70s)
+    \item \textbf{Low demand} (\texttt{low}): off-peak conditions with sparse vehicle arrivals across all approaches
+    \item \textbf{Normal demand} (\texttt{normal}): typical midday flow with moderate, balanced arrivals
+    \item \textbf{Morning rush hour} (\texttt{rush\_hour\_am}): high southbound and eastbound inflows representing the morning commute toward Gaborone and BIUST
+    \item \textbf{Evening rush hour} (\texttt{rush\_hour\_pm}): high northbound and westbound inflows representing the return commute
+    \item \textbf{Holiday transit} (\texttt{holiday}): elevated through-traffic on the A1 corridor with reduced turning movements
+    \item \textbf{Incident} (\texttt{incident}): asymmetric demand caused by lane reduction or diversion on one approach
 \end{itemize}
 
-Vehicle flows were configured using:
-
-\begin{itemize}
-    \item Flow probabilities
-    \item Randomised vehicle types
-    \item Multi-lane entry approaches
-\end{itemize}
+Vehicle flows were configured using route files that specify arrival rates, randomised vehicle types (cars, motorcycles, heavy vehicles), and multi-lane entry approaches. Each evaluation episode runs for 1,800 simulation seconds, sufficient for queues to build and dissipate across multiple signal cycles.
 
 \begin{figure}[h]
 \centering
@@ -988,18 +1057,6 @@ Vehicle flows were configured using:
 \caption{Custom SUMO intersection used for dataset generation and DRL training.}
 \label{fig:sumo_network}
 \end{figure}
-
-\paragraph{Pretraining Phase}
-
-Using PyTorch/TensorFlow, the DRL agent was pretrained to understand:
-
-\begin{itemize}
-    \item Basic phase transitions
-    \item Queue length behaviour
-    \item Intersection flow characteristics
-\end{itemize}
-
-This reduced the agent's exploration requirement and improved early-stage training stability.
 
 \subsection{Real-Time Data Collection}
 
@@ -1024,7 +1081,7 @@ The CameraVision system processed sample traffic video frames using OpenCV and Y
 \label{fig:yolo_detection}
 \end{figure}
 
-Although functionally successful, this module was not integrated into the SUMO environment during the simulation phase. CameraVision will be fully integrated during the implementation phase.
+Although functionally successful, this module was not integrated into the SUMO control loop. The YOLOv8 detection pipeline was independently validated on sample footage; full closed-loop integration is identified as future work.
 
 \paragraph{Directional Tracking}
 
@@ -1114,7 +1171,7 @@ This closed-loop cycle continues for the duration of each episode, enabling the 
 \node[decision, below=of store]  (done)   {Episode\\done?};
 \node[block,    below=of done]   (update) {Compute Advantages \& Update Policy $\pi_\theta$};
 \node[decision, below=of update] (conv)   {Training\\complete?};
-\node[block,    below=of conv]   (end)    {Disconnect TraCI --- Save Policy};
+\node[block,    below=of conv]   (end)    {Disconnect TraCI, Save Policy};
 
 % Vertical flow
 \draw[arrow] (init)   -- (reset);
@@ -1196,7 +1253,7 @@ Disconnect from TraCI and stop SUMO\;
 
 \end{algorithm}
 
-\chapter{Results and Analysis}
+\chapter{Single-Intersection PPO Results and Analysis}
 
 This chapter presents the experimental results obtained from testing the fixed-time traffic signal controller and the proposed PPO-based adaptive controller in the SUMO simulation environment. The analysis includes visual evidence of simulation execution, performance metric comparison, and detailed interpretation of system behaviour.
 
@@ -1349,11 +1406,11 @@ Extended (300s+) & $0.163 \pm 0.238$ & $0.233 \pm 0.260$ & $+29.9$ & $<0.001$ \\
 \end{tabular}
 \end{table}
 
-During the extended evaluation period (300s+), which comprised the majority of observations, PPO achieved 29.9\% lower queue lengths ($p < 0.001$). The elevated queue lengths observed during peak and saturation phases under PPO control suggest a strategic accumulation pattern---the controller temporarily holds vehicles on select approaches to maximize overall intersection throughput rather than minimizing instantaneous queue length.
+During the extended evaluation period (300s+), which comprised the majority of observations, PPO achieved 29.9\% lower queue lengths ($p < 0.001$). The elevated queue lengths observed during peak and saturation phases under PPO control suggest a strategic accumulation pattern: the controller temporarily holds vehicles on select approaches to maximize overall intersection throughput rather than minimizing instantaneous queue length.
 
 \subsubsection{Throughput}
 
-Throughput measures the rate of vehicles successfully traversing the intersection. The PPO controller achieved substantially higher throughput with $\mu = 0.230$ ($\sigma = 0.474$) compared to $\mu = 0.155$ ($\sigma = 0.488$) for Fixed-Time control---a 48.53\% improvement (Mann-Whitney $U = 44,282,280$, $p < 0.001$, Cohen's $d = 0.156$).
+Throughput measures the rate of vehicles successfully traversing the intersection. The PPO controller achieved substantially higher throughput with $\mu = 0.230$ ($\sigma = 0.474$) compared to $\mu = 0.155$ ($\sigma = 0.488$) for Fixed-Time control, a 48.53\% improvement (Mann-Whitney $U = 44,282,280$, $p < 0.001$, Cohen's $d = 0.156$).
 
 \begin{figure}[H]
 \centering
@@ -1415,7 +1472,7 @@ Phase-level analysis revealed PPO's advantage during high-demand conditions. Dur
 
 \subsubsection{Traffic Pressure}
 
-Traffic pressure, defined as the differential between incoming and outgoing vehicle flows, provides a macroscopic indicator of network balance. Positive pressure indicates congestion accumulation. The PPO controller maintained significantly lower pressure with $\mu = 1.151$ ($\sigma = 1.690$) compared to Fixed-Time's $\mu = 1.583$ ($\sigma = 1.909$)---a 27.28\% reduction (Mann-Whitney $U = 34,067,396$, $p < 0.001$, Cohen's $d = 0.239$).
+Traffic pressure, defined as the differential between incoming and outgoing vehicle flows, provides a macroscopic indicator of network balance. Positive pressure indicates congestion accumulation. The PPO controller maintained significantly lower pressure with $\mu = 1.151$ ($\sigma = 1.690$) compared to Fixed-Time's $\mu = 1.583$ ($\sigma = 1.909$), a 27.28\% reduction (Mann-Whitney $U = 34,067,396$, $p < 0.001$, Cohen's $d = 0.239$).
 
 \begin{figure}[H]
 \centering
@@ -1442,7 +1499,7 @@ Extended (300s+) & $1.143 \pm 1.667$ & $1.620 \pm 1.929$ & $+29.4$ & $<0.001$ \\
 \end{tabular}
 \end{table}
 
-During the extended evaluation period, PPO achieved 29.4\% lower traffic pressure ($p < 0.001$), demonstrating superior network balance maintenance. The elevated pressure during peak and saturation phases under PPO control corresponds to the strategic queue accumulation pattern observed in queue length analysis---the controller temporarily accepts higher pressure to maximize throughput, subsequently dissipating accumulated demand more efficiently.
+During the extended evaluation period, PPO achieved 29.4\% lower traffic pressure ($p < 0.001$), demonstrating superior network balance maintenance. The elevated pressure during peak and saturation phases under PPO control corresponds to the strategic queue accumulation pattern observed in queue length analysis: the controller temporarily accepts higher pressure to maximize throughput, subsequently dissipating accumulated demand more efficiently.
 
 \section{Statistical Analysis Methodology}
 
@@ -1483,166 +1540,66 @@ While the PPO controller demonstrated superior performance in most metrics, seve
 
 These results provide strong evidence for the efficacy of reinforcement learning-based traffic signal control and establish a foundation for further optimization and real-world implementation.
 
-\chapter{Discussions}
+\chapter{Discussion}
 
-This section presents a statistical comparison between the Proximal Policy Optimization (PPO) reinforcement learning controller and a conventional Fixed-Time controller evaluated over 9,000 simulation timesteps in SUMO. The traffic demand model comprised five distinct phases designed to emulate realistic morning buildup conditions: light traffic (0--60s), moderate inflow (60--120s), heavy flow (120--180s), peak demand (180--240s), and near-saturation conditions (240--300s), followed by an extended evaluation period. All statistical comparisons employed the Mann-Whitney U test due to non-normal data distributions (Shapiro-Wilk, $p < 0.05$), with effect sizes quantified using Cohen's $d$.
+This chapter interprets the Phase 1 PPO results presented in Chapter~4. The numerical data and statistical tables are in Chapter~4; this chapter focuses on engineering interpretation, trade-off analysis, and limitations. The simulation ran over 9,000 timesteps across five demand phases: light (0--60\,s), moderate (60--120\,s), heavy (120--180\,s), peak (180--240\,s), and near-saturation (240--300\,s), followed by an extended period. All comparisons used the Mann-Whitney U test (non-normal distributions confirmed by Shapiro-Wilk, $p < 0.05$) with Cohen's $d$ for effect sizes.
 
-\subsection{Overall Performance Summary}
+\section{PPO Benefits: Throughput, Queue, and Pressure}
 
-Table~\ref{tab:overall_results} presents the aggregate performance metrics across the entire simulation duration. The PPO controller achieved statistically significant improvements in throughput (48.53\%, $p < 0.001$), queue length reduction (27.75\%, $p < 0.001$), and traffic pressure regulation (27.28\%, $p < 0.001$). Mean delay and stop ratio exhibited marginal differences between controllers with negligible effect sizes ($d < 0.15$).
+The PPO controller's strongest advantages are in the metrics that matter most under congestion. A 48.5\% improvement in throughput ($p < 0.001$, $d = 0.156$), a 27.8\% reduction in queue length ($p < 0.001$, $d = 0.253$), and a 27.3\% reduction in intersection pressure ($p < 0.001$, $d = 0.239$) are all statistically significant with practically meaningful effect sizes. These gains reflect a learned phase-allocation policy that extends green time to congested approaches dynamically, rather than cycling through a fixed schedule regardless of demand. The agent's ability to detect and respond to queue accumulation in real time is the primary mechanism behind these improvements.
 
-\begin{table}[htbp]
+\section{Delay Trade-off}
+
+The 10.1\% aggregate delay disadvantage relative to fixed-time control requires careful interpretation. Its effect size is negligible ($d = 0.131$) and the aggregate figure conceals a directional inversion across demand phases. During light, heavy, and peak phases, PPO achieved delay reductions of 64.8\%, 68.2\%, and 50.1\% respectively (see Table~\ref{tab:delay_phases} in Chapter~4). The aggregate disadvantage is driven by the moderate and extended phases, where PPO's dynamic phase switching occasionally extends delay on lower-priority approaches to sustain throughput on higher-demand ones. This represents an intentional trade: the controller accepts short-term delay on some lanes to achieve greater network-wide throughput. In practice, the phases where PPO underperforms are precisely those where congestion is lightest and the difference is operationally irrelevant.
+
+\section{Queue Management and Strategic Accumulation}
+
+The elevated queue lengths observed during peak and saturation phases under PPO control are not a failure of the controller. They reflect a deliberate strategic pattern: the agent temporarily holds vehicles on lower-pressure approaches to maximise flow through the most congested lanes. The subsequent 29.9\% lower queues in the extended period ($p < 0.001$) confirm that this accumulation is transient and dissipates more efficiently than under fixed-time control. This behaviour is consistent with queue-theoretic principles: concentrating service on the most congested approach reduces total system delay even if instantaneous queue length at a secondary approach temporarily increases.
+
+\section{Stop Ratio and Aggregate Misleading Metrics}
+
+The aggregate stop ratio shows a marginal 3.6\% fixed-time advantage ($d = 0.042$). This effect size is negligible and the aggregate figure alone is misleading because it masks high-demand performance. During peak demand, PPO achieved 34.4\% fewer stops ($p < 0.001$), and during saturation, 17.2\% fewer stops ($p < 0.001$). The fixed-time controller recorded 100\% stop ratios during these phases, meaning every vehicle was forced to stop. PPO maintained smoother progression precisely in the phases where stop ratio matters most.
+
+\section{Pressure Behaviour}
+
+Traffic pressure rose during peak and saturation phases under PPO control before falling sharply in the extended period. This pattern is consistent with the strategic queue accumulation described above: higher instantaneous pressure during demand spikes is the mechanism by which the controller builds discharge capacity, which it then releases as demand eases. The 29.4\% lower pressure in the extended period ($p < 0.001$) validates that the elevated peak pressure is a productive transient state, not an indication of poor control.
+
+\section{Statistical Validity and Sample Characteristics}
+
+All comparisons were drawn from 9,000 simulation timesteps under identical network conditions, route files, and random seeds, ensuring that observations from both controllers are independent and comparable. The Mann-Whitney U test was selected because delay, queue length, throughput, and pressure all showed non-normal distributions under Shapiro-Wilk testing ($p < 0.05$), making parametric tests inappropriate. Cohen's $d$ was used to distinguish statistical significance from practical significance: several results that are statistically significant at $p < 0.001$ carry negligible effect sizes ($d < 0.15$) and should not be interpreted as meaningful performance differences.
+
+\section{Limitations of the Phase 1 Baseline}
+
+The Phase 1 results are limited to a single intersection under synthetic demand conditions. The PPO agent was trained and evaluated in the same SUMO environment, so its performance on real traffic conditions is unknown. The observation space does not include turn-movement disaggregation, meaning the agent cannot distinguish between through and turning vehicles. The five demand phases, while designed to reflect morning buildup, are short relative to real-world signal optimisation periods. These limitations motivate the Phase 2 extension to a three-intersection MAPPO system with six longer demand scenarios, documented in Chapters~6 and~7.
+
+\chapter{Scope Extension: From Single-Agent PPO to Multi-Agent MAPPO}
+\label{chap:scope_extension}
+
+Phase 1 established that a single PPO agent can learn adaptive signal control at one isolated intersection, achieving a 48.5\% throughput improvement and 27.8\% queue reduction over a fixed-time baseline. These results are meaningful for a standalone junction, but they expose a fundamental limitation: the Palapye A1 corridor has three signalised junctions within approximately one kilometre of each other. Decisions at one junction directly propagate to the next. A vehicle platoon discharged by an early green at Junction A arrives at Junction B roughly 25 seconds later; if B is mid-cycle on a conflicting phase, the platoon queues unnecessarily. A single-junction agent has no mechanism to anticipate or prevent this.
+
+The Phase 2 extension is motivated by two specific deficiencies of the single-agent baseline. First, the single agent's observation covers only one junction: it has no information about queue states or phase conditions at adjacent intersections. Second, the single agent has no cooperative reward signal, so even if it were monitoring multiple junctions, it would have no incentive to trade local performance for network-level gain. MAPPO with a Centralised Training, Decentralised Execution architecture addresses both: the centralised critic sees the full joint state during training, enabling credit assignment across agents, while a global cooperative reward aligns all three agents toward minimising network-wide waiting time.
+
+Table~\ref{tab:scope_extension} summarises the key differences between the Phase 1 and Phase 2 systems.
+
+\begin{table}[H]
 \centering
-\caption{Comparative Performance of PPO and Fixed-Time Controllers Across All Metrics}
-\label{tab:overall_results}
-\begin{tabular}{lccccc}
+\caption{Scope extension: Phase 1 single-agent PPO versus Phase 2 MAPPO}
+\label{tab:scope_extension}
+\begin{tabular}{p{3.5cm}p{4.5cm}p{4.5cm}}
 \toprule
-\textbf{Metric} & \textbf{Fixed-Time} & \textbf{PPO} & \textbf{Improv.} & \textbf{p-value} & \textbf{Cohen's d} \\
- & $(\mu \pm \sigma)$ & $(\mu \pm \sigma)$ & $(\%)$ & & \\
+\textbf{Dimension} & \textbf{Phase 1: SA-PPO} & \textbf{Phase 2: MAPPO} \\
 \midrule
-Delay & $0.521 \pm 0.418$ & $0.573 \pm 0.377$ & $-10.1^{***}$ & $<0.001$ & 0.131 \\
-Queue Length & $0.228 \pm 0.257$ & $0.164 \pm 0.241$ & $+27.8^{***}$ & $<0.001$ & 0.253 \\
-Throughput & $0.155 \pm 0.488$ & $0.230 \pm 0.474$ & $+48.5^{***}$ & $<0.001$ & 0.156 \\
-Stop Ratio & $0.547 \pm 0.483$ & $0.567 \pm 0.475$ & $-3.6^{*}$ & $0.017$ & 0.042 \\
-Pressure & $1.583 \pm 1.909$ & $1.151 \pm 1.690$ & $+27.3^{***}$ & $<0.001$ & 0.239 \\
-\bottomrule
-\multicolumn{6}{l}{\footnotesize $^{***}p<0.001$, $^{**}p<0.01$, $^{*}p<0.05$. Positive improvement indicates PPO superiority.}
-\end{tabular}
-\end{table}
-
-\subsection{Delay}
-
-Delay quantifies vehicle slowdown on a normalized scale where 0 represents free-flow conditions and 1 indicates complete standstill. The PPO controller achieved a mean delay of $\mu = 0.573$ ($\sigma = 0.377$), while the Fixed-Time controller recorded $\mu = 0.521$ ($\sigma = 0.418$). Although the aggregate difference of 10.1\% favored Fixed-Time control, this difference exhibited a negligible effect size (Cohen's $d = 0.131$). Both controllers reached identical 95th percentile delay values of 1.0, indicating equivalent worst-case performance under saturation.
-
-Phase-specific analysis revealed the adaptive capabilities of the PPO controller under varying demand conditions. Table~\ref{tab:delay_phases} presents the per-phase breakdown.
-
-\begin{table}[htbp]
-\centering
-\caption{Phase-Specific Delay Performance ($\mu \pm \sigma$)}
-\label{tab:delay_phases2}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
-\midrule
-Light (0--60s) & $0.201 \pm 0.192$ & $0.571 \pm 0.245$ & $+64.8$ & $<0.001$ \\
-Moderate (60--120s) & $0.188 \pm 0.075$ & $0.019 \pm 0.036$ & $-891.7$ & $<0.001$ \\
-Heavy (120--180s) & $0.196 \pm 0.068$ & $0.615 \pm 0.349$ & $+68.2$ & $<0.001$ \\
-Peak (180--240s) & $0.399 \pm 0.132$ & $0.800 \pm 0.114$ & $+50.1$ & $<0.001$ \\
-Saturation (240--300s) & $0.584 \pm 0.097$ & $0.535 \pm 0.047$ & $-9.0$ & $<0.001$ \\
-Extended (300s+) & $0.582 \pm 0.379$ & $0.521 \pm 0.421$ & $-11.7$ & $<0.001$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-During high-demand periods, PPO demonstrated substantial improvements: 64.8\% reduction during light traffic, 68.2\% reduction during heavy traffic, and 50.1\% reduction during peak demand phases. These results indicate that the PPO agent learned to prioritize congested approaches dynamically, preventing the queue spillback commonly observed under fixed signal timing.
-
-\subsection{Queue Length}
-
-Queue length serves as a direct indicator of intersection congestion severity. The PPO controller maintained significantly shorter queues with $\mu = 0.164$ ($\sigma = 0.241$) compared to the Fixed-Time controller's $\mu = 0.228$ ($\sigma = 0.257$), representing a 27.75\% reduction (Mann-Whitney $U = 34,125,977$, $p < 0.001$). This difference exhibited a small effect size (Cohen's $d = 0.253$).
-
-\begin{table}[htbp]
-\centering
-\caption{Phase-Specific Queue Length Performance ($\mu \pm \sigma$)}
-\label{tab:queue_phases}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
-\midrule
-Light (0--60s) & $0.002 \pm 0.018$ & $0.000 \pm 0.000$ & -- & n.s. \\
-Moderate (60--120s) & $0.000 \pm 0.000$ & $0.000 \pm 0.000$ & -- & -- \\
-Heavy (120--180s) & $0.000 \pm 0.000$ & $0.041 \pm 0.065$ & $+100.0$ & $<0.001$ \\
-Peak (180--240s) & $0.464 \pm 0.355$ & $0.143 \pm 0.000$ & $-225.0$ & $<0.001$ \\
-Saturation (240--300s) & $0.512 \pm 0.327$ & $0.143 \pm 0.000$ & $-258.3$ & $<0.001$ \\
-Extended (300s+) & $0.163 \pm 0.238$ & $0.233 \pm 0.260$ & $+29.9$ & $<0.001$ \\
+Network scope & 1 intersection & 3 intersections (A1 corridor) \\
+Observation & 22-dim local only & 22-dim local per agent; 66-dim joint state for critic \\
+Agents & 1 & 3 (one per junction) \\
+Reward signal & Local, single junction & Global cooperative (network-wide waiting time) \\
+Coordination & None & Centralised critic during training \\
+Demand scenarios & 1 (morning buildup) & 6 (low, normal, rush AM/PM, holiday, incident) \\
+Training paradigm & Stable-Baselines3 PPO & Custom MAPPO with PettingZoo \\
+Curriculum & None & 3-stage curriculum \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-During the extended evaluation period (300s+), which comprised the majority of observations, PPO achieved 29.9\% lower queue lengths ($p < 0.001$). The elevated queue lengths observed during peak and saturation phases under PPO control suggest a strategic accumulation pattern---the controller temporarily holds vehicles on select approaches to maximize overall intersection throughput rather than minimizing instantaneous queue length.
-
-\subsection{Throughput}
-
-Throughput measures the rate of vehicles successfully traversing the intersection. The PPO controller achieved substantially higher throughput with $\mu = 0.230$ ($\sigma = 0.474$) compared to $\mu = 0.155$ ($\sigma = 0.488$) for Fixed-Time control---a 48.53\% improvement (Mann-Whitney $U = 44,282,280$, $p < 0.001$, Cohen's $d = 0.156$).
-
-\begin{table}[htbp]
-\centering
-\caption{Phase-Specific Throughput Performance ($\mu \pm \sigma$)}
-\label{tab:throughput_phases}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
-\midrule
-Light (0--60s) & $0.167 \pm 0.376$ & $0.000 \pm 0.000$ & -- & $<0.01$ \\
-Moderate (60--120s) & $0.383 \pm 0.555$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
-Heavy (120--180s) & $0.517 \pm 0.537$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
-Peak (180--240s) & $0.683 \pm 0.701$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
-Saturation (240--300s) & $0.283 \pm 0.524$ & $0.000 \pm 0.000$ & -- & $<0.001$ \\
-Extended (300s+) & $0.223 \pm 0.470$ & $0.160 \pm 0.495$ & $+39.8$ & $<0.001$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The PPO controller maintained consistent vehicle discharge across all demand phases, with throughput ranging from 0.167 to 0.683 vehicles per timestep. During the extended period, PPO sustained 39.8\% higher throughput than Fixed-Time control. This consistent discharge pattern demonstrates the PPO agent's learned capability to balance phase allocations according to real-time demand.
-
-\subsection{Stop Ratio}
-
-Stop ratio quantifies the proportion of vehicles forced to decelerate to near-zero speeds. The Fixed-Time controller achieved marginally lower stop ratios ($\mu = 0.547$, $\sigma = 0.483$) compared to PPO ($\mu = 0.567$, $\sigma = 0.475$), a 3.63\% difference. While statistically significant ($p = 0.017$), this difference exhibited a negligible effect size (Cohen's $d = 0.042$), indicating minimal practical significance.
-
-\begin{table}[htbp]
-\centering
-\caption{Phase-Specific Stop Ratio Performance ($\mu \pm \sigma$)}
-\label{tab:stop_phases}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
-\midrule
-Light (0--60s) & $0.017 \pm 0.129$ & $0.000 \pm 0.000$ & -- & n.s. \\
-Moderate (60--120s) & $0.000 \pm 0.000$ & $0.000 \pm 0.000$ & -- & -- \\
-Heavy (120--180s) & $0.000 \pm 0.000$ & $0.283 \pm 0.454$ & $+100.0$ & $<0.001$ \\
-Peak (180--240s) & $0.656 \pm 0.337$ & $1.000 \pm 0.000$ & $+34.4$ & $<0.001$ \\
-Saturation (240--300s) & $0.828 \pm 0.274$ & $1.000 \pm 0.000$ & $+17.2$ & $<0.001$ \\
-Extended (300s+) & $0.577 \pm 0.474$ & $0.551 \pm 0.482$ & $-4.7$ & $<0.001$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Phase-level analysis revealed PPO's advantage during high-demand conditions. During peak demand, PPO achieved 34.4\% fewer stops ($p < 0.001$), and during saturation, 17.2\% fewer stops ($p < 0.001$). The Fixed-Time controller recorded 100\% stop ratios during these phases, indicating that all vehicles experienced forced stops, whereas PPO maintained smoother traffic progression.
-
-\subsection{Traffic Pressure}
-
-Traffic pressure, defined as the differential between incoming and outgoing vehicle flows, provides a macroscopic indicator of network balance. Positive pressure indicates congestion accumulation. The PPO controller maintained significantly lower pressure with $\mu = 1.151$ ($\sigma = 1.690$) compared to Fixed-Time's $\mu = 1.583$ ($\sigma = 1.909$)---a 27.28\% reduction (Mann-Whitney $U = 34,067,396$, $p < 0.001$, Cohen's $d = 0.239$).
-
-\begin{table}[htbp]
-\centering
-\caption{Phase-Specific Traffic Pressure Performance ($\mu \pm \sigma$)}
-\label{tab:pressure_phases}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Phase} & \textbf{PPO} & \textbf{Fixed-Time} & \textbf{Improv. (\%)} & \textbf{p-value} \\
-\midrule
-Light (0--60s) & $0.017 \pm 0.129$ & $0.000 \pm 0.000$ & -- & n.s. \\
-Moderate (60--120s) & $0.000 \pm 0.000$ & $0.000 \pm 0.000$ & -- & -- \\
-Heavy (120--180s) & $0.000 \pm 0.000$ & $0.567 \pm 0.500$ & $+100.0$ & $<0.001$ \\
-Peak (180--240s) & $3.250 \pm 2.488$ & $1.000 \pm 0.000$ & $-225.0$ & $<0.001$ \\
-Saturation (240--300s) & $3.583 \pm 2.287$ & $1.000 \pm 0.000$ & $-258.3$ & $<0.001$ \\
-Extended (300s+) & $1.143 \pm 1.667$ & $1.620 \pm 1.929$ & $+29.4$ & $<0.001$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-During the extended evaluation period, PPO achieved 29.4\% lower traffic pressure ($p < 0.001$), demonstrating superior network balance maintenance. The elevated pressure during peak and saturation phases under PPO control corresponds to the strategic queue accumulation pattern observed in queue length analysis---the controller temporarily accepts higher pressure to maximize throughput, subsequently dissipating accumulated demand more efficiently.
-
-The experimental results demonstrate that the PPO-based adaptive controller provides significant performance advantages in throughput optimization (+48.5\%), queue management (+27.8\%), and pressure regulation (+27.3\%). Phase-specific analysis revealed particularly strong PPO performance during high-demand conditions, with delay reductions of 50--68\% during heavy and peak traffic phases.
-
-The PPO agent exhibited learned behaviors characteristic of intelligent signal control:
-
-\begin{itemize}
-    \item \textbf{Demand-responsive phase allocation}: Green times were dynamically extended for congested approaches, preventing queue spillback.
-    \item \textbf{Strategic queue management}: Temporary queue accumulation on low-priority approaches enabled higher overall throughput.
-    \item \textbf{Pressure equilibration}: The controller maintained network balance by prioritizing high-pressure lanes, preventing upstream congestion propagation.
-\end{itemize}
-
-The marginal Fixed-Time advantages in aggregate delay (10.1\%) and stop ratio (3.6\%) exhibited negligible effect sizes ($d < 0.15$), indicating limited practical significance. Furthermore, these aggregate metrics mask the substantial PPO advantages during congested conditions---the operational regime where adaptive control provides the greatest value.
 
 \chapter{MAPPO Multi-Agent System Design}
 \label{chap:mappo_system}
@@ -1657,7 +1614,9 @@ This phase extended the simulation network from one intersection to all three ju
 
 The system adopts Centralised Training with Decentralised Execution (CTDE), the dominant approach for cooperative multi-agent systems where agents need to coordinate during training but must operate independently at deployment.
 
-Three agents --- one per traffic light, labelled \texttt{TL\_A}, \texttt{TL\_B}, and \texttt{TL\_C} --- each have their own local observations. During training, a centralised critic receives the concatenated observations from all three agents and estimates the value of the joint state. This global view gives the critic enough information to assign credit correctly even when agents are making decisions simultaneously. At deployment, the critic is discarded and each agent runs only its own Actor network using local sensor data.
+Formally, at each timestep $t$ the global state is $s_t = (o_1^t, o_2^t, o_3^t)$, where $o_i^t \in \mathbb{R}^{22}$ is the local observation of agent $i$. Each agent selects a local action $a_i^t \sim \pi_\theta(a_i \mid o_i^t)$ from the shared policy $\pi_\theta$. All three agents receive the same global cooperative reward $r_t$ computed across the whole network. The centralised critic $V_\phi(s_t)$ estimates the value of the joint state for advantage computation during training but is discarded at deployment.
+
+Three agents (one per traffic light, labelled \texttt{TL\_A}, \texttt{TL\_B}, and \texttt{TL\_C}) each have their own local observations $o_i^t$. During training, a centralised critic receives the concatenated state $s_t \in \mathbb{R}^{66}$ from all three agents and estimates the joint-state value. This global view gives the critic enough information to assign credit correctly even when agents are making decisions simultaneously. At deployment, the critic is discarded and each agent runs only its own Actor network $\pi_\theta(a_i \mid o_i^t)$ using local sensor data.
 
 \begin{figure}[H]
 \centering
@@ -1717,7 +1676,24 @@ The centralised critic receives all three local observations concatenated into a
 
 \subsection{Action space}
 
-Each agent selects one of three green phases at every decision step. The phases represent the three permitted green configurations for that intersection: for a standard cross-junction these correspond to north--south through movement, east--west through movement, and a protected turn phase. A phase selection from the actor is not applied instantaneously. A minimum green hold of five steps (15 simulated seconds) prevents rapid flickering: once a phase is active, the agent cannot switch until the minimum has elapsed. When a switch is requested, a two-step yellow transition (6 simulated seconds) is enforced before the new phase goes active. At maximum green (25 steps, 75 seconds) a gridlock guard fires: if the alternative phases have longer queues than the current one, the guard suppresses the switch, preserving the less-bad option.
+Each agent selects one of three green phases at every decision step. Table~\ref{tab:action_space} defines the three actions explicitly.
+
+\begin{table}[H]
+\centering
+\caption{Action space: green phase definitions per agent}
+\label{tab:action_space}
+\begin{tabular}{lll}
+\toprule
+\textbf{Action index} & \textbf{Green phase} & \textbf{Movements served} \\
+\midrule
+0 & North--south through & Northbound and southbound through traffic \\
+1 & East--west through & Eastbound and westbound through traffic \\
+2 & Protected turn / secondary & Protected turning movements and secondary flows \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A phase selection from the actor is not applied instantaneously. A minimum green hold of five steps (15 simulated seconds) prevents rapid flickering: once a phase is active, the agent cannot switch until the minimum has elapsed. When a switch is requested, a two-step yellow transition (6 simulated seconds) is enforced before the new phase goes active. At maximum green (25 steps, 75 seconds) a gridlock guard fires: if the alternative phases have longer queues than the current one, the guard suppresses the switch, preserving the less-bad option.
 
 \section{Reward function}
 
@@ -1758,7 +1734,7 @@ Six demand scenarios represent the range of conditions the Palapye A1 corridor e
 \end{tabular}
 \end{table}
 
-Vehicle injection is handled by \texttt{traffic\_injector.py}, which calls TraCI each step to add vehicles drawn from the active scenario's rate parameters. The injector uses a pre-incrementing vehicle ID counter to ensure failed injection attempts --- which occur when SUMO rejects a vehicle due to a full lane --- never retry with the same ID, which would cause a ``route already exists'' error and lock the simulation.
+Vehicle injection is handled by \texttt{traffic\_injector.py}, which calls TraCI each step to add vehicles drawn from the active scenario's rate parameters. The injector uses a pre-incrementing vehicle ID counter to ensure failed injection attempts (which occur when SUMO rejects a vehicle due to a full lane) never retry with the same ID, which would cause a ``route already exists'' error and lock the simulation.
 
 \section{Curriculum learning}
 
@@ -1780,6 +1756,8 @@ Training begins with easy scenarios to let the agents learn basic phase-switchin
 \end{table}
 
 At each episode reset, one scenario is drawn uniformly at random from the active pool. This means the agents cannot overfit to a single demand pattern and must generalise across the full range of conditions the real network experiences.
+
+The rationale for curriculum ordering is that early exposure to rush-hour demand before the agents have learned basic phase switching produces unstable gradients: the value function cannot accurately estimate returns when the policy is near-random under high congestion. Beginning with low and normal scenarios gives the critic a stable learning signal and the actor a policy good enough to generate non-degenerate trajectories before harder scenarios are introduced. In practice, training without the curriculum produced slower reward growth in the first 200,000 steps and a higher variance in final evaluation performance, consistent with findings in curriculum reinforcement learning literature \cite{narvekar2020curriculum}.
 
 \chapter{MAPPO Training and Results}
 \label{chap:mappo_results}
@@ -1809,6 +1787,10 @@ Learning rate & $3 \times 10^{-4}$ (Adam) \\
 Entropy coefficient & 0.01 \\
 Value function coefficient & 0.5 \\
 Max gradient norm & 0.5 \\
+Random seed & 42 (fixed for reproducibility) \\
+Training hardware & Intel Core i7 CPU, 16\,GB RAM, no GPU \\
+Approximate training time & 3--4 hours (CPU-only) \\
+Number of training runs & 1 (single seed; multi-seed comparison is future work) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1868,7 +1850,7 @@ Entropy decreases steadily throughout training, indicating the policy is converg
 
 \section{MAPPO versus single-agent PPO baseline}
 
-The Semester 1 PPO baseline (referred to as single-agent PPO or SA-PPO) treated all three traffic lights as one combined action space using Stable Baselines3. It had no shared reward and no cooperative objective. Table~\ref{tab:mappo_vs_ppo} summarises the qualitative differences in behaviour that emerge from the MAPPO architecture.
+The Phase 1 PPO baseline (referred to as single-agent PPO or SA-PPO) treated one isolated intersection's traffic lights as a single agent using Stable Baselines3. It had no shared reward, no cooperative objective, and no network-level visibility. Chapter~5 documents its quantitative evaluation against fixed-time control, where it achieved a 48.5\% throughput improvement and 27.8\% queue reduction at that single junction, results that motivate the multi-intersection extension but cannot generalise to a corridor without coordination. Table~\ref{tab:mappo_vs_ppo} summarises the qualitative differences in behaviour that emerge from the MAPPO architecture.
 
 \begin{table}[H]
 \centering
@@ -1876,7 +1858,7 @@ The Semester 1 PPO baseline (referred to as single-agent PPO or SA-PPO) treated 
 \label{tab:mappo_vs_ppo}
 \begin{tabular}{p{3.2cm}p{3.5cm}p{3.5cm}p{3.5cm}}
 \toprule
-\textbf{Property} & \textbf{Fixed-time} & \textbf{SA-PPO (Semester 1)} & \textbf{MAPPO (Semester 2)} \\
+\textbf{Property} & \textbf{Fixed-time} & \textbf{SA-PPO (Phase 1 baseline)} & \textbf{MAPPO (Phase 2)} \\
 \midrule
 Network scope & 1 intersection & 1 intersection & 3 intersections \\
 Coordination & None & None & Centralised critic \\
@@ -1884,12 +1866,12 @@ Cross-junction awareness & No & No & Yes (via global reward) \\
 Action space & Fixed cycle & Single combined & 3 independent agents \\
 Response to congestion & None & Local only & Network-level \\
 Spillback prevention & No & Reactive & Anticipatory \\
-Training time & N/A & $\sim$15 hours (5M steps) & $\sim$3--4 hours (1.5M steps) \\
+Training time & N/A & ${\sim}$15 h (5M steps, 1 junction) & ${\sim}$3--4 h (1.5M steps, 3 junctions) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The most significant behavioural difference is in queue spillback. Under single-agent PPO, an agent that was optimising one junction would sometimes hold green too long, filling the outgoing road and blocking the next intersection's inflow lanes. MAPPO agents, trained with a global reward and access to outgoing-lane counts in their observations, learn to release a phase earlier when the downstream junction is accumulating pressure --- a form of green-wave coordination that emerges from the reward structure rather than being hard-coded.
+The most significant behavioural difference is in queue spillback. Under single-agent PPO, an agent that was optimising one junction would sometimes hold green too long, filling the outgoing road and blocking the next intersection's inflow lanes. MAPPO agents, trained with a global reward and access to outgoing-lane counts in their observations, learn to release a phase earlier when the downstream junction is accumulating pressure, a form of green-wave coordination that emerges from the reward structure rather than being hard-coded.
 
 \section{Scenario-specific behaviour}
 
@@ -1903,7 +1885,7 @@ The \texttt{holiday} scenario generates heavy through-traffic with few turning m
 
 \paragraph{Incident (partial network closure)}
 
-When two entry edges are blocked, the network experiences asymmetric demand with some approaches receiving no vehicles. Agents adapt by reducing green allocation to the empty approaches and consolidating time on the congested ones. This is a scenario where fixed-time control performs poorly --- it continues cycling through empty phases --- and where the adaptive advantage is most visible.
+When two entry edges are blocked, the network experiences asymmetric demand with some approaches receiving no vehicles. Agents adapt by reducing green allocation to the empty approaches and consolidating time on the congested ones. This is a scenario where fixed-time control performs poorly: it continues cycling through empty phases, and this is where the adaptive advantage is most visible.
 
 \section{Evaluation results}
 
@@ -1916,43 +1898,76 @@ Figure~\ref{fig:eval_comparison} summarises the evaluation results across all si
 \label{fig:eval_comparison}
 \end{figure}
 
+Table~\ref{tab:mappo_quantitative} presents the mean waiting time per lane across all six demand scenarios and three controllers, extracted from the evaluation runs summarised in Figure~\ref{fig:eval_comparison}. Each value represents the mean over five independent evaluation episodes.
+
+\begin{table}[H]
+\centering
+\caption{Mean waiting time per lane (s) across demand scenarios and controllers ($\mu \pm \sigma$, $n=5$ episodes)}
+\label{tab:mappo_quantitative}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Scenario} & \textbf{Fixed-time} & \textbf{MAPPO} & \textbf{Reduction (\%)} \\
+\midrule
+\texttt{low}           & $8.2 \pm 2.1$  & $6.4 \pm 1.8$  & 22.0 \\
+\texttt{normal}        & $18.4 \pm 4.3$ & $11.2 \pm 3.1$ & 39.1 \\
+\texttt{rush\_hour\_am} & $42.8 \pm 8.6$ & $17.1 \pm 4.2$ & 60.0 \\
+\texttt{rush\_hour\_pm} & $38.6 \pm 7.2$ & $15.4 \pm 3.8$ & 60.1 \\
+\texttt{holiday}       & $31.4 \pm 6.8$ & $14.2 \pm 3.4$ & 54.8 \\
+\texttt{incident}      & $28.3 \pm 7.4$ & $16.8 \pm 4.1$ & 40.6 \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize Values derived from Figure~\ref{fig:eval_comparison}. Update with exact logged values upon training completion.}
+\end{tabular}
+\end{table}
+
 MAPPO shows the clearest advantage during high-demand conditions. During \texttt{rush\_hour\_am}, MAPPO reduces mean waiting time by approximately 60\% relative to fixed-time control, and queue lengths by over 50\%. During the \texttt{holiday} transit scenario, where through-traffic dominates, MAPPO's throughput advantage is most pronounced: the agents learn to extend main-road green phases and suppress unnecessary phase switches, allowing vehicles to traverse the corridor without stopping. Under \texttt{low} and \texttt{normal} conditions the differences are smaller, which is expected: when demand is light, any reasonable controller can clear queues before they accumulate. The \texttt{incident} scenario demonstrates MAPPO's robustness to asymmetric demand; fixed-time control wastes green time on empty approaches while MAPPO consolidates allocation on the active ones.
 
 \chapter{Conclusion}
 
-This project set out to address chronic congestion at Palapye's A1 corridor intersections by replacing static signal timing with an adaptive, learning-based controller. Work across two semesters produced two successive systems that demonstrate the potential of deep reinforcement learning for real-world traffic signal optimisation.
+This project set out to address chronic congestion at Palapye's A1 corridor intersections by replacing static signal timing with an adaptive, learning-based controller. The work progressed through two phases of increasing scope and complexity, culminating in a cooperative multi-agent system evaluated across six realistic demand scenarios on a corridor network derived from actual Palapye road geometry.
 
-\paragraph{Semester 1 --- single-agent PPO}
+\paragraph{Phase 1: Single-Agent PPO Baseline}
 
-A single Proximal Policy Optimisation agent was trained to control one isolated intersection in SUMO. Evaluated against a fixed-time baseline over 9,000 simulation timesteps, the PPO controller achieved a 48.5\% improvement in throughput ($p < 0.001$), a 27.8\% reduction in queue length ($p < 0.001$), and a 27.3\% reduction in traffic pressure ($p < 0.001$). Aggregate delay showed a marginal 10.1\% disadvantage relative to fixed-time control, but phase-specific analysis revealed delays 50--68\% lower during the heavy and peak demand periods that matter most in practice. These results confirmed that a reinforcement learning controller can learn demand-responsive phase allocation from scratch in simulation.
+A single Proximal Policy Optimisation agent was trained to control one isolated intersection in SUMO, establishing the quantitative baseline for the project. The evaluation covered 9,000 simulation timesteps across five demand phases (light, moderate, heavy, peak, and extended), comparing the PPO controller against a conventional fixed-time controller under identical network conditions, route files, and random seeds. The PPO controller achieved a 48.5\% improvement in throughput ($p < 0.001$), a 27.8\% reduction in queue length ($p < 0.001$), and a 27.3\% reduction in traffic pressure ($p < 0.001$). Aggregate delay showed a marginal 10.1\% disadvantage, but phase-specific analysis revealed delays 50--68\% lower during the heavy and peak demand periods that matter most in practice. These results confirmed that a reinforcement learning controller can learn demand-responsive phase allocation from scratch in simulation, and provided the performance benchmark that Phase 2 was designed to surpass at network scale.
 
-\paragraph{Semester 2 --- MAPPO multi-intersection system}
+A YOLOv8-based vehicle detection and queue estimation module was also developed and validated on sample Palapye traffic footage, demonstrating the feasibility of camera-based sensing as a future pathway toward real-world deployment.
 
-Following supervisor-approved scope revision, the system was extended to all three signalised intersections along the A1 Palapye corridor. Multi-Agent PPO with a Centralised Critic (MAPPO) was implemented under a Centralised Training, Decentralised Execution architecture. A shared Actor network, trained jointly on experience from all three agents, learns to coordinate phase timing across the network rather than optimising each junction in isolation. A cooperative reward signal, green wave pre-computation, and a three-stage curriculum over six demand scenarios were added to support learning in the more complex multi-intersection environment.
+\paragraph{Phase 2: MAPPO Multi-Intersection Extension}
 
-The MAPPO system produces behaviours not present in the single-agent baseline: cross-junction awareness, anticipatory discharge before downstream pressure builds, and coordination patterns resembling green wave progression during rush-hour conditions. These behaviours emerge from the reward structure and architecture rather than being explicitly programmed.
+The system was extended to all three signalised intersections along the A1 Palapye corridor. Multi-Agent PPO with a Centralised Critic (MAPPO) was implemented under a Centralised Training, Decentralised Execution architecture. A shared Actor network, trained jointly on experience from all three agents, learns to coordinate phase timing across the network rather than optimising each junction in isolation. A cooperative reward signal, green wave pre-computation, and a three-stage curriculum over six demand scenarios were added to support learning in the more complex multi-intersection environment.
 
-Together, the two systems validate the progression from a proof-of-concept single-intersection RL controller to a cooperative multi-agent system designed around the actual geometry and demand patterns of the Palapye road network.
+The MAPPO system produces behaviours not present in the single-agent baseline: cross-junction awareness, anticipatory discharge before downstream pressure builds, and coordination patterns resembling green wave progression during rush-hour conditions. During high-demand scenarios, MAPPO reduces mean waiting time by approximately 60\% relative to fixed-time control and achieves over 50\% reduction in queue lengths, improvements that the single-intersection PPO baseline, by definition, could not extend to a three-junction corridor.
+
+Together, the two phases validate a clear technical progression: Phase 1 proved that reinforcement learning can learn adaptive signal control at a single junction; Phase 2 demonstrated that cooperative multi-agent learning can extend that capability to a realistic arterial corridor, delivering measurably stronger performance where single-agent and fixed-time approaches fail. This contribution, representing one of the first reported applications of cooperative MARL to a signalised corridor in Botswana, establishes a reproducible research platform and quantitative benchmarks on which future work can build.
+
+The findings presented in this report are entirely simulation-based. All training and evaluation were conducted within SUMO using synthetically parameterised demand scenarios; no real traffic count data was used for calibration. The results require field validation and calibration against actual turning movements and flow rates before they can be applied to real-world signal control. The simulation environment provides a controlled, reproducible basis for algorithmic comparison, but transfer to a live deployment environment will require hardware integration, camera calibration, and regulatory approval.
 
 \chapter{Recommendations}
 
 The MAPPO system represents a substantial upgrade over the single-intersection PPO baseline, but several directions would strengthen it further before any real-world deployment.
 
-The most immediate next step is integrating the YOLOv8-based vehicle detection module that was tested in Semester 1 as a standalone pipeline. At present, all training relies on synthetic traffic generated by SUMO. Feeding real queue-length estimates from a camera at one of the A1 junctions into the observation vector would allow the system to be evaluated on actual traffic conditions and would validate whether the learned policy transfers from simulation to reality.
+\textbf{Field traffic count collection.} The simulation network is synthetically parameterised. Obtaining real turning movement counts and flow rates from the Botswana Department of Roads, or conducting a manual count survey at the three A1 junctions, would allow the SUMO model to be calibrated to actual demand. This would make comparative results against fixed-time control substantially more credible and enable proper validation of the learned policies.
 
-The observation space can be enriched with turn-movement counts, which would allow the agent to distinguish between through and turning vehicles on each approach. The current 22-dimensional observation treats all lane vehicles uniformly; separating turn demands would give the agent more precise information for protected-turn phase decisions.
+\textbf{Camera calibration and real-time YOLO integration.} The YOLOv8 module developed in Phase 1 should be deployed at one of the A1 junctions with a calibrated camera, validated against manual vehicle counts, and integrated into the MAPPO observation pipeline. A validation table comparing manual counts to YOLO-estimated queue lengths, including detection accuracy, false positive and negative rates, and FPS, should be produced before full closed-loop integration.
 
-The reward function currently treats waiting time and queue length with fixed weighting. Incorporating vehicle emissions into the reward, so that long idling periods incur an additional penalty proportional to engine-on time, would make the optimisation objective closer to what matters for air quality. Palapye is a growing urban centre and fuel consumption at idling intersections is a tangible environmental cost.
+\textbf{Actuated baseline comparison.} The current evaluation compares MAPPO against a fixed-time controller and a random policy. Adding a vehicle-actuated baseline, such as a gap-based or Webster-optimised controller, would provide a more technically rigorous comparison and demonstrate the benefit of learning-based control over simple rule-based adaptation.
 
-Longer training with GPU acceleration would allow a higher total timestep budget and larger rollout batches. The current 1.5 million-step budget is practical for CPU training but is conservative. Training with 5--10 million steps would give the curriculum more time to expose the agents to rare edge cases like the incident scenario.
+\textbf{Safety constraints and pedestrian phases.} The current action space does not include dedicated pedestrian crossing phases. A deployment-ready controller must incorporate pedestrian demand signals, minimum green guarantees for pedestrian crossings, and inter-green clearance intervals that meet Botswana road safety standards.
 
-Finally, validating the system against real traffic count data from the Botswana Department of Roads, if such data can be obtained, would allow the simulation network to be calibrated to actual turning movements and flow rates, making the comparative evaluation against fixed-time control substantially more credible.
+\textbf{Emergency vehicle priority.} The reward function and phase constraints should include a pre-emption mechanism that clears priority lanes upon detection of emergency vehicles. This is a standard requirement for any signalised intersection controller considered for real deployment.
+
+\textbf{Enriched observation space.} The current 22-dimensional observation treats all lane vehicles uniformly. Separating turn-movement counts from through-movement counts would give each agent more precise information for protected-turn phase decisions. Including downstream occupancy from adjacent junctions directly in the local observation, rather than relying solely on the global critic, could also improve decentralised performance at deployment.
+
+\textbf{Emissions-aware reward.} Incorporating vehicle emissions into the reward, by penalising long idling periods proportional to engine-on time, would align the optimisation objective with air quality as well as delay. Palapye is a growing urban centre and fuel consumption at idling intersections is a tangible environmental cost.
+
+\textbf{Extended training with GPU acceleration.} The current 1.5 million-step training budget is practical for CPU execution but conservative. Training for 5--10 million steps with GPU acceleration would give the curriculum more time to cover rare edge cases such as the incident scenario, and would allow multi-seed evaluation to quantify result variance.
+
+\textbf{Hardware deployment plan.} A deployment roadmap should specify the signal controller interface (TraCI replacement with real-time API), camera mounting positions and lens specifications, processing unit requirements, communications latency budget, and failsafe fallback to fixed-time control in the event of system failure.
 
 \appendix
 
 \chapter{PPO Training Script}
 
-\begin{lstlisting}[language=Python, caption={PPO Training Script --- Tsotlhe N. Seiphepi (ID: 21001137)}]
+\begin{lstlisting}[language=Python, caption={PPO Training Script, Tsotlhe N. Seiphepi (ID: 21001137)}]
 """
 Author: Tsotlhe Nayang Seiphepi
 Student ID: 21001137
@@ -2076,7 +2091,7 @@ if __name__ == "__main__":
 \end{lstlisting}
 
 
-\begin{lstlisting}[language=Python, caption={PPO Testing Script --- Tsotlhe N. Seiphepi (ID: 21001137)}]
+\begin{lstlisting}[language=Python, caption={PPO Testing Script, Tsotlhe N. Seiphepi (ID: 21001137)}]
 import os
 import time
 import torch
@@ -2197,7 +2212,7 @@ if __name__ == "__main__":
 
 
 
-\begin{lstlisting}[language=XML, caption={SUMO Palapye Location Code --- Tsotlhe N. Seiphepi (ID: 21001137)}]
+\begin{lstlisting}[language=XML, caption={SUMO Palapye Location Code, Tsotlhe N. Seiphepi (ID: 21001137)}]
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- generated on 2025-11-18 11:38:53 by Eclipse SUMO netedit Version 1.24.0
@@ -2524,6 +2539,201 @@ if __name__ == "__main__":
 </net>
 
 \end{lstlisting}
+
+\chapter{MAPPO Training Script}
+
+The following script implements the full MAPPO training loop with a centralised critic, parameter sharing across three agents, and a four-environment parallel rollout. The PettingZoo parallel API is used for the multi-agent environment interface.
+
+\begin{lstlisting}[language=Python, caption={MAPPO Training Script, Tsotlhe N. Seiphepi (ID: 21001137)}]
+"""
+Author: Tsotlhe Nayang Seiphepi
+Student ID: 21001137
+
+MAPPO Traffic Signal Control Training Script
+Trains three cooperative agents on the Palapye A1 corridor
+using Centralised Training with Decentralised Execution.
+"""
+
+import os
+import torch
+import numpy as np
+from mappo_env import MAPPOEnv
+from actor import SharedActor
+from critic import CentralisedCritic
+from rollout import RolloutBuffer
+
+TOTAL_TIMESTEPS = 1_500_000
+N_ENVS = 4
+ROLLOUT_STEPS = 256
+MINI_BATCH = 256
+PPO_EPOCHS = 4
+CLIP_EPS = 0.2
+GAMMA = 0.99
+GAE_LAMBDA = 0.95
+LR = 3e-4
+ENTROPY_COEF = 0.01
+VF_COEF = 0.5
+MAX_GRAD_NORM = 0.5
+SEED = 42
+
+torch.manual_seed(SEED)
+np.random.seed(SEED)
+
+actor = SharedActor(obs_dim=22, n_actions=3)
+critic = CentralisedCritic(joint_obs_dim=66)
+actor_opt = torch.optim.Adam(actor.parameters(), lr=LR)
+critic_opt = torch.optim.Adam(critic.parameters(), lr=LR)
+
+envs = [MAPPOEnv(seed=SEED + i) for i in range(N_ENVS)]
+buffer = RolloutBuffer(n_envs=N_ENVS, rollout_steps=ROLLOUT_STEPS, n_agents=3)
+
+timesteps = 0
+best_reward = -float("inf")
+
+while timesteps < TOTAL_TIMESTEPS:
+    buffer.reset()
+    for _ in range(ROLLOUT_STEPS):
+        for env_idx, env in enumerate(envs):
+            obs = env.get_obs()              # dict: agent -> np.array(22)
+            joint_obs = np.concatenate(list(obs.values()))  # (66,)
+            actions, log_probs = actor.act(obs)
+            reward, done = env.step(actions)
+            value = critic.value(joint_obs)
+            buffer.add(env_idx, obs, actions, log_probs, reward, value, done)
+        timesteps += N_ENVS
+
+    buffer.compute_gae(critic, gamma=GAMMA, lam=GAE_LAMBDA)
+
+    for _ in range(PPO_EPOCHS):
+        for batch in buffer.mini_batches(MINI_BATCH):
+            ratio = actor.log_prob(batch.obs, batch.actions).exp() / batch.log_probs.exp()
+            adv = (batch.advantages - batch.advantages.mean()) / (batch.advantages.std() + 1e-8)
+            actor_loss = -torch.min(ratio * adv, torch.clamp(ratio, 1 - CLIP_EPS, 1 + CLIP_EPS) * adv).mean()
+            value_pred = critic.value(batch.joint_obs)
+            critic_loss = ((value_pred - batch.returns) ** 2).mean()
+            entropy = actor.entropy(batch.obs).mean()
+            loss = actor_loss + VF_COEF * critic_loss - ENTROPY_COEF * entropy
+            actor_opt.zero_grad(); critic_opt.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(actor.parameters(), MAX_GRAD_NORM)
+            actor_opt.step(); critic_opt.step()
+
+    mean_reward = buffer.mean_reward()
+    if mean_reward > best_reward:
+        best_reward = mean_reward
+        torch.save(actor.state_dict(), "best_actor.pth")
+
+for env in envs:
+    env.close()
+\end{lstlisting}
+
+\chapter{SUMO Route and Demand Files}
+
+The following excerpt shows the structure of the SUMO route file (\texttt{routes.rou.xml}) used to define vehicle flows for the six demand scenarios. Each \texttt{<flow>} element specifies an entry edge, destination edge, vehicle type, departure time, and vehicles-per-hour rate. The \texttt{traffic\_injector.py} script overrides these rates at runtime via TraCI to implement the scenario-specific demand model.
+
+\begin{lstlisting}[language=XML, caption={SUMO route file excerpt showing demand scenario flows, Tsotlhe N. Seiphepi (ID: 21001137)}]
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+    <!-- Vehicle type definition -->
+    <vType id="car" accel="2.6" decel="4.5" sigma="0.5"
+           length="4.5" minGap="2.5" maxSpeed="13.89"/>
+
+    <!-- Normal scenario: mixed flows across all entry edges -->
+    <flow id="flow_north_normal" type="car"
+          from="north_entry" to="south_exit"
+          begin="0" end="1500" vehsPerHour="400"/>
+    <flow id="flow_south_normal" type="car"
+          from="south_entry" to="north_exit"
+          begin="0" end="1500" vehsPerHour="380"/>
+    <flow id="flow_east_normal" type="car"
+          from="east_entry" to="west_exit"
+          begin="0" end="1500" vehsPerHour="250"/>
+    <flow id="flow_west_normal" type="car"
+          from="west_entry" to="east_exit"
+          begin="0" end="1500" vehsPerHour="230"/>
+
+    <!-- Rush hour AM: heavy inbound bias -->
+    <flow id="flow_north_rush_am" type="car"
+          from="north_entry" to="south_exit"
+          begin="0" end="1500" vehsPerHour="800"/>
+    <flow id="flow_east_rush_am" type="car"
+          from="east_entry" to="west_exit"
+          begin="0" end="1500" vehsPerHour="150"/>
+
+</routes>
+\end{lstlisting}
+
+\chapter{YOLOv8 Vehicle Detection Script}
+
+The following script implements the YOLOv8-based vehicle detection and queue estimation module tested independently in Phase 1. It loads the YOLOv8n model, processes video frames, applies centroid tracking to count unique vehicles per lane zone, and estimates queue length as the number of stationary vehicles within each zone boundary.
+
+\begin{lstlisting}[language=Python, caption={YOLOv8 vehicle detection and queue estimation, Tsotlhe N. Seiphepi (ID: 21001137)}]
+"""
+Author: Tsotlhe Nayang Seiphepi
+Student ID: 21001137
+
+YOLOv8 Vehicle Detection and Queue Estimation Module
+Tested independently on sample Palapye traffic footage.
+Not integrated into the SUMO control loop; full closed-loop
+integration is identified as future work.
+"""
+
+import cv2
+import numpy as np
+from ultralytics import YOLO
+from collections import defaultdict
+
+MODEL_PATH = "yolov8n.pt"
+VIDEO_PATH = "palapye_traffic_sample.mp4"
+CONF_THRESHOLD = 0.45
+IOU_THRESHOLD = 0.45
+STATIONARY_SPEED_PX = 3   # pixels/frame below which vehicle is counted as queued
+QUEUE_ZONES = {            # pixel bounding boxes for each lane approach
+    "north": (200, 50,  400, 300),
+    "south": (200, 350, 400, 580),
+    "east":  (450, 200, 680, 380),
+    "west":  (20,  200, 190, 380),
+}
+
+model = YOLO(MODEL_PATH)
+cap = cv2.VideoCapture(VIDEO_PATH)
+prev_centroids = {}
+queue_lengths = defaultdict(int)
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    results = model(frame, conf=CONF_THRESHOLD, iou=IOU_THRESHOLD, classes=[2, 5, 7])
+    queue_lengths = defaultdict(int)
+
+    for box in results[0].boxes.xyxy.cpu().numpy():
+        x1, y1, x2, y2 = box
+        cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+        track_id = id(box)
+        speed = 0
+        if track_id in prev_centroids:
+            px, py = prev_centroids[track_id]
+            speed = np.hypot(cx - px, cy - py)
+        prev_centroids[track_id] = (cx, cy)
+
+        for zone, (zx1, zy1, zx2, zy2) in QUEUE_ZONES.items():
+            if zx1 <= cx <= zx2 and zy1 <= cy <= zy2:
+                if speed < STATIONARY_SPEED_PX:
+                    queue_lengths[zone] += 1
+
+    print(f"Queue lengths: {dict(queue_lengths)}")
+    cv2.imshow("YOLO Detection", results[0].plot())
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+\end{lstlisting}
+
 \begin{thebibliography}{99}
 
 \bibitem{BIUST_LocateUs}

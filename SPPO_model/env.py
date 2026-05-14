@@ -36,13 +36,13 @@ class SumoEnv(Env):
 
         # ==== Incoming lanes for TL 6073919354 ====
         self.incoming_lanes = [
-            "-E5_0",                    # WEST → TL
-            "-465932558#1.34_0",        # NORTH Left
-            "-465932558#1.34_1",        # NORTH Middle
-            "-465932558#1.34_2",        # NORTH Right
-            "470773638#1_0",            # EAST → TL
-            "465932558#0_0",            # SOUTH Lane 1
-            "465932558#0_1",            # SOUTH Lane 2
+            "-E5_0",                    # EAST → TL  (E5 building access, exits via -E5)
+            "-465932558#1.34_0",        # NORTH lane 0 (left-turn only, dead — no feeder)
+            "-465932558#1.34_1",        # NORTH lane 1 (straight, Phase 9)
+            "-465932558#1.34_2",        # NORTH lane 2 (right-turn, Phase 6)
+            "470773638#1_0",            # WEST → TL  (side road, Phase 12)
+            "465932558#0_0",            # SOUTH lane 0 (straight, Phase 9)
+            "465932558#0_1",            # SOUTH lane 1 (right-turn to E5, Phase 6)
         ]
 
         # ==== Outgoing lanes ====
@@ -57,13 +57,20 @@ class SumoEnv(Env):
         # Traffic light ID
         self.tl_id = "6073919354"
 
-        # ==== Action Space: high-level green phases only ====
-        # Map RL action indices (0..4) -> actual SUMO green phase indices
-        self.phase_map = [0, 3, 6, 9, 12]
+        # ==== Action Space: active green phases only ====
+        # Phase 3 (NORTH left turn to E5) is excluded: no vehicles can reach lane 0
+        # of -465932558#1.34 from the upstream connections, making it a dead phase.
+        # Map RL action indices (0..3) -> actual SUMO green phase indices
+        self.phase_map = [0, 6, 9, 12]
         self.action_space = Discrete(len(self.phase_map))
 
-        # ==== Observation: queue length per lane ====
-        self.observation_space = Box(low=0, high=200, shape=(7,), dtype=np.float32)
+        # ==== Observation space ====
+        # Per lane: halting count (queue) + max accumulated waiting time
+        # Global:   current phase (one-hot, 4 phases) + time since last switch
+        n_lanes = len(self.incoming_lanes)
+        n_phases = len(self.phase_map)
+        obs_dim = n_lanes * 2 + n_phases + 1   # 7*2 + 4 + 1 = 19
+        self.observation_space = Box(low=0.0, high=1.0, shape=(obs_dim,), dtype=np.float32)
 
         # timing / episode control
         self.step_length = step_length
@@ -73,7 +80,7 @@ class SumoEnv(Env):
         # safety / timing (SLOW mode defaults)
         self.yellow_duration = 4   # seconds of yellow
         self.red_duration = 3      # seconds of all-red (intergreen)
-        self.min_green_time = 8    # minimum time to hold a green before switching
+        self.min_green_time = 20   # minimum time to hold a green before switching
 
         # bookkeeping
         self._step_count = 0
@@ -85,28 +92,47 @@ class SumoEnv(Env):
         self.MAX_THROUGHPUT = 20.0
         self.MAX_PRESSURE = 40.0
 
-        # Phase dictionaries that match your SUMO tlLogic XML (explicit)
-        # GREEN_PHASES = [0, 3, 6, 9, 12]
-        self.YELLOW_MAP = {0: 1, 3: 4, 6: 7, 9: 10, 12: 13}
-        self.RED_MAP = {0: 2, 3: 5, 6: 8, 9: 11, 12: 14}
+        # Phase transition maps for programID="fixed" in tls.add.xml
+        # GREEN_PHASES active = [0, 6, 9, 12]  (Phase 3 removed — dead phase)
+        self.YELLOW_MAP = {0: 1, 6: 7, 9: 10, 12: 13}
+        self.RED_MAP    = {0: 2, 6: 8, 9: 11, 12: 14}
 
         # Reverse map: any phase index -> its green group base
         self.GROUP_MAP = {
-            0: 0, 1: 0, 2: 0,
-            3: 3, 4: 3, 5: 3,
-            6: 6, 7: 6, 8: 6,
-            9: 9, 10: 9, 11: 9,
-            12: 12, 13: 12, 14: 12
+            0: 0,  1: 0,  2: 0,
+            6: 6,  7: 6,  8: 6,
+            9: 9,  10: 9, 11: 9,
+            12: 12, 13: 12, 14: 12,
+            # Phase 3 group still mapped so setPhase calls don't crash if SUMO
+            # is mid-transition when we read the current phase
+            3: 0,  4: 0,  5: 0,
         }
+
+        # Signal sequencing — clear turning queues before straight phases.
+        # Right-turn lanes on the SOUTH and NORTH approaches share upstream space
+        # with through lanes. When their queue grows long enough it physically
+        # blocks straight vehicles even while their green is active.
+        # Fix: if the turning queue exceeds the threshold, run Phase 6 (turns)
+        # for turn_clear_duration steps before switching to Phase 9 (straight).
+        self.STRAIGHT_PHASES     = {9}
+        self.TURN_CLEAR_PHASE    = 6
+        self.TURN_BLOCKING_LANES = [
+            "-465932558#1.34_2",  # NORTH right-turn  → can block NORTH straight
+            "465932558#0_1",      # SOUTH right-turn  → can block SOUTH straight
+        ]
+        self.turn_clear_threshold = 3   # halting vehicles needed to trigger clearing
+        self.turn_clear_duration  = 15  # steps to hold turn-clear phase
 
     # ============================
     # START SUMO
     # ============================
     def start_sumo(self):
-        if self.use_gui:
-            cmd = ["sumo-gui", "-c", self.sumo_cfg]
-        else:
-            cmd = ["sumo", "-c", self.sumo_cfg]
+        import os
+        sumo_home = os.environ.get("SUMO_HOME", r"C:\Program Files (x86)\Eclipse\Sumo")
+        binary = "sumo-gui.exe" if self.use_gui else "sumo.exe"
+        sumo_bin = os.path.join(sumo_home, "bin", binary)
+        cmd = [sumo_bin, "-c", self.sumo_cfg,
+               "--no-step-log", "--waiting-time-memory", "1000"]
 
         # ensure no leftover connection
         try:
@@ -121,13 +147,49 @@ class SumoEnv(Env):
     # OBSERVATION STATE
     # ============================
     def _get_observation(self):
+        """
+        Enriched, normalised observation:
+        - per-lane halting count (queue), normalised by MAX_QUEUE
+        - per-lane mean accumulated waiting time, normalised by MAX_TRAVEL_TIME
+        - current green group as one-hot over phase_map
+        - time since last phase switch, normalised
+        """
         obs = []
+
+        # 1) per-lane queue (halting number) -- matches the reward signal
         for lane in self.incoming_lanes:
             try:
-                q = traci.lane.getLastStepVehicleNumber(lane)
+                q = traci.lane.getLastStepHaltingNumber(lane)
             except Exception:
                 q = 0
-            obs.append(q)
+            obs.append(float(np.clip(q / self.MAX_QUEUE, 0.0, 1.0)))
+
+        # 2) per-lane MAX accumulated waiting time -- one starving vehicle dominates
+        for lane in self.incoming_lanes:
+            try:
+                vids = traci.lane.getLastStepVehicleIDs(lane)
+                if vids:
+                    waits = [traci.vehicle.getAccumulatedWaitingTime(v) for v in vids]
+                    w = float(max(waits))
+                else:
+                    w = 0.0
+            except Exception:
+                w = 0.0
+            obs.append(float(np.clip(w / self.MAX_TRAVEL_TIME, 0.0, 1.0)))
+
+        # 3) current green group as one-hot -- the agent must know what it is doing
+        try:
+            current_phase = int(traci.trafficlight.getPhase(self.tl_id))
+            current_group = self.GROUP_MAP.get(current_phase, self.phase_map[0])
+        except Exception:
+            current_group = self.phase_map[0]
+        for g in self.phase_map:
+            obs.append(1.0 if g == current_group else 0.0)
+
+        # 4) time since last switch -- lets the agent learn to hold a phase
+        elapsed = self._step_count - self._last_change_step
+        obs.append(float(np.clip(elapsed / 60.0, 0.0, 1.0)))
+
         return np.array(obs, dtype=np.float32)
 
     # ============================
@@ -226,7 +288,7 @@ class SumoEnv(Env):
         return metrics
 
     def _compute_reward(self):
-        """Simplified, normalized reward combining queue & pressure & travel time."""
+        """Reward combining queue, pressure, and max-vehicle starvation penalty."""
         try:
             vehicle_ids = traci.vehicle.getIDList()
 
@@ -241,15 +303,16 @@ class SumoEnv(Env):
             pressure = incoming - outgoing
             pressure_n = np.clip(abs(pressure) / self.MAX_PRESSURE, 0.0, 1.0)
 
-            # avg travel time normalized
-            travel_times = [traci.vehicle.getAccumulatedWaitingTime(v) for v in vehicle_ids]
-            avg_travel_time = float(np.mean(travel_times)) if travel_times else 0.0
-            travel_n = np.clip(avg_travel_time / self.MAX_TRAVEL_TIME, 0.0, 1.0)
+            # max single-vehicle starvation -- catches the one neglected lane
+            if vehicle_ids:
+                max_wait = float(max(traci.vehicle.getAccumulatedWaitingTime(v) for v in vehicle_ids))
+            else:
+                max_wait = 0.0
+            max_wait_n = np.clip(max_wait / self.MAX_TRAVEL_TIME, 0.0, 1.0)
 
-            # Compose reward (prioritize queue & pressure)
-            reward = -1.0 * (0.6 * avg_queue_n + 0.4 * pressure_n + 0.2 * travel_n)
+            # Compose: queue + pressure weighted higher; starvation term catches neglected lanes
+            reward = -1.0 * (0.5 * avg_queue_n + 0.3 * pressure_n + 0.2 * max_wait_n)
 
-            # Clip
             return float(np.clip(reward, -10.0, 0.0))
         except Exception:
             return -1.0
@@ -257,42 +320,19 @@ class SumoEnv(Env):
     # ============================
     # SET PHASE — safe dictionary-based transitions
     # ============================
-    def _set_phase(self, action):
-        """
-        Full safe transition (A):
-        current_group (green) -> its yellow -> its all-red -> target_group (green)
-        This uses explicit YELLOW_MAP and RED_MAP so indices are always valid.
-        NOTE: idle override is disabled during training; if you run with use_gui=True
-        and want idle behaviour, enable it separately.
-        """
-        # Map RL action -> target SUMO green phase
-        if action is None:
-            return
-        try:
-            target_green = int(self.phase_map[int(action)])
-        except Exception:
-            return
+    def _get_turning_queue(self):
+        """Total halting vehicles in the right-turn lanes that cause spillback."""
+        total = 0
+        for lane in self.TURN_BLOCKING_LANES:
+            try:
+                total += traci.lane.getLastStepHaltingNumber(lane)
+            except Exception:
+                pass
+        return total
 
-        # read current SUMO phase
-        try:
-            current_phase = int(traci.trafficlight.getPhase(self.tl_id))
-        except Exception:
-            current_phase = target_green
-
-        # enforce minimum green time
-        if (self._step_count - self._last_change_step) < self.min_green_time:
-            # do not change yet
-            return
-
-        # if already in target green, nothing to do
-        if current_phase == target_green:
-            return
-
-        # Identify the current group's green base (fallback to target_green)
-        current_group = self.GROUP_MAP.get(current_phase, target_green)
-
-        # 1) set yellow for current_group
-        yellow_phase = self.YELLOW_MAP.get(current_group, None)
+    def _do_transition(self, from_group, to_green):
+        """Yellow → all-red → green transition between two phase groups."""
+        yellow_phase = self.YELLOW_MAP.get(from_group, None)
         if yellow_phase is not None:
             try:
                 traci.trafficlight.setPhase(self.tl_id, int(yellow_phase))
@@ -301,8 +341,7 @@ class SumoEnv(Env):
             for _ in range(self.yellow_duration):
                 traci.simulationStep()
 
-        # 2) set all-red for current_group
-        red_phase = self.RED_MAP.get(current_group, None)
+        red_phase = self.RED_MAP.get(from_group, None)
         if red_phase is not None:
             try:
                 traci.trafficlight.setPhase(self.tl_id, int(red_phase))
@@ -311,13 +350,63 @@ class SumoEnv(Env):
             for _ in range(self.red_duration):
                 traci.simulationStep()
 
-        # 3) apply target green
         try:
-            traci.trafficlight.setPhase(self.tl_id, int(target_green))
+            traci.trafficlight.setPhase(self.tl_id, int(to_green))
         except Exception:
             pass
 
-        # record the step when change happened
+    def _set_phase(self, action):
+        """
+        Safe phase transition with turn-before-straight sequencing.
+
+        When the agent requests a straight-traffic phase (Phase 9) and the
+        right-turn lanes hold a queue above turn_clear_threshold, the controller
+        first runs the turn-clearing phase (Phase 6) for turn_clear_duration steps
+        before switching to the straight phase. This prevents right-turn spillback
+        from physically blocking through vehicles during their own green.
+
+        Sequence for affected transitions:
+          current → [yellow → red] → Phase 6 (turns clear, held N steps)
+                  → [yellow → red] → Phase 9 (straight green)
+
+        All other transitions follow the standard safe sequence:
+          current → [yellow → red] → target green
+        """
+        if action is None:
+            return
+        try:
+            target_green = int(self.phase_map[int(action)])
+        except Exception:
+            return
+
+        try:
+            current_phase = int(traci.trafficlight.getPhase(self.tl_id))
+        except Exception:
+            current_phase = target_green
+
+        if (self._step_count - self._last_change_step) < self.min_green_time:
+            return
+
+        if current_phase == target_green:
+            return
+
+        current_group = self.GROUP_MAP.get(current_phase, target_green)
+
+        # Turn-before-straight sequencing:
+        # Only insert turn-clear step when all three conditions hold:
+        #   1. target is a straight phase
+        #   2. we are not already running the turn-clear phase (avoid no-op cycle)
+        #   3. turning queue exceeds threshold (avoid wasting green time when clear)
+        if (target_green in self.STRAIGHT_PHASES
+                and current_group != self.TURN_CLEAR_PHASE
+                and self._get_turning_queue() >= self.turn_clear_threshold):
+            self._do_transition(current_group, self.TURN_CLEAR_PHASE)
+            for _ in range(self.turn_clear_duration):
+                traci.simulationStep()
+            self._do_transition(self.TURN_CLEAR_PHASE, target_green)
+        else:
+            self._do_transition(current_group, target_green)
+
         self._last_change_step = self._step_count
 
     # ============================
@@ -340,6 +429,12 @@ class SumoEnv(Env):
                 traci.simulationStep()
             except Exception:
                 break
+
+        # Ensure our custom TLS program is active (net file has programID="0")
+        try:
+            traci.trafficlight.setProgram(self.tl_id, "fixed")
+        except Exception:
+            pass
 
         # reset counters
         self._step_count = 0
