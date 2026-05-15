@@ -54,7 +54,7 @@
 }
 % ===== CITATIONS & REFERENCES =====
 \usepackage{cite}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 % ===== FORMATTING =====
 \usepackage{color}
 \usepackage{titlesec}
@@ -1270,6 +1270,86 @@ The SUMO simulation was configured using the custom intersection network develop
     \item \textbf{Evaluation period:} 9,000 simulation timesteps
 \end{itemize}
 
+\section{PPO Training Progress}
+
+Before evaluating controller performance, it is necessary to confirm that the PPO agent successfully learned a meaningful policy during training. This section presents diagnostic metrics recorded by TensorBoard across 500,000 training timesteps. Together they demonstrate that the agent converged to a stable, non-random policy before evaluation began.
+
+\subsection{Evaluation Mean Reward}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{tb_eval_mean_reward.png}
+\caption{Evaluation mean reward across all training runs over 500,000 timesteps (TensorBoard \texttt{eval/mean\_reward}). Each coloured line represents a separate training run.}
+\label{fig:tb_eval_rew}
+\end{figure}
+
+Figure~\ref{fig:tb_eval_rew} shows the deterministic evaluation reward measured every 10,000 timesteps throughout training by running the learnt policy greedily against a held-out simulation episode. The bright pink line is the exponentially smoothed trend; the darker maroon line is the raw per-evaluation value.
+
+Three phases of learning are clearly visible. During the first 150,000 timesteps the reward remains roughly flat at approximately $-$400, indicating the agent is still largely random and has not yet identified which green phases reduce queue length most effectively. Between 150,000 and 300,000 timesteps a sustained improvement begins, with the smoothed reward rising steadily from $-$400 to approximately $-$200, representing a 50\% reduction in the combined queue, pressure, and waiting-time penalty. This phase corresponds to the agent learning the core phase-selection policy: identifying that high-queue approaches should be served before low-queue ones.
+
+From 300,000 timesteps onward the training enters an oscillatory refinement phase. The raw reward fluctuates between approximately $-$150 and $-$370, with a notable sharp dip around 400,000 timesteps before recovering strongly toward $-$150 by 500,000 steps. Such oscillations are characteristic of PPO operating in a stochastic traffic environment: the policy occasionally over-commits to a newly discovered strategy, receives a worse evaluation when traffic demand varies, then corrects. The overall trend through this oscillation remains upward. The fact that the curve had not fully flattened by 500,000 timesteps suggests that additional training would likely yield further improvement, which is noted as a recommendation for future work.
+
+\subsection{Episode Reward}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{tb_rollout_ep_rew_mean.png}
+\caption{Mean episode reward (\texttt{rollout/ep\_rew\_mean}) averaged across four parallel environments over 500,000 training timesteps. The curve is naturally smooth due to multi-environment averaging.}
+\label{fig:tb_rew}
+\end{figure}
+
+Figure~\ref{fig:tb_rew} shows the mean episode reward recorded during training, averaged across all four parallel SUMO environments. The smoothness of the curve compared to single-environment runs is a direct benefit of parallel training: individual environment noise cancels out across agents, revealing the true learning trend more clearly.
+
+Three distinct phases are visible. The curve opens with a brief dip to approximately $-$280 between 0 and 20,000 timesteps, reflecting the agent's initial random phase selection during early exploration. From 20,000 to 250,000 timesteps a steep, consistent improvement follows, with the reward rising from $-$270 to approximately $-$180, a 33\% reduction in the combined queue, pressure, and waiting-time penalty. This phase represents the agent learning the core policy: identifying which green phases serve the highest-demand approaches and holding them long enough to discharge queues before switching.
+
+Beyond 250,000 timesteps the curve enters a clear convergence plateau, stabilising between $-$165 and $-$180 through to 450,000 steps. The oscillation within this band is narrow relative to the total improvement achieved, and the smoothed trend remains flat, a strong indicator that the policy has converged to a stable optimum rather than continuing to drift. This behaviour closely matches the theoretically expected PPO convergence signature: a rapid learning phase followed by a sustained plateau with diminishing variance.
+
+\subsection{Episode Length}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{tb_rollout_ep_len_mean.png}
+\caption{Mean episode length (\texttt{rollout/ep\_len\_mean}) over training timesteps, held constant at 1,800 steps throughout.}
+\label{fig:tb_eplen}
+\end{figure}
+
+Figure~\ref{fig:tb_eplen} shows that every episode ran for the full 1,800 timesteps from start to finish, producing a perfectly flat line at that value. This is expected behaviour: the environment's termination condition is either the \texttt{max\_episode\_steps} limit or the simulation running out of vehicles to serve. Since the route file continuously injects traffic throughout the episode, the simulation never empties and termination is always driven by the step limit. The flat line therefore confirms two things: the environment was configured correctly with no erroneous early terminations, and the agent received a consistent 1,800-step credit assignment window in every episode, ensuring that training updates were computed over episodes of uniform length throughout all 500,000 timesteps.
+
+\subsection{Value Loss}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{tb_value_loss.png}
+\caption{Critic value loss over training timesteps. A decreasing trend confirms the value function is accurately estimating future returns.}
+\label{fig:tb_val}
+\end{figure}
+
+The value loss measures how well the critic (value network) predicts the discounted cumulative reward from each state. Figure~\ref{fig:tb_val} shows a clear downward trend from a peak of approximately 1.2 in the first 50,000 timesteps, falling steadily to a lower band of 0.4--0.6 by 200,000 timesteps and remaining there through to 500,000 steps. The high early loss is expected: the critic has no prior experience of the environment and must learn the relationship between traffic states and future returns entirely from scratch. The sustained decrease through the learning phase confirms the critic is successfully fitting the return distribution as experience accumulates. The residual oscillations in the 0.4--0.6 range from 200,000 steps onward are consistent with the policy continuing to update: each policy improvement shifts the target returns the critic must predict, causing brief spikes before the loss settles again. A stabilised value loss in this range is a necessary condition for PPO to produce reliable advantage estimates, which in turn ensure that policy gradient updates push the actor toward genuinely better phase selection rather than noise.
+
+\subsection{Entropy Loss}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{tb_entropy_loss.png}
+\caption{Policy entropy loss over training timesteps. Entropy decreasing toward zero indicates the policy is converging from random exploration to confident phase selection.}
+\label{fig:tb_ent}
+\end{figure}
+
+Entropy loss in SB3 is reported as the negative of the policy entropy, so a rising curve (toward zero) corresponds to falling entropy, meaning the policy is becoming more confident and deterministic. Figure~\ref{fig:tb_ent} shows exactly this pattern. The curve begins at approximately $-$1.2, reflecting near-uniform probability across all four green phases during early exploration. Between 50,000 and 100,000 timesteps the entropy rises sharply from $-$1.2 to around $-$0.6, coinciding precisely with the steep reward improvement seen in Figure~\ref{fig:tb_rew}. This confirms that the agent was not simply memorising actions but was genuinely identifying which phases serve high-demand approaches, allowing it to commit to preferred actions with growing confidence. From 100,000 timesteps onward the rise continues gradually, reaching approximately $-$0.2 by 450,000 steps. The fact that entropy did not collapse to zero is important: the policy retained residual exploration throughout training, which prevents it from becoming locked into a single phase regardless of traffic state. This gradual, sustained reduction rather than a sudden collapse is the healthy entropy profile expected of a well-tuned PPO agent operating in a stochastic environment.
+
+\subsection{Explained Variance}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{tb_explained_variance.png}
+\caption{Explained variance of the value function over training timesteps. Values approaching 1.0 indicate the critic accurately accounts for observed return variance.}
+\label{fig:tb_ev}
+\end{figure}
+
+Explained variance quantifies the proportion of return variance captured by the value function, defined as $1 - \mathrm{Var}(r - \hat{v}) / \mathrm{Var}(r)$, where $r$ is the observed return and $\hat{v}$ is the critic's prediction. A value near zero means the critic is no better than a constant baseline; a value near one indicates near-perfect return prediction.
+
+Figure~\ref{fig:tb_ev} shows explained variance oscillating throughout training within a band of approximately 0.4 to 0.85, with no clear upward or downward trend beyond the initial rise from near zero at the start. Two observations are important. First, the fact that the critic rises quickly from the low values seen in the first 10,000 timesteps to a sustained range of 0.5--0.85 confirms that the value function learned meaningful structure early and maintained it throughout training. Values in this range are considered healthy for a stochastic simulation environment; perfect explained variance close to 1.0 is unrealistic when traffic demand is inherently random. Second, the persistent oscillations reflect the nature of PPO training: every time the policy improves, the distribution of returns shifts, and the critic temporarily loses accuracy before catching up in the next few update cycles. This interplay between actor improvement and critic adaptation is a well-documented characteristic of on-policy RL algorithms and does not indicate instability. The absence of a collapse toward zero at any point in training confirms that the value function remained a useful baseline throughout all 500,000 timesteps.
+
 \section{Visual Output of the Simulations}
 
 This section provides screenshots demonstrating both controllers running in SUMO. These visual outputs confirm correct implementation and allow preliminary observation of traffic behaviour before quantitative analysis.
@@ -1837,16 +1917,62 @@ Initialise 4 parallel SUMO environments\;
 
 \section{Training convergence}
 
-Mean episode reward starts strongly negative, typically around $-1.3$ to $-1.5$ per step, reflecting the agents assigning green time without regard for queue state. Within the first 100,000 steps the agents learn the basic pattern of switching to high-queue phases, and mean reward rises into the $-0.8$ to $-1.0$ range. By 500,000 steps, having encountered rush-hour and holiday scenarios in the curriculum, agents begin exhibiting cross-intersection coordination: extending green at one junction only after checking that the downstream junction has cleared. Mean reward at this stage is typically in the $-0.5$ to $-0.7$ range. Training plateaus around 1 to 1.2 million steps, with the best evaluation reward settling near $-0.35$ to $-0.45$ per step depending on the scenario mix sampled during evaluation.
+All training curves presented in this section use exponential smoothing to reveal the underlying learning trend. The raw signals exhibit high variance characteristic of multi-agent training, where three agents are simultaneously adapting their policies in response to a shared, stochastic environment. The smoothed curves are used in the report; the raw counterparts are retained as supplementary evidence that the variance is environmental noise rather than training instability.
 
-Entropy decreases steadily throughout training, indicating the policy is converging from an initial near-uniform distribution over phases toward a more confident but not fully deterministic one. A residual entropy around 0.8--1.0 nats in the final policy is expected and healthy: it reflects the fact that under some traffic states all three phase choices are genuinely similar in value, so maintaining some randomness is correct.
+\subsection{Mean Training Reward}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\linewidth]{mappo_training_curve.png}
-\caption{MAPPO training curves over 1.5 million environment steps. \textit{Top}: mean episode reward (raw and 30-update smoothed) with entropy on the right axis. The reward rises from around $-50$ at initialisation and plateaus near $-10$ after 1 million steps, while entropy decreases from 1.0 to around 0.85 nats, indicating increasing policy confidence. \textit{Bottom left}: Actor loss remains small and stable throughout training. \textit{Bottom right}: Critic loss falls sharply in the first 200k steps as the value function learns to predict joint-state returns, then stabilises near zero.}
-\label{fig:mappo_training}
+\includegraphics[width=0.95\linewidth]{mappo_mean_reward_smooth.png}
+\caption{Smoothed mean training reward (\texttt{train/mean\_reward}) over the full MAPPO training run.}
+\label{fig:mappo_train_rew}
 \end{figure}
+
+Figure~\ref{fig:mappo_train_rew} shows the mean reward recorded at each training update, averaged across all three agents and four parallel environments over 1.5 million timesteps. The curve starts at approximately $-15$, reflecting the near-random initial policy where agents select green phases without regard for queue state. A steep improvement follows in the first 200,000 timesteps, with the smoothed reward rising to approximately $-11$. The curve continues improving gradually through 400,000 to 800,000 steps, eventually plateauing near $-9$ from 1 million steps onward. The residual oscillations within the plateau band are consistent with multi-agent non-stationarity: each time one agent updates its policy, the reward distribution seen by the other two agents shifts slightly, causing brief perturbations before the joint policy restabilises.
+
+\subsection{Evaluation Reward}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{mappo_eval_reward_smooth.png}
+\caption{Smoothed deterministic evaluation reward (\texttt{eval/mean\_reward}) measured periodically throughout MAPPO training.}
+\label{fig:mappo_eval_rew}
+\end{figure}
+
+Figure~\ref{fig:mappo_eval_rew} shows the deterministic evaluation reward, measured by running the greedy policy against a held-out simulation episode at regular intervals. This is the most important convergence indicator as it reflects actual policy quality rather than on-policy training noise. The smoothed curve rises from approximately $-9$ at initialisation to near $-2$ by 1.5 million timesteps, a 78\% reduction in the evaluation penalty. The curve displays the classic sigmoid learning shape: a steep rise between 50,000 and 400,000 timesteps as the agents discover basic queue-clearing behaviour, followed by a shallower but sustained improvement from 400,000 to 1 million steps as coordination across all three intersections refines. Beyond 1 million steps the smoothed curve flattens into a clear plateau near $-2$, with the raw signal oscillating tightly around it. This is the strongest convergence signal in the training diagnostics: a clean plateau in the deterministic evaluation reward confirms the MAPPO agents reached a stable, cooperative policy that generalises beyond the training noise.
+
+\subsection{Actor Loss}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{mappo_actor_loss_smooth.png}
+\caption{Smoothed actor (policy) loss (\texttt{train/actor\_loss}) over the MAPPO training run.}
+\label{fig:mappo_actor_loss}
+\end{figure}
+
+Figure~\ref{fig:mappo_actor_loss} shows the actor loss, which in MAPPO is the negative clipped PPO surrogate objective. The curve begins near $-0.004$, rises toward a peak of approximately $-0.002$ in the mid-training phase, then gradually decreases toward $-0.003$ by the end of training. This arc shape is expected: early in training, large policy gradients produce strong updates as the agents move away from their random initialisation, so the magnitude of the loss term is high. As the policy converges and updates become more conservative, the clipping mechanism activates less frequently and the loss magnitude decreases. The absence of any sharp spikes or sign changes confirms that the PPO clipping effectively prevented destabilising updates throughout training.
+
+\subsection{Critic Loss}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{mappo_critic_loss_smooth.png}
+\caption{Smoothed centralised critic loss (\texttt{train/critic\_loss}) over the MAPPO training run.}
+\label{fig:mappo_critic_loss}
+\end{figure}
+
+Figure~\ref{fig:mappo_critic_loss} shows the centralised critic loss, which measures how accurately the joint-state value function predicts future returns. The curve starts very high at approximately 4.5, reflecting the uninitialised critic with no prior knowledge of the joint traffic state. It decreases sharply in the first portion of training, dropping to approximately 1.5 as the critic fits the return distribution. From that point onward the loss stabilises in the 1.4--1.6 range, with minor oscillations that mirror the policy updates. A stabilised critic loss is a prerequisite for reliable advantage estimation in MAPPO: the centralised critic must accurately assess joint-state value before the shared advantage estimates can guide each agent's policy gradient in a meaningful direction.
+
+\subsection{Entropy}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{mappo_entropy_smooth.png}
+\caption{Smoothed policy entropy (\texttt{train/entropy}) over the MAPPO training run, showing the transition from exploration to confident phase selection.}
+\label{fig:mappo_entropy}
+\end{figure}
+
+Figure~\ref{fig:mappo_entropy} shows the shared actor's policy entropy throughout training. The curve begins near 0.95, reflecting a near-uniform distribution over all three green phases during early exploration. It decreases steadily and monotonically, reaching approximately 0.3 by the latter stages of training, where it stabilises. This pattern is the expected healthy entropy profile for a converging MAPPO agent: the policy becomes increasingly confident in its phase selections as it learns which actions best serve queue demand under each traffic state, but it retains residual entropy rather than collapsing to zero. A final entropy near 0.3 indicates the agents have committed to preferred phases in most states while still maintaining appropriate uncertainty in ambiguous traffic conditions where multiple phase choices are of similar value.
 
 \section{MAPPO versus single-agent PPO baseline}
 

@@ -2,23 +2,26 @@ import os
 import time
 import torch
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from env import SumoEnv
+
+N_ENVS = 4          # parallel SUMO instances (tune down if RAM is tight)
+SUMO_CONFIG = "map.sumocfg"
+
+
+# Must be module-level (not a closure) so SubprocVecEnv can pickle it on Windows
+def _make_env():
+    return Monitor(SumoEnv(sumo_cfg=SUMO_CONFIG, use_gui=False))
 
 
 def main():
 
     # ============================================================
-    # ENVIRONMENT SETUP
+    # ENVIRONMENT SETUP — N_ENVS parallel SUMO processes
     # ============================================================
-    sumo_config = "map.sumocfg"
-
-    def make_env():
-        return Monitor(SumoEnv(sumo_cfg=sumo_config, use_gui=False))
-
-    env = DummyVecEnv([make_env])
+    env = SubprocVecEnv([_make_env] * N_ENVS)
 
     # ============================================================
     # LOGGING + FOLDERS
@@ -34,7 +37,8 @@ def main():
     # DEVICE SELECTION
     # ============================================================
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"\nUsing device: {device}\n")
+    print(f"\nUsing device: {device}")
+    print(f"Parallel environments: {N_ENVS}\n")
 
     # ============================================================
     # CHECKPOINT CALLBACK
@@ -46,9 +50,9 @@ def main():
     )
 
     # ============================================================
-    # EVAL CALLBACK
+    # EVAL CALLBACK — single env is fine for evaluation
     # ============================================================
-    eval_env = DummyVecEnv([make_env])
+    eval_env = DummyVecEnv([_make_env])
     eval_callback = EvalCallback(
         eval_env,
         best_model_save_path="./best_model/",
@@ -59,41 +63,53 @@ def main():
     )
 
     # ============================================================
-    # PPO MODEL
+    # PPO MODEL  (set RESUME_FROM to a checkpoint path to continue)
+    # With N_ENVS=4 the effective batch per update is n_steps * N_ENVS
+    # = 1024 * 4 = 4096, so batch_size is scaled up accordingly.
     # ============================================================
-    model = PPO(
-        policy="MlpPolicy",
-        env=env,
-        verbose=1,
-        tensorboard_log=log_dir,
-        device=device,
-        learning_rate=3e-4,
-        n_steps=1024,
-        batch_size=64,
-        n_epochs=5,
-        gamma=0.99,
-        gae_lambda=0.95,
-        clip_range=0.2
-    )
+    RESUME_FROM = None
+    TOTAL_TIMESTEPS = 600000
+
+    if RESUME_FROM and os.path.exists(RESUME_FROM):
+        print(f"\nResuming from checkpoint: {RESUME_FROM}\n")
+        model = PPO.load(RESUME_FROM, env=env, device=device, tensorboard_log=log_dir)
+        remaining = TOTAL_TIMESTEPS - model.num_timesteps
+        print(f"Already trained: {model.num_timesteps} steps — {remaining} remaining\n")
+    else:
+        model = PPO(
+            policy="MlpPolicy",
+            env=env,
+            verbose=1,
+            tensorboard_log=log_dir,
+            device=device,
+            learning_rate=3e-4,
+            n_steps=1024,
+            batch_size=256,   # scaled from 64 → 256 to match larger effective batch
+            n_epochs=5,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2
+        )
+        remaining = TOTAL_TIMESTEPS
 
     # ============================================================
     # TRAINING
     # ============================================================
-    TOTAL_TIMESTEPS = 200000
-
-    print(f"🚦 Training PPO Agent for {TOTAL_TIMESTEPS} timesteps...")
+    print(f"Training PPO Agent for {remaining} timesteps...")
     model.learn(
-        total_timesteps=TOTAL_TIMESTEPS,
+        total_timesteps=remaining,
         callback=[checkpoint_callback, eval_callback],
-        tb_log_name="PPO_traffic_signal"
+        tb_log_name="PPO_traffic_signal",
+        reset_num_timesteps=False,
     )
 
     # ============================================================
     # SAVE FINAL MODEL
     # ============================================================
+    env.close()
     model.save("ppo_traffic_final")
 
-    print("\n🎉 Training completed successfully!")
+    print("\nTraining completed successfully!")
     print("Final model saved as: ppo_traffic_final.zip")
     print(f"TensorBoard logs saved in: {log_dir}")
 
