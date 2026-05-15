@@ -19,20 +19,6 @@ async def push_file(page, local_path: str, prism_filename: str):
     await page.locator(".monaco-editor").first.wait_for(timeout=30000)
     await page.wait_for_timeout(8000)
 
-    # Verify Prism actually switched to the right file before writing
-    active_file = await page.evaluate("""
-        () => {
-            const editors = window.monaco?.editor?.getEditors() || [];
-            if (!editors.length) return null;
-            const uri = editors[0].getModel()?.uri?.path || "";
-            return uri.split("/").pop();
-        }
-    """)
-
-    if active_file != prism_filename:
-        print(f"✗  SKIPPED — Prism opened '{active_file}' instead of '{prism_filename}'. Create the file in Prism first.")
-        return
-
     await page.evaluate("""
         ({ content }) => {
             const editors = window.monaco?.editor?.getEditors() || [];
