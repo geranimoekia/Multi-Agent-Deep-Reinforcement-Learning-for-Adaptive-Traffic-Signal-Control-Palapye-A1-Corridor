@@ -19,6 +19,20 @@ async def push_file(page, local_path: str, prism_filename: str):
     await page.locator(".monaco-editor").first.wait_for(timeout=30000)
     await page.wait_for_timeout(8000)
 
+    # Verify Prism actually switched to the right file before writing
+    active_file = await page.evaluate("""
+        () => {
+            const editors = window.monaco?.editor?.getEditors() || [];
+            if (!editors.length) return null;
+            const uri = editors[0].getModel()?.uri?.path || "";
+            return uri.split("/").pop();
+        }
+    """)
+
+    if active_file != prism_filename:
+        print(f"✗  SKIPPED — Prism opened '{active_file}' instead of '{prism_filename}'. Create the file in Prism first.")
+        return
+
     await page.evaluate("""
         ({ content }) => {
             const editors = window.monaco?.editor?.getEditors() || [];
@@ -45,8 +59,7 @@ async def push_file(page, local_path: str, prism_filename: str):
     """)
     local_lines = len(content.splitlines())
     local_chars = len(content)
-    char_diff = abs(info["chars"] - local_chars)
-    if char_diff <= 1:  # allow ±1 for trailing newline counting difference
+    if abs(info["chars"] - local_chars) <= 1:
         print(f"✓  ({local_lines} lines / {local_chars} chars)")
     else:
         print(f"✗  mismatch — local {local_lines}L/{local_chars}c | remote {info['lines']}L/{info['chars']}c")
