@@ -127,21 +127,10 @@ class SumoEnv(Env):
     # START SUMO
     # ============================
     def start_sumo(self):
-        import os, sys, shutil
+        import os
         sumo_home = os.environ.get("SUMO_HOME", r"C:\Program Files (x86)\Eclipse\Sumo")
-        ext = ".exe" if sys.platform == "win32" else ""
-        binary = f"sumo-gui{ext}" if self.use_gui else f"sumo{ext}"
+        binary = "sumo-gui.exe" if self.use_gui else "sumo.exe"
         sumo_bin = os.path.join(sumo_home, "bin", binary)
-        if not os.path.isfile(sumo_bin):
-            sumo_bin = shutil.which(binary) or sumo_bin
-
-        if not os.path.isfile(self.sumo_cfg):
-            raise FileNotFoundError(
-                f"SUMO config not found: {self.sumo_cfg}\n"
-                f"Working directory: {os.getcwd()}\n"
-                f"Files here: {os.listdir(os.path.dirname(self.sumo_cfg) or '.')}"
-            )
-
         cmd = [sumo_bin, "-c", self.sumo_cfg,
                "--no-step-log", "--waiting-time-memory", "1000"]
 
