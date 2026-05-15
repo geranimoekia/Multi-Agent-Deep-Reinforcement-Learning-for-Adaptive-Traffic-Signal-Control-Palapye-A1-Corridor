@@ -13,22 +13,13 @@ async def push():
         browser = await p.chromium.launch(headless=True)
         ctx     = await browser.new_context(storage_state=storage)
         page    = await ctx.new_page()
-        print("[PUSH] Navigating...")
+        print("Pushing to Prism...")
         await page.goto(PROJECT_URL, wait_until="domcontentloaded", timeout=60000)
         await page.locator(".monaco-editor").first.wait_for(timeout=30000)
         await page.wait_for_timeout(8000)
 
-        info_before = await page.evaluate("""
-            () => {
-                const editors = window.monaco?.editor?.getEditors() || [];
-                const m = editors.length ? editors[0].getModel() : null;
-                return m ? {chars: m.getValueLength(), lines: m.getLineCount()} : {chars: -1, lines: -1};
-            }
-        """)
-        print(f"[BEFORE] Active model: {info_before['lines']} lines / {info_before['chars']} chars")
-
         # Update the ACTIVE editor's model (= the file Prism is showing for m=main.tex)
-        replaced = await page.evaluate("""
+        await page.evaluate("""
             ({ content }) => {
                 const editors = window.monaco?.editor?.getEditors() || [];
                 if (!editors.length) return false;
@@ -39,33 +30,27 @@ async def push():
                 return true;
             }
         """, {"content": content})
-        print(f"[PUSH]  setValue: {replaced}  ({len(content)} chars)")
 
         # Ctrl+S to trigger Prism's save
         await page.keyboard.press("Control+s")
         await page.wait_for_timeout(2000)
         await page.keyboard.press("Control+s")
-        print("[PUSH]  Ctrl+S sent — waiting for server save...")
         await page.wait_for_timeout(6000)
 
         info_after = await page.evaluate("""
             () => {
                 const editors = window.monaco?.editor?.getEditors() || [];
                 const m = editors.length ? editors[0].getModel() : null;
-                if (!m) return {lines: -1, yolo: false, sumo: false, marl: false};
-                const v = m.getValue();
-                return {
-                    lines: m.getLineCount(),
-                    yolo: v.includes("You Only Look Once"),
-                    sumo: v.includes("Traffic Simulation Tools"),
-                    marl: v.includes("Dec-POMDP"),
-                };
+                return m ? {lines: m.getLineCount(), chars: m.getValueLength()} : {lines: -1, chars: -1};
             }
         """)
-        print(f"\n[VERIFY] Remote lines: {info_after['lines']}  (local: {len(content.splitlines())})")
-        print(f"[VERIFY] Has YOLO section:          {info_after['yolo']}")
-        print(f"[VERIFY] Has SUMO tools section:    {info_after['sumo']}")
-        print(f"[VERIFY] Has MARL general intro:    {info_after['marl']}")
+        local_lines = len(content.splitlines())
+        local_chars = len(content)
+        in_sync = info_after['lines'] == local_lines and info_after['chars'] == local_chars
+        if in_sync:
+            print(f"\n✓ Prism is up to date — {local_lines} lines / {local_chars} chars synced successfully.")
+        else:
+            print(f"\n✗ Sync mismatch — local: {local_lines} lines / {local_chars} chars | remote: {info_after['lines']} lines / {info_after['chars']} chars")
         await browser.close()
 
 asyncio.run(push())

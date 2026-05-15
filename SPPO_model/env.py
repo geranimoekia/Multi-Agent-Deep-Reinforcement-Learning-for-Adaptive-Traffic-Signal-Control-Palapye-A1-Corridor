@@ -66,11 +66,25 @@ class SumoEnv(Env):
 
         # ==== Observation space ====
         # Per lane: halting count (queue) + max accumulated waiting time
+        # Per phase: queue served by that phase (lets the agent compare options directly)
         # Global:   current phase (one-hot, 4 phases) + time since last switch
+        #           + max-queue lane index one-hot over phases (which phase SHOULD serve now)
         n_lanes = len(self.incoming_lanes)
         n_phases = len(self.phase_map)
-        obs_dim = n_lanes * 2 + n_phases + 1   # 7*2 + 4 + 1 = 19
+        # 7 (queue) + 7 (wait) + 4 (queue-per-phase) + 4 (current phase) + 1 (elapsed) + 4 (argmax phase) = 27
+        obs_dim = n_lanes * 2 + n_phases + n_phases + 1 + n_phases
         self.observation_space = Box(low=0.0, high=1.0, shape=(obs_dim,), dtype=np.float32)
+
+        # Lanes served (have green) under each action's green phase.
+        # Used by the observation (queue-per-phase feature) and the reward
+        # (mismatch penalty between served lane and worst lane).
+        # Indexed by phase_map position: phase 0, 6, 9, 12.
+        self.phase_to_lanes = {
+            0:  ["-E5_0"],                                                          # EAST green
+            6:  ["-465932558#1.34_2", "465932558#0_1"],                             # right-turn group
+            9:  ["-465932558#1.34_1", "465932558#0_0"],                             # N/S straight
+            12: ["470773638#1_0"],                                                  # WEST green
+        }
 
         # timing / episode control
         self.step_length = step_length
@@ -80,14 +94,20 @@ class SumoEnv(Env):
         # safety / timing (SLOW mode defaults)
         self.yellow_duration = 4   # seconds of yellow
         self.red_duration = 3      # seconds of all-red (intergreen)
-        self.min_green_time = 20   # minimum time to hold a green before switching
+        self.min_green_time = 10   # minimum time to hold a green before switching
+        # Emergency override: if any *other* lane's queue exceeds this while we
+        # are still inside min_green_time, allow an early switch. Stops the agent
+        # being locked into serving 1 vehicle while another lane piles up.
+        self.queue_emergency_threshold = 8
 
         # bookkeeping
         self._step_count = 0
         self._last_change_step = 0
 
         # normalization constants (tune for your scenario)
-        self.MAX_QUEUE = 30.0
+        # MAX_QUEUE lowered from 30 -> 10 so realistic queues (1..10) actually use
+        # the full [0,1] range. With 30 the entire signal was crushed into [0, 0.33].
+        self.MAX_QUEUE = 10.0
         self.MAX_TRAVEL_TIME = 300.0
         self.MAX_THROUGHPUT = 20.0
         self.MAX_PRESSURE = 40.0
@@ -132,7 +152,7 @@ class SumoEnv(Env):
         binary = "sumo-gui.exe" if self.use_gui else "sumo.exe"
         sumo_bin = os.path.join(sumo_home, "bin", binary)
         cmd = [sumo_bin, "-c", self.sumo_cfg,
-               "--no-step-log", "--waiting-time-memory", "1000"]
+               "--no-step-log", "--waiting-time-memory", "1000", "--no-warnings"]
 
         # ensure no leftover connection
         try:
@@ -151,17 +171,25 @@ class SumoEnv(Env):
         Enriched, normalised observation:
         - per-lane halting count (queue), normalised by MAX_QUEUE
         - per-lane mean accumulated waiting time, normalised by MAX_TRAVEL_TIME
+        - per-phase aggregate queue (sum over the lanes that phase serves)
         - current green group as one-hot over phase_map
         - time since last phase switch, normalised
+        - one-hot over phase_map of which phase currently has the worst queue
+          (a strong inductive bias: "this is the phase you SHOULD pick now")
         """
         obs = []
 
-        # 1) per-lane queue (halting number) -- matches the reward signal
+        # Cache per-lane queues so we can reuse them for the phase aggregates.
+        lane_queues = {}
         for lane in self.incoming_lanes:
             try:
-                q = traci.lane.getLastStepHaltingNumber(lane)
+                lane_queues[lane] = float(traci.lane.getLastStepHaltingNumber(lane))
             except Exception:
-                q = 0
+                lane_queues[lane] = 0.0
+
+        # 1) per-lane queue (halting number) -- matches the reward signal
+        for lane in self.incoming_lanes:
+            q = lane_queues[lane]
             obs.append(float(np.clip(q / self.MAX_QUEUE, 0.0, 1.0)))
 
         # 2) per-lane MAX accumulated waiting time -- one starving vehicle dominates
@@ -177,7 +205,17 @@ class SumoEnv(Env):
                 w = 0.0
             obs.append(float(np.clip(w / self.MAX_TRAVEL_TIME, 0.0, 1.0)))
 
-        # 3) current green group as one-hot -- the agent must know what it is doing
+        # 3) per-phase aggregate queue -- gives the agent a direct "if I pick
+        #    action k, this is the backlog it serves" feature. Without this the
+        #    agent must implicitly learn the lane->phase mapping from sparse
+        #    reward, which is what was producing the "green for 1 car" pathology.
+        phase_queues = []
+        for g in self.phase_map:
+            qg = sum(lane_queues.get(l, 0.0) for l in self.phase_to_lanes.get(g, []))
+            phase_queues.append(qg)
+            obs.append(float(np.clip(qg / self.MAX_QUEUE, 0.0, 1.0)))
+
+        # 4) current green group as one-hot -- the agent must know what it is doing
         try:
             current_phase = int(traci.trafficlight.getPhase(self.tl_id))
             current_group = self.GROUP_MAP.get(current_phase, self.phase_map[0])
@@ -186,9 +224,19 @@ class SumoEnv(Env):
         for g in self.phase_map:
             obs.append(1.0 if g == current_group else 0.0)
 
-        # 4) time since last switch -- lets the agent learn to hold a phase
+        # 5) time since last switch -- lets the agent learn to hold a phase
         elapsed = self._step_count - self._last_change_step
         obs.append(float(np.clip(elapsed / 60.0, 0.0, 1.0)))
+
+        # 6) argmax over phase queues -- one-hot hint of which phase has the
+        #    largest backlog right now. Cheap, dense signal that breaks the
+        #    "serve the wrong lane" degenerate policy.
+        if phase_queues and max(phase_queues) > 0:
+            best = int(np.argmax(phase_queues))
+        else:
+            best = -1
+        for i in range(len(self.phase_map)):
+            obs.append(1.0 if i == best else 0.0)
 
         return np.array(obs, dtype=np.float32)
 
@@ -288,12 +336,33 @@ class SumoEnv(Env):
         return metrics
 
     def _compute_reward(self):
-        """Reward combining queue, pressure, and max-vehicle starvation penalty."""
+        """
+        Reward combining queue, pressure, starvation, and a *mismatch* penalty
+        that explicitly punishes serving a low-queue phase while another phase
+        has a much longer queue.
+
+        Why mismatch matters: with only avg_queue and max_wait, the reward is
+        gameable -- a phase that clears 1 car still nudges the average down, so
+        the agent never learns to discriminate "1 car vs 10 cars" between lanes.
+        The mismatch term provides a per-step, per-action signal:
+            penalty proportional to (max_phase_queue - served_phase_queue)
+        which is zero only when the served phase IS the worst-queue phase.
+        """
         try:
             vehicle_ids = traci.vehicle.getIDList()
 
-            # avg queue normalized
-            queues = [traci.lane.getLastStepHaltingNumber(l) for l in self.incoming_lanes]
+            # per-lane queues
+            lane_q = {l: float(traci.lane.getLastStepHaltingNumber(l))
+                      for l in self.incoming_lanes}
+            queues = list(lane_q.values())
+
+            # MAX queue (single worst lane) -- replaces avg_queue as the primary
+            # term. The previous avg version let the agent hide a 10-car queue
+            # behind six empty lanes (avg = 1.4, looked fine).
+            max_queue = float(max(queues)) if queues else 0.0
+            max_queue_n = np.clip(max_queue / self.MAX_QUEUE, 0.0, 1.0)
+
+            # also keep avg as a smaller secondary term (network-wide health)
             avg_queue = float(np.mean(queues)) if queues else 0.0
             avg_queue_n = np.clip(avg_queue / self.MAX_QUEUE, 0.0, 1.0)
 
@@ -310,8 +379,28 @@ class SumoEnv(Env):
                 max_wait = 0.0
             max_wait_n = np.clip(max_wait / self.MAX_TRAVEL_TIME, 0.0, 1.0)
 
-            # Compose: queue + pressure weighted higher; starvation term catches neglected lanes
-            reward = -1.0 * (0.5 * avg_queue_n + 0.3 * pressure_n + 0.2 * max_wait_n)
+            # ---- mismatch penalty: served phase vs worst-queue phase ----
+            phase_q = {}
+            for g, lanes in self.phase_to_lanes.items():
+                phase_q[g] = sum(lane_q.get(l, 0.0) for l in lanes)
+            try:
+                current_phase = int(traci.trafficlight.getPhase(self.tl_id))
+                current_group = self.GROUP_MAP.get(current_phase, self.phase_map[0])
+            except Exception:
+                current_group = self.phase_map[0]
+            served_q = phase_q.get(current_group, 0.0)
+            worst_q = max(phase_q.values()) if phase_q else 0.0
+            mismatch_n = np.clip((worst_q - served_q) / self.MAX_QUEUE, 0.0, 1.0)
+
+            # Compose: max_queue carries the bulk of the signal, mismatch makes
+            # the agent learn to actually match phase to demand.
+            reward = -1.0 * (
+                0.35 * max_queue_n
+                + 0.15 * avg_queue_n
+                + 0.20 * pressure_n
+                + 0.10 * max_wait_n
+                + 0.20 * mismatch_n
+            )
 
             return float(np.clip(reward, -10.0, 0.0))
         except Exception:
@@ -384,13 +473,35 @@ class SumoEnv(Env):
         except Exception:
             current_phase = target_green
 
-        if (self._step_count - self._last_change_step) < self.min_green_time:
-            return
+        current_group = self.GROUP_MAP.get(current_phase, target_green)
+
+        # min_green lockout, with emergency override.
+        # Previously this was an unconditional `return`: once a phase started,
+        # the agent was silently ignored for `min_green_time` steps even if a
+        # different lane built a long queue. Now we let the agent switch early
+        # if the target phase's queue is much larger than what we are serving.
+        elapsed = self._step_count - self._last_change_step
+        if elapsed < self.min_green_time:
+            try:
+                served_q = sum(
+                    traci.lane.getLastStepHaltingNumber(l)
+                    for l in self.phase_to_lanes.get(current_group, [])
+                )
+                target_q = sum(
+                    traci.lane.getLastStepHaltingNumber(l)
+                    for l in self.phase_to_lanes.get(target_green, [])
+                )
+            except Exception:
+                served_q = target_q = 0
+            emergency = (
+                target_q >= self.queue_emergency_threshold
+                and target_q > served_q + 3
+            )
+            if not emergency:
+                return
 
         if current_phase == target_green:
             return
-
-        current_group = self.GROUP_MAP.get(current_phase, target_green)
 
         # Turn-before-straight sequencing:
         # Only insert turn-clear step when all three conditions hold:
