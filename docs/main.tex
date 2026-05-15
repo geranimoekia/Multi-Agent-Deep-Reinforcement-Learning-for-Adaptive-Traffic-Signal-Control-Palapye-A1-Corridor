@@ -1754,13 +1754,15 @@ Each agent observes eight incoming lanes at its junction. For every lane it reco
 \centering
 \caption{Local observation vector (22 dimensions, one per agent)}
 \label{tab:obs_space}
-\begin{tabular}{p{1.4cm}p{2.8cm}p{2.8cm}p{1.2cm}p{1.8cm}p{2.0cm}}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}p{1.2cm}p{3.0cm}p{2.6cm}p{1.2cm}p{1.6cm}p{2.1cm}@{}}
 \toprule
 \textbf{Indices} & \textbf{Feature} & \textbf{TraCI source} & \textbf{Unit} & \textbf{Raw range} & \textbf{Normalisation} \\
 \midrule
-0--7   & Queue length per incoming lane & \texttt{getLastStepHaltingNumber} & vehicles & 0--20+ & $\log(1+x)$ \\
+0--7   & Queue length per incoming lane & \shortstack[l]{\texttt{getLastStep}\\\texttt{HaltingNumber}} & vehicles & 0--20+ & $\log(1+x)$ \\
 8--15  & Cumulative waiting time per incoming lane & \texttt{getWaitingTime} & seconds & 0--300+ & $\log(1+x)$ \\
-16--19 & Vehicle count on outgoing lanes & \texttt{getLastStepVehicleNumber} & vehicles & 0--15+ & $\log(1+x)$ \\
+16--19 & Vehicle count on outgoing lanes & \shortstack[l]{\texttt{getLastStep}\\\texttt{VehicleNumber}} & vehicles & 0--15+ & $\log(1+x)$ \\
 20     & Current green phase index & \texttt{getPhase} & — & 0--2 & Normalised 0--1 \\
 21     & Phase state flag & \texttt{getPhase} / yellow timer & — & 0 or 1 & Binary \\
 \bottomrule
