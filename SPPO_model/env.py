@@ -134,6 +134,14 @@ class SumoEnv(Env):
         sumo_bin = os.path.join(sumo_home, "bin", binary)
         if not os.path.isfile(sumo_bin):
             sumo_bin = shutil.which(binary) or sumo_bin
+
+        if not os.path.isfile(self.sumo_cfg):
+            raise FileNotFoundError(
+                f"SUMO config not found: {self.sumo_cfg}\n"
+                f"Working directory: {os.getcwd()}\n"
+                f"Files here: {os.listdir(os.path.dirname(self.sumo_cfg) or '.')}"
+            )
+
         cmd = [sumo_bin, "-c", self.sumo_cfg,
                "--no-step-log", "--waiting-time-memory", "1000"]
 
