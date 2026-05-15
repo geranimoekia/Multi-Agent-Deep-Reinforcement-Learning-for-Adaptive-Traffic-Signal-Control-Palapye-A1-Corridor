@@ -45,7 +45,8 @@ async def push_file(page, local_path: str, prism_filename: str):
     """)
     local_lines = len(content.splitlines())
     local_chars = len(content)
-    if info["lines"] == local_lines and info["chars"] == local_chars:
+    char_diff = abs(info["chars"] - local_chars)
+    if char_diff <= 1:  # allow ±1 for trailing newline counting difference
         print(f"✓  ({local_lines} lines / {local_chars} chars)")
     else:
         print(f"✗  mismatch — local {local_lines}L/{local_chars}c | remote {info['lines']}L/{info['chars']}c")
