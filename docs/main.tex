@@ -453,7 +453,7 @@ These systems use mathematical models to represent how traffic behaves. Instead 
 
 \subsection{Model Predictive Control}
 
-This technique predicts future traffic states like queue lengths and delays over a finite prediction horizon and computes the best signal timings in advance. A mathematical model predicts how traffic will evolve if certain green/red timings are applied. An optimisation problem is solved to minimise a cost function subject to constraints like minimum green time or safety rules. The first part of the optimised signal plan is implemented. The process repeats at the next step with updated traffic data \cite{8707103}. Mathematically, the MPC problem is expressed as:
+This technique predicts future traffic states like queue lengths and delays over a finite prediction horizon and computes the best signal timings in advance. A mathematical model predicts how traffic will evolve if certain green/red timings are applied. An optimisation problem is solved to minimise a cost function subject to constraints like minimum green time or safety rules. The first part of the optimised signal plan is implemented. The process repeats at the next step with updated traffic data \cite{ye2019survey}. Mathematically, the MPC problem is expressed as:
 
 \begin{equation}
 \min_{u(0), \dots, u(N-1)} \sum_{k=0}^{N-1} J(x(k), u(k)) + J_f(x(N))
@@ -477,9 +477,9 @@ where:
 
 The stage cost $J(x,u)$ typically combines queue lengths, waiting times, or number of stops, while $J_f(x(N))$ serves as a terminal cost penalizing undesirable end states.
 
-MPC can anticipate future conditions, explicitly handle multi-variable intersections and constraints, and outperforms fixed and actuated control strategies \cite{8707103}. Distributed and hierarchical MPC variants also offer improved coordination across multiple intersections.
+MPC can anticipate future conditions, explicitly handle multi-variable intersections and constraints, and outperforms fixed and actuated control strategies \cite{ye2019survey}. Distributed and hierarchical MPC variants also offer improved coordination across multiple intersections.
 
-These benefits come with significant trade-offs. Centralised MPC carries a computational burden that restricts real-time feasibility in large urban networks, and its performance is heavily dependent on how accurately the underlying traffic model captures reality. Most applications remain at the simulation stage, with few large-scale real-world deployments to date. Scalability and robustness to uncertainty remain open challenges \cite{8707103}.
+These benefits come with significant trade-offs. Centralised MPC carries a computational burden that restricts real-time feasibility in large urban networks, and its performance is heavily dependent on how accurately the underlying traffic model captures reality. Most applications remain at the simulation stage, with few large-scale real-world deployments to date. Scalability and robustness to uncertainty remain open challenges \cite{ye2019survey}.
 
 \subsection{Dynamic Traffic Assignment (DTA)}
 
@@ -2881,12 +2881,10 @@ cv2.destroyAllWindows()
 \begin{thebibliography}{99}
 
 \bibitem{BIUST_LocateUs}
-Botswana International University of Science and Technology, ``Locate Us,''
-\url{https://www.biust.ac.bw/locate-us/}. Accessed: 2025-09-24.
+Botswana International University of Science and Technology, ``Locate Us,'' [Online]. Available: \url{https://www.biust.ac.bw/locate-us/}. [Accessed: 24-Sep-2025].
 
 \bibitem{mmegi_heavy_traffic_a1}
-P. Bothoko, ``Heavy traffic eases along A1 road,'' \textit{Mmegi Online}, 2024.
-\url{https://www.mmegi.bw/news/heavy-traffic-eases-along-a1-road/news}
+P. Bothoko, ``Heavy traffic eases along A1 road,'' \textit{Mmegi Online}, 2024. [Online]. Available: \url{https://www.mmegi.bw/news/heavy-traffic-eases-along-a1-road/news}.
 
 \bibitem{tang2019global}
 K. Tang, M. Boltze, H. Nakamura, and Z. Tian,
@@ -2897,6 +2895,7 @@ Elsevier, 2019.
 A. Kala\v{s}ov\'{a}, A. H\'{a}jnik, S. Kubal'\'{a}k, J. Be\v{n}u\v{s}, and V. Harantov\'{a},
 ``The impact of actuated control on the environment and the traffic flow,''
 \textit{Journal of Applied Engineering Science}, vol.~20, no.~2, pp.~305--314, 2022.
+doi: 10.5937/jaes0-35108.
 
 \bibitem{mannion2016experimental}
 P. Mannion, J. Duggan, and E. Howley,
@@ -2904,11 +2903,6 @@ P. Mannion, J. Duggan, and E. Howley,
 \textit{Autonomic Road Transport Support Systems}, pp.~47--66, Springer, 2016.
 
 \bibitem{ye2019survey}
-B.-L. Ye, W. Wu, K. Ruan, L. Li, T. Chen, H. Gao, and Y. Chen,
-``A survey of model predictive control methods for traffic signal control,''
-\textit{IEEE/CAA Journal of Automatica Sinica}, vol.~6, no.~3, pp.~623--640, 2019.
-
-\bibitem{8707103}
 B.-L. Ye, W. Wu, K. Ruan, L. Li, T. Chen, H. Gao, and Y. Chen,
 ``A survey of model predictive control methods for traffic signal control,''
 \textit{IEEE/CAA Journal of Automatica Sinica}, vol.~6, no.~3, pp.~623--640, 2019.
@@ -2944,6 +2938,7 @@ T.~S. Ximenes, A.~C. de~Oliveira~Silva, G.~P. de~Martino, W.~M. Emiliano, M. Men
 B. Lv, H. Xu, J. Wu, Y. Tian, Y. Zhang, Y. Zheng, C. Yuan, and S. Tian,
 ``LiDAR-enhanced connected infrastructures sensing and broadcasting high-resolution traffic information serving smart cities,''
 \textit{IEEE Access}, vol.~7, pp.~79895--79907, 2019.
+doi: 10.1109/ACCESS.2019.2922815.
 
 \bibitem{futuretransp5040137}
 S. Mansouryar, C. Colombaroni, N. Isaenko, and G. Fusco,
@@ -2951,7 +2946,7 @@ S. Mansouryar, C. Colombaroni, N. Isaenko, and G. Fusco,
 \textit{Future Transportation}, vol.~5, no.~4, article 137, 2025.
 doi: 10.3390/futuretransp5040137.
 
-\bibitem{inproceedings}
+\bibitem{gajda2001vehicle}
 J. Gajda, R. Sroka, M. Stencel, A. Wajda, and T. Zeglen,
 ``A vehicle classification based on inductive loop detectors,''
 in \textit{Proc. 18th IEEE Instrumentation and Measurement Technology Conference}, vol.~1, pp.~460--464, 2001.
@@ -2961,6 +2956,7 @@ doi: 10.1109/IMTC.2001.928860.
 L. Bu\c{s}oniu, R. Babu\v{s}ka, and B. De~Schutter,
 ``A comprehensive survey of multiagent reinforcement learning,''
 \textit{IEEE Transactions on Systems, Man, and Cybernetics, Part C}, vol.~38, no.~2, pp.~156--172, 2008.
+doi: 10.1109/TSMCC.2007.913919.
 
 \bibitem{tan1993multi}
 M. Tan,
@@ -3006,6 +3002,7 @@ in \textit{Autonomous Agents and Multi-Agent Systems}, pp.~66--83, Springer, 201
 T. Chu, J. Wang, L. Codec\`{a}, and Z. Li,
 ``Multi-agent deep reinforcement learning for large-scale traffic signal control,''
 \textit{IEEE Transactions on Intelligent Transportation Systems}, vol.~21, no.~3, pp.~1086--1095, 2019.
+doi: 10.1109/TITS.2019.2901791.
 
 \bibitem{wei2019colight}
 H. Wei, N. Xu, H. Zhang, G. Zheng, X. Zang, C. Chen, W. Zhang, Y. Zhu, K. Xu, and Z. Li,
