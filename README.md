@@ -15,20 +15,23 @@ The algorithm is **MAPPO** (Multi-Agent Proximal Policy Optimisation) with a **C
 
 ## Architecture
 
-```
-CTDE - Centralised Training, Decentralised Execution
+```mermaid
+flowchart LR
+    subgraph T ["Training (Centralised)"]
+        GS["Global State\n66-dim\nall 3 agents"]
+        CC["Centralised\nCritic"]
+        V["Value\nEstimate"]
+        GS --> CC --> V
+    end
 
- Training                          Deployment
- ────────                          ──────────
- Global state (66-dim)             Local obs only (22-dim)
-       │                                 │
-  ┌────▼─────┐                     ┌────▼────┐
-  │Centralized│                    │  Actor  │  ← same network,
-  │  Critic  │                     │(shared) │    all 3 agents
-  └──────────┘                     └────┬────┘
-                                        │
-                              action: 0, 1, or 2
-                              (green phase selection)
+    subgraph D ["Deployment (Decentralised)"]
+        LO["Local Obs\n22-dim per agent"]
+        AC["Actor\nshared weights"]
+        ACT["Action\n0 / 1 / 2\ngreen phase"]
+        LO --> AC --> ACT
+    end
+
+    T -. "shared Actor weights" .-> D
 ```
 
 **Actor** - 22-dim local observation → 3 action logits (one per green phase)  
