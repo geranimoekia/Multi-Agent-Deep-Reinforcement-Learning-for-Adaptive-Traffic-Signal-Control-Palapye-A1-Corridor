@@ -498,6 +498,9 @@ class VehicleDetector:
 # ──────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import argparse
+    import os
+    # Use the YOLO weights bundled in this folder, regardless of launch directory.
+    _HERE = os.path.dirname(os.path.abspath(__file__))
 
     ap = argparse.ArgumentParser(description="Vehicle detector → MAPPO observation CSV")
     ap.add_argument("--source",  default="0",           help="Camera index or video file path")
@@ -512,7 +515,7 @@ if __name__ == "__main__":
 
     detector = VehicleDetector(
         source=src,
-        model_path="yolov8n.pt",   # smallest/fastest YOLO model
+        model_path=os.path.join(_HERE, "yolov8n.pt"),   # smallest/fastest YOLO model
         conf=args.conf,
         device=args.device,        # use "cpu" on weak-GPU machines
     )
