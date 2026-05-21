@@ -1,5 +1,5 @@
 """
-compare_network_live.py
+mappo_vs_fixed_network_live.py
 
 Time-series comparison of MAPPO vs Fixed-Time on the full triple-intersection
 A1 corridor network. Records per-step metrics averaged across all three junctions,
@@ -15,6 +15,13 @@ Output:
   output/compare_network_stop_ratio.png
   output/compare_network_pressure.png
 """
+
+# --- Performance Analysis/ lives outside src/; add ../src to the path so the
+# flat project imports (mappo_env, mappo_networks, sumo_env) resolve. Run these
+# scripts from the repository root so data paths (network/, mappo_models/) work.
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "src"))
+
 
 import os
 import sys

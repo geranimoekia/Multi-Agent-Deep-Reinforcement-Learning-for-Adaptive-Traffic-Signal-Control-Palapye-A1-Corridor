@@ -70,8 +70,14 @@ PALMS-Multi-Agent-Deep-Reinforcement-Learning-Traffic-Signal-Control-Palapye/
 │   │
 │   ├── evaluate_mappo.py         # Evaluate MAPPO vs fixed-time / baselines
 │   ├── evaluate_network.py       # Network-wide evaluation across junctions
-│   ├── compare_*.py              # Controller / network comparison scripts
 │   └── watch_mappo.py, demo_ctde.py, ...   # Live viewers & demos
+│
+├── Performance Analysis/         # Controller comparison scripts (run from repo root)
+│   ├── mappo_vs_ppo_vs_fixed_network.py        # All 3 controllers, full network (bar charts)
+│   ├── mappo_vs_ppo_vs_fixed_junction.py       # All 3 controllers at junction TL_A (bar charts)
+│   ├── mappo_vs_ppo_vs_fixed_junction_live.py  # Same, per-step line graphs
+│   ├── mappo_vs_fixed_network_live.py          # MAPPO vs Fixed, network time-series
+│   └── ppo_vs_mappo_live_gui.py                # Live dual SUMO-GUI: SA-PPO vs MAPPO
 │
 ├── network/                      # SUMO simulation files
 │   ├── triple.sumocfg            # Simulation config entry point
