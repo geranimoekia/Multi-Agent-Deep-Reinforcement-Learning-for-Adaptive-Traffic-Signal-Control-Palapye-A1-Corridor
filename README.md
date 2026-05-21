@@ -32,21 +32,84 @@ graph LR
     Training -. shared Actor weights .-> Deployment
 ```
 
-**Actor** - 22-dim local observation → 3 action logits (one per green phase)  
-**CentralizedCritic** - 66-dim global state (all 3 agents concatenated) → scalar value  
-**Parameter sharing** - one Actor network for all three traffic lights (they have the same structure, so the same "rules" apply to each)
+PALMS uses **CTDE (Centralised Training, Decentralised Execution)**. During training the critic sees the full network state across all three junctions to produce accurate value estimates. At deployment only the Actor runs, using each agent's own local sensors.
 
 ---
 
-## Local Observation (22 numbers per agent)
+### Actor Network (Policy)
 
-| Index | Feature | How it's measured |
-|-------|---------|-------------------|
-| 0–7 | Queue length per incoming lane | Halting vehicles, log-scaled |
-| 8–15 | Waiting time per incoming lane | Cumulative wait, log-scaled |
-| 16–19 | Vehicle count on outgoing lanes | Downstream congestion, log-scaled |
-| 20 | Current green phase | Normalised 0–1 |
-| 21 | Phase state | 0 = green, 1 = yellow |
+All three traffic lights share a single Actor instance. Each agent feeds its own 22-number local observation through the network independently and receives a phase decision.
+
+**Input - 22 values per agent**
+
+| Index | Feature | Description |
+|-------|---------|-------------|
+| 0 - 7 | Queue length per incoming lane | Halting vehicles, log-scaled |
+| 8 - 15 | Waiting time per incoming lane | Cumulative wait in seconds, log-scaled |
+| 16 - 19 | Vehicle count on outgoing lanes | Downstream congestion, log-scaled |
+| 20 | Current green phase | Normalised 0 to 1 |
+| 21 | Phase state flag | 0 = green, 1 = yellow |
+
+**Layer structure**
+
+```
+Input (22)  →  Linear(256)  →  Tanh  →  Linear(256)  →  Tanh  →  Linear(3)
+```
+
+**Output** - 3 raw logits, one per green phase. A Categorical distribution converts them to probabilities. During training the action is sampled for exploration; during evaluation the highest-probability phase is always chosen.
+
+---
+
+### Centralised Critic (Value Network)
+
+Used only during training and discarded at deployment. The critic receives the full global state - all three agents' observations concatenated - and returns a single scalar value V(s) used to compute advantages for the PPO update.
+
+**Input - 66 values (3 agents x 22)**
+
+```
+[ Agent 1 obs (22) | Agent 2 obs (22) | Agent 3 obs (22) ]  =  66-dim global state
+```
+
+By seeing all queues, waiting times, and phases across every junction at once, the critic can accurately judge joint situations - for example, whether clearing one junction is causing a knock-on queue at another.
+
+**Layer structure**
+
+```
+Input (66)  →  Linear(256)  →  Tanh  →  Linear(256)  →  Tanh  →  Linear(1)
+```
+
+---
+
+### Parameter Sharing
+
+One Actor network is shared across all three traffic lights rather than training three separate networks. This works because every intersection has the same lane structure and observation format, so the same decision rules generalise across junction positions.
+
+| Benefit | Detail |
+|---------|--------|
+| Fewer parameters | 1x network instead of 3x - faster convergence |
+| More gradient signal | Each environment step produces 3 training samples |
+| Implicit coordination | Agents learn a policy that works well across all positions in the network |
+
+---
+
+### Training Data Flow
+
+```
+4 parallel SUMO environments collect experience simultaneously
+              |
+              v
+  GAE - Generalised Advantage Estimation
+  estimates how much better/worse each action was than expected
+  (lambda = 0.95, gamma = 0.99)
+              |
+              v
+  PPO Update - clip ratio epsilon = 0.2
+  updates Actor and Critic weights without taking destructive steps
+              |
+              v
+  Evaluate on held-out episodes
+  save best_actor.pth if mean reward improves
+```
 
 ---
 
