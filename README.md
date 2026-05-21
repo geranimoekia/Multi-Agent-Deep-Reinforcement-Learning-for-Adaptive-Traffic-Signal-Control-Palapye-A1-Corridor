@@ -186,6 +186,108 @@ Live Streamlit interface showing:
 
 ---
 
+## Evaluation
+
+Run these from the **repository root** after training completes (or using the pre-trained checkpoints in `mappo_models/`).
+
+### Single-intersection evaluation — MAPPO vs Fixed vs Random
+
+```bash
+python src/evaluate_mappo.py
+```
+
+Runs three controllers across all six traffic scenarios and records per-step metrics at every junction:
+
+| Controller | Description |
+|---|---|
+| `mappo` | Trained policy (`mappo_models/best_actor.pth`), deterministic greedy |
+| `fixed` | Fixed-time cycling — phases 0 → 1 → 2 → 0 every N steps |
+| `random` | Uniform random phase selection (sanity baseline) |
+
+**Output** (written to repo root and `output/`):
+- `eval_summary.csv` — mean waiting time, queue length, throughput, stop ratio per controller per scenario
+- `output/eval_comparison.png` — grouped bar chart across all scenarios
+
+---
+
+### Network-wide evaluation — MAPPO vs Fixed across all three junctions
+
+```bash
+python src/evaluate_network.py
+```
+
+Collects per-junction and network-wide metrics across all six demand scenarios.
+
+**Output** (`output/`):
+- `output/network_eval_summary.csv` — per-controller, per-scenario numbers for TL_A / TL_B / TL_C + network aggregate
+- `output/network_eval_wait.png`, `network_eval_queue.png`, `network_eval_throughput.png`, `network_eval_pressure.png` — network-wide bar charts
+- `output/network_eval_junctions_*.png` — per-junction breakdown
+
+---
+
+## Performance Analysis
+
+All scripts in `Performance Analysis/` compare controllers head-to-head. Run them from the **repository root**:
+
+### Bar-chart comparisons (static, all scenarios averaged)
+
+```bash
+# All 3 controllers — network-wide metrics
+python "Performance Analysis/mappo_vs_ppo_vs_fixed_network.py"
+
+# All 3 controllers — junction TL_A only
+python "Performance Analysis/mappo_vs_ppo_vs_fixed_junction.py"
+```
+
+Compares **MAPPO**, **SA-PPO** (single-agent baseline from `SPPO_model/`), and **Fixed-time** on five metrics: waiting time, queue length, throughput, stop ratio, pressure.
+
+**Output** (`output/`):
+- `output/compare_summary.csv`, `output/compare_overall.png` — network-wide grouped bar charts
+- `output/compare_tla_all_metrics.png` — TL_A junction bar chart
+
+---
+
+### Time-series comparisons (per-step line graphs)
+
+```bash
+# Line graphs at junction TL_A — MAPPO vs SA-PPO vs Fixed
+python "Performance Analysis/mappo_vs_ppo_vs_fixed_junction_live.py"
+
+# Line graphs across the full network — MAPPO vs Fixed
+python "Performance Analysis/mappo_vs_fixed_network_live.py"
+```
+
+Records metrics at every simulation step and plots them as growing line charts (one line per controller).
+
+**Output** (`output/`):
+- `output/compare_tla_live.png` — per-step TL_A comparison
+- `output/compare_network_waiting_time.png`, `compare_network_queue_length.png`, `compare_network_throughput.png`, `compare_network_stop_ratio.png`, `compare_network_pressure.png`
+
+---
+
+### Live dual-GUI comparison
+
+```bash
+# Opens two SUMO-GUI windows simultaneously: SA-PPO (left) vs MAPPO (right)
+python "Performance Analysis/ppo_vs_mappo_live_gui.py"
+```
+
+Launches both simulations side by side and plots five metrics in real time as both step. Requires a display. Close the matplotlib window to stop both simulations cleanly.
+
+---
+
+### Metrics reference
+
+| Metric | Definition |
+|---|---|
+| **Waiting time** | Mean seconds a vehicle spends stationary per incoming lane |
+| **Queue length** | Mean halting vehicles per incoming lane |
+| **Throughput** | Total vehicles that cleared the junction per episode |
+| **Stop ratio** | Fraction of incoming vehicles stopped each step (mean) |
+| **Pressure** | Mean (incoming vehicles − outgoing vehicles) per step |
+
+---
+
 ## RL Design
 
 | Component | Detail |
