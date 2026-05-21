@@ -20,8 +20,11 @@ import os
 import time
 
 # ── Config ────────────────────────────────────────────────────────────────────
-VIDEO_PATH          = "traffic.mp4"
-YOLO_MODEL          = "yolov8s.pt"        # small model — better accuracy than nano
+# Resolve the video and model relative to this script's folder so the detector
+# finds its assets no matter which directory it is launched from.
+_HERE               = os.path.dirname(os.path.abspath(__file__))
+VIDEO_PATH          = os.path.join(_HERE, "traffic.mp4")
+YOLO_MODEL          = os.path.join(_HERE, "yolov8s.pt")   # small model — better accuracy than nano
 CONF                = 0.25               # lower threshold catches more vehicles
 VEHICLE_CLASSES     = [2, 3, 5, 7]        # car, motorcycle, bus, truck
 STATIONARY_PX       = 10                  # max pixel drift to be classed as queued

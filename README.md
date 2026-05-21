@@ -86,7 +86,14 @@ PALMS-Multi-Agent-Deep-Reinforcement-Learning-Traffic-Signal-Control-Palapye/
 │   ├── tls.add.xml               # Custom traffic light phase programs
 │   └── vtypes.add.xml            # Vehicle type definitions
 │
-├── tools/                        # Utilities (plotting, vehicle detection, TLS editor)
+├── vehicle_detection/            # YOLOv8 vehicle detection (run from repo root)
+│   ├── detect_traffic.py         # Runs YOLOv8 over traffic.mp4, counts/queues vehicles
+│   ├── vehicle_detector.py       # Reusable detector class → MAPPO observation CSV
+│   ├── traffic.mp4               # Source footage (gitignored — large)
+│   ├── first_frame.jpg           # Calibration still (first frame of traffic.mp4)
+│   └── yolov8n.pt, yolov8s.pt    # YOLO weights (gitignored — large)
+│
+├── tools/                        # Utilities (plotting, TLS editor, presentation gen)
 ├── animations/                   # Manim animations of the system
 ├── docs/                         # Project report (LaTeX) — see "Project Report" below
 │   ├── main.tex, references.bib
