@@ -1,4 +1,4 @@
-# PALMS — Multi-Agent Deep Reinforcement Learning Traffic Signal Control
+# PALMS - Multi-Agent Deep Reinforcement Learning Traffic Signal Control
 ### Palapye, Botswana · Triple Intersection Network
 
 Three traffic lights. One cooperative policy. Trained with MAPPO to minimise waiting times across a real-world road layout.
@@ -7,16 +7,16 @@ Three traffic lights. One cooperative policy. Trained with MAPPO to minimise wai
 
 ## What This Is
 
-PALMS trains a multi-agent reinforcement learning system to control the three signalised intersections along the A1 highway corridor through Palapye. Each traffic light is an independent agent that observes its own queue lengths and waiting times, then decides which green phase to hold or switch to. The agents share a single neural network (parameter sharing) and are trained cooperatively — they all benefit when the whole network flows well, not just one junction.
+PALMS trains a multi-agent reinforcement learning system to control the three signalised intersections along the A1 highway corridor through Palapye. Each traffic light is an independent agent that observes its own queue lengths and waiting times, then decides which green phase to hold or switch to. The agents share a single neural network (parameter sharing) and are trained cooperatively - they all benefit when the whole network flows well, not just one junction.
 
-The algorithm is **MAPPO** (Multi-Agent Proximal Policy Optimisation) with a **Centralised Critic** — during training, the critic sees the full network state (all three intersections at once) to produce better value estimates, but at deployment each agent makes decisions using only its own local sensor data.
+The algorithm is **MAPPO** (Multi-Agent Proximal Policy Optimisation) with a **Centralised Critic** - during training, the critic sees the full network state (all three intersections at once) to produce better value estimates, but at deployment each agent makes decisions using only its own local sensor data.
 
 ---
 
 ## Architecture
 
 ```
-CTDE — Centralised Training, Decentralised Execution
+CTDE - Centralised Training, Decentralised Execution
 
  Training                          Deployment
  ────────                          ──────────
@@ -31,9 +31,9 @@ CTDE — Centralised Training, Decentralised Execution
                               (green phase selection)
 ```
 
-**Actor** — 22-dim local observation → 3 action logits (one per green phase)  
-**CentralizedCritic** — 66-dim global state (all 3 agents concatenated) → scalar value  
-**Parameter sharing** — one Actor network for all three traffic lights (they have the same structure, so the same "rules" apply to each)
+**Actor** - 22-dim local observation → 3 action logits (one per green phase)  
+**CentralizedCritic** - 66-dim global state (all 3 agents concatenated) → scalar value  
+**Parameter sharing** - one Actor network for all three traffic lights (they have the same structure, so the same "rules" apply to each)
 
 ---
 
@@ -89,18 +89,18 @@ PALMS-Multi-Agent-Deep-Reinforcement-Learning-Traffic-Signal-Control-Palapye/
 ├── vehicle_detection/            # YOLOv8 vehicle detection (run from repo root)
 │   ├── detect_traffic.py         # Runs YOLOv8 over traffic.mp4, counts/queues vehicles
 │   ├── vehicle_detector.py       # Reusable detector class → MAPPO observation CSV
-│   ├── traffic.mp4               # Source footage (gitignored — large)
+│   ├── traffic.mp4               # Source footage (gitignored - large)
 │   ├── first_frame.jpg           # Calibration still (first frame of traffic.mp4)
-│   └── yolov8n.pt, yolov8s.pt    # YOLO weights (gitignored — large)
+│   └── yolov8n.pt, yolov8s.pt    # YOLO weights (gitignored - large)
 │
 ├── tools/                        # Utilities (plotting, TLS editor, presentation gen)
 ├── animations/                   # Manim animations of the system
-├── docs/                         # Project report (LaTeX) — see "Project Report" below
+├── docs/                         # Project report (LaTeX) - see "Project Report" below
 │   ├── main.tex, references.bib
 │   ├── figures/                  # All report figures
 │   └── presentations/            # Slide decks (.pptx)
 │
-├── mappo_models/                 # Saved checkpoints — best_/final_ tracked; numbered ones gitignored
+├── mappo_models/                 # Saved checkpoints - best_/final_ tracked; numbered ones gitignored
 ├── mappo_logs/                   # CSV training log (gitignored)
 ├── output/                       # Generated evaluation plots/CSVs (gitignored)
 ├── SPPO_model/                   # Archive of the original single-agent PPO version
@@ -127,7 +127,7 @@ rl_env\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Set SUMO_HOME (Windows — adjust path if needed)
+# Set SUMO_HOME (Windows - adjust path if needed)
 $env:SUMO_HOME = "C:\Program Files (x86)\Eclipse\Sumo"
 ```
 
@@ -139,11 +139,11 @@ $env:SUMO_HOME = "C:\Program Files (x86)\Eclipse\Sumo"
 python src/train_mappo.py
 ```
 
-- **4 parallel SUMO environments** — diverse experience, faster data collection
-- **1.5 million timesteps** — converges in ~3–4 hours on CPU
-- **Curriculum learning** — starts on easy scenarios, adds rush hour and holiday as training progresses
+- **4 parallel SUMO environments** - diverse experience, faster data collection
+- **1.5 million timesteps** - converges in ~3–4 hours on CPU
+- **Curriculum learning** - starts on easy scenarios, adds rush hour and holiday as training progresses
 - Saves `mappo_models/best_actor.pth` whenever evaluation reward improves
-- Logs every update to `mappo_logs/mappo_train.csv` — open in Excel or plot with pandas
+- Logs every update to `mappo_logs/mappo_train.csv` - open in Excel or plot with pandas
 
 ### Curriculum Schedule
 
@@ -190,7 +190,7 @@ Live Streamlit interface showing:
 
 Run these from the **repository root** after training completes (or using the pre-trained checkpoints in `mappo_models/`).
 
-### Single-intersection evaluation — MAPPO vs Fixed vs Random
+### Single-intersection evaluation - MAPPO vs Fixed vs Random
 
 ```bash
 python src/evaluate_mappo.py
@@ -201,16 +201,16 @@ Runs three controllers across all six traffic scenarios and records per-step met
 | Controller | Description |
 |---|---|
 | `mappo` | Trained policy (`mappo_models/best_actor.pth`), deterministic greedy |
-| `fixed` | Fixed-time cycling — phases 0 → 1 → 2 → 0 every N steps |
+| `fixed` | Fixed-time cycling - phases 0 → 1 → 2 → 0 every N steps |
 | `random` | Uniform random phase selection (sanity baseline) |
 
 **Output** (written to repo root and `output/`):
-- `eval_summary.csv` — mean waiting time, queue length, throughput, stop ratio per controller per scenario
-- `output/eval_comparison.png` — grouped bar chart across all scenarios
+- `eval_summary.csv` - mean waiting time, queue length, throughput, stop ratio per controller per scenario
+- `output/eval_comparison.png` - grouped bar chart across all scenarios
 
 ---
 
-### Network-wide evaluation — MAPPO vs Fixed across all three junctions
+### Network-wide evaluation - MAPPO vs Fixed across all three junctions
 
 ```bash
 python src/evaluate_network.py
@@ -219,9 +219,9 @@ python src/evaluate_network.py
 Collects per-junction and network-wide metrics across all six demand scenarios.
 
 **Output** (`output/`):
-- `output/network_eval_summary.csv` — per-controller, per-scenario numbers for TL_A / TL_B / TL_C + network aggregate
-- `output/network_eval_wait.png`, `network_eval_queue.png`, `network_eval_throughput.png`, `network_eval_pressure.png` — network-wide bar charts
-- `output/network_eval_junctions_*.png` — per-junction breakdown
+- `output/network_eval_summary.csv` - per-controller, per-scenario numbers for TL_A / TL_B / TL_C + network aggregate
+- `output/network_eval_wait.png`, `network_eval_queue.png`, `network_eval_throughput.png`, `network_eval_pressure.png` - network-wide bar charts
+- `output/network_eval_junctions_*.png` - per-junction breakdown
 
 ---
 
@@ -232,35 +232,35 @@ All scripts in `Performance Analysis/` compare controllers head-to-head. Run the
 ### Bar-chart comparisons (static, all scenarios averaged)
 
 ```bash
-# All 3 controllers — network-wide metrics
+# All 3 controllers - network-wide metrics
 python "Performance Analysis/mappo_vs_ppo_vs_fixed_network.py"
 
-# All 3 controllers — junction TL_A only
+# All 3 controllers - junction TL_A only
 python "Performance Analysis/mappo_vs_ppo_vs_fixed_junction.py"
 ```
 
 Compares **MAPPO**, **SA-PPO** (single-agent baseline from `SPPO_model/`), and **Fixed-time** on five metrics: waiting time, queue length, throughput, stop ratio, pressure.
 
 **Output** (`output/`):
-- `output/compare_summary.csv`, `output/compare_overall.png` — network-wide grouped bar charts
-- `output/compare_tla_all_metrics.png` — TL_A junction bar chart
+- `output/compare_summary.csv`, `output/compare_overall.png` - network-wide grouped bar charts
+- `output/compare_tla_all_metrics.png` - TL_A junction bar chart
 
 ---
 
 ### Time-series comparisons (per-step line graphs)
 
 ```bash
-# Line graphs at junction TL_A — MAPPO vs SA-PPO vs Fixed
+# Line graphs at junction TL_A - MAPPO vs SA-PPO vs Fixed
 python "Performance Analysis/mappo_vs_ppo_vs_fixed_junction_live.py"
 
-# Line graphs across the full network — MAPPO vs Fixed
+# Line graphs across the full network - MAPPO vs Fixed
 python "Performance Analysis/mappo_vs_fixed_network_live.py"
 ```
 
 Records metrics at every simulation step and plots them as growing line charts (one line per controller).
 
 **Output** (`output/`):
-- `output/compare_tla_live.png` — per-step TL_A comparison
+- `output/compare_tla_live.png` - per-step TL_A comparison
 - `output/compare_network_waiting_time.png`, `compare_network_queue_length.png`, `compare_network_throughput.png`, `compare_network_stop_ratio.png`, `compare_network_pressure.png`
 
 ---
@@ -292,10 +292,10 @@ Launches both simulations side by side and plots five metrics in real time as bo
 
 | Component | Detail |
 |---|---|
-| **Algorithm** | MAPPO — Multi-Agent PPO with Centralised Critic |
+| **Algorithm** | MAPPO - Multi-Agent PPO with Centralised Critic |
 | **Agents** | 3 (one per traffic light), parameter sharing |
 | **Observation** | 22-dim local per agent; 66-dim global for critic |
-| **Action** | Discrete(3) per agent — select green phase 0, 1, or 2 |
+| **Action** | Discrete(3) per agent - select green phase 0, 1, or 2 |
 | **Reward** | Shared: `−tanh(avg_wait / 60s) − 0.1 × queue_ratio − collision/teleport penalties` |
 | **Episode length** | 500 RL steps × 3 sim-seconds = 25 simulated minutes |
 | **Min green hold** | 5 steps (15 sim-seconds) before a phase switch is allowed |
@@ -344,8 +344,8 @@ To compile locally: open `docs/main.tex` in [Overleaf](https://overleaf.com) (Fi
 
 ## Tech Stack
 
-- **SUMO 1.24+** — microscopic traffic simulation
-- **TraCI** — Python API for real-time SUMO control
-- **PyTorch** — neural networks and PPO optimisation
-- **Streamlit + Plotly** — live training dashboard
-- **NumPy / Gymnasium** — environment interface and rollout buffer
+- **SUMO 1.24+** - microscopic traffic simulation
+- **TraCI** - Python API for real-time SUMO control
+- **PyTorch** - neural networks and PPO optimisation
+- **Streamlit + Plotly** - live training dashboard
+- **NumPy / Gymnasium** - environment interface and rollout buffer
