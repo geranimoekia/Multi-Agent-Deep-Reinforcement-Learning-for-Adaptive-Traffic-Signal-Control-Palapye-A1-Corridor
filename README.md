@@ -1,7 +1,7 @@
-# PALMS - Multi-Agent Deep Reinforcement Learning Traffic Signal Control
-### Palapye, Botswana · Triple Intersection Network
+# Multi-Agent Deep Reinforcement Learning for Adaptive Traffic Signal Control in the Palapye A1 Corridor
+### Tsotlhe Nayang Seiphepi · Final Year Project · BIUST
 
-Three traffic lights. One cooperative policy. Trained with MAPPO to minimise waiting times across a real-world road layout.
+Three traffic lights. One cooperative policy. Trained with MAPPO to minimise waiting times across a real-world road network.
 
 ---
 
