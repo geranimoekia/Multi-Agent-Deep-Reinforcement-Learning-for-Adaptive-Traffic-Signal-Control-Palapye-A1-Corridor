@@ -1,5 +1,5 @@
 """
-live_compare_ppo_mappo.py
+ppo_vs_mappo_live_gui.py
 Live animated comparison dashboard at junction 6073919354 (TL_A).
 
 Opens TWO SUMO-GUI windows simultaneously:
@@ -12,6 +12,13 @@ Each chart has two lines (SPPO orange, MAPPO blue) growing in real time.
 
 Close the matplotlib window to stop both simulations cleanly.
 """
+
+# --- Performance Analysis/ lives outside src/; add ../src to the path so the
+# flat project imports (mappo_env, mappo_networks, sumo_env) resolve. Run these
+# scripts from the repository root so data paths (network/, mappo_models/) work.
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "src"))
+
 
 import os
 import sys

@@ -1,5 +1,5 @@
 """
-compare_controllers.py
+mappo_vs_ppo_vs_fixed_network.py
 Compare MAPPO, SA-PPO, and Fixed-time controllers on the triple-intersection network.
 
 Outputs:
@@ -7,6 +7,13 @@ Outputs:
   output/compare_overall.png     — grouped bar chart, all 3 TLs
   output/compare_tla.png         — same metrics, TL_A lanes only
 """
+
+# --- Performance Analysis/ lives outside src/; add ../src to the path so the
+# flat project imports (mappo_env, mappo_networks, sumo_env) resolve. Run these
+# scripts from the repository root so data paths (network/, mappo_models/) work.
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "src"))
+
 
 import os
 import sys

@@ -1,5 +1,5 @@
 """
-compare_tla.py
+mappo_vs_ppo_vs_fixed_junction.py
 Direct comparison of SPPO vs MAPPO vs Fixed-Time at junction 6073919354 (TL_A).
 
   SPPO   — single-agent PPO trained on the single-intersection network (SPPO_model/map.sumocfg).
@@ -20,6 +20,13 @@ Outputs:
   output/compare_tla_all_metrics.png   — 5-metric grouped bar chart
   output/compare_tla_summary.csv       — raw numbers
 """
+
+# --- Performance Analysis/ lives outside src/; add ../src to the path so the
+# flat project imports (mappo_env, mappo_networks, sumo_env) resolve. Run these
+# scripts from the repository root so data paths (network/, mappo_models/) work.
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "src"))
+
 
 import os
 import sys
