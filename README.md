@@ -54,29 +54,51 @@ CTDE — Centralised Training, Decentralised Execution
 ```
 PALMS-Multi-Agent-Deep-Reinforcement-Learning-Traffic-Signal-Control-Palapye/
 │
-├── mappo_env.py            # Multi-agent SUMO environment (reset / step / reward)
-├── mappo_networks.py       # Actor + CentralizedCritic neural networks
-├── train_mappo.py          # Main training loop (rollout → GAE → PPO update)
+├── src/                          # All Python source (run scripts from the repo root)
+│   ├── mappo_env.py              # Multi-agent SUMO environment (reset / step / reward)
+│   ├── mappo_networks.py         # Actor + CentralizedCritic neural networks
+│   ├── train_mappo.py            # Main training loop (rollout → GAE → PPO update)
+│   │
+│   ├── sumo_env.py               # Single-agent PPO environment (baseline)
+│   ├── train_ppo.py              # Single-agent PPO training (baseline)
+│   ├── dashboard.py              # Streamlit live monitor
+│   │
+│   ├── traffic_injector.py       # Dynamic vehicle injection by scenario
+│   ├── traffic_scenario.py       # Demand scenario profiles (rush hour, holiday, etc.)
+│   ├── green_wave.py             # Rule-based green-wave offset pre-computation
+│   ├── tl_programs.py            # SUMO traffic light phase program loader
+│   │
+│   ├── evaluate_mappo.py         # Evaluate MAPPO vs fixed-time / baselines
+│   ├── evaluate_network.py       # Network-wide evaluation across junctions
+│   ├── compare_*.py              # Controller / network comparison scripts
+│   └── watch_mappo.py, demo_ctde.py, ...   # Live viewers & demos
 │
-├── sumo_env.py             # Single-agent PPO baseline (for comparison)
-├── dashboard.py            # Streamlit live monitor
-│
-├── traffic_injector.py     # Dynamic vehicle injection by scenario
-├── traffic_scenario.py     # Demand scenario profiles (rush hour, holiday, etc.)
-├── green_wave.py           # Rule-based green-wave offset pre-computation
-├── tl_programs.py          # SUMO traffic light phase program loader
-│
-├── network/                # SUMO simulation files
-│   ├── triple.sumocfg      # Simulation config entry point
+├── network/                      # SUMO simulation files
+│   ├── triple.sumocfg            # Simulation config entry point
 │   ├── network_tripled.net.xml
 │   ├── triple_routes_flows.rou.xml
-│   ├── tls.add.xml         # Custom traffic light phase programs
-│   └── vtypes.add.xml      # Vehicle type definitions
+│   ├── tls.add.xml               # Custom traffic light phase programs
+│   └── vtypes.add.xml            # Vehicle type definitions
 │
-├── mappo_models/           # Saved checkpoints (gitignored)
-├── mappo_logs/             # CSV training log (gitignored)
-└── v1.0/                   # Archive of original single-agent PPO version
+├── tools/                        # Utilities (plotting, vehicle detection, TLS editor)
+├── animations/                   # Manim animations of the system
+├── docs/                         # Project report (LaTeX) — see "Project Report" below
+│   ├── main.tex, references.bib
+│   ├── figures/                  # All report figures
+│   └── presentations/            # Slide decks (.pptx)
+│
+├── mappo_models/                 # Saved checkpoints — best_/final_ tracked; numbered ones gitignored
+├── mappo_logs/                   # CSV training log (gitignored)
+├── output/                       # Generated evaluation plots/CSVs (gitignored)
+├── SPPO_model/                   # Archive of the original single-agent PPO version
+├── requirements.txt
+└── README.md
 ```
+
+> **Note on running scripts:** the Python modules use flat imports, so always run
+> them **from the repository root** with the `src/` prefix, e.g.
+> `python src/train_mappo.py`. This keeps both module imports and the relative
+> data paths (`network/`, `mappo_models/`) resolving correctly.
 
 ---
 
@@ -90,7 +112,7 @@ python -m venv rl_env
 rl_env\Scripts\activate
 
 # Install dependencies
-pip install torch numpy gymnasium traci streamlit plotly
+pip install -r requirements.txt
 
 # Set SUMO_HOME (Windows — adjust path if needed)
 $env:SUMO_HOME = "C:\Program Files (x86)\Eclipse\Sumo"
@@ -101,7 +123,7 @@ $env:SUMO_HOME = "C:\Program Files (x86)\Eclipse\Sumo"
 ## Training
 
 ```bash
-python train_mappo.py
+python src/train_mappo.py
 ```
 
 - **4 parallel SUMO environments** — diverse experience, faster data collection
@@ -141,7 +163,7 @@ python train_mappo.py
 ## Dashboard
 
 ```bash
-python -m streamlit run dashboard.py
+python -m streamlit run src/dashboard.py
 ```
 
 Live Streamlit interface showing:
@@ -183,7 +205,7 @@ Live Streamlit interface showing:
 
 ## Results (single-agent PPO baseline → MAPPO)
 
-The single-agent baseline (v1.0, Stable Baselines3) treated all three traffic lights as one combined action space. MAPPO separates them into cooperating agents with a shared policy and a centralised critic, improving coordination at the cost of a more complex training setup.
+The single-agent baseline (archived in [`SPPO_model/`](SPPO_model/), Stable Baselines3) treated all three traffic lights as one combined action space. MAPPO separates them into cooperating agents with a shared policy and a centralised critic, improving coordination at the cost of a more complex training setup.
 
 Training logs are saved to `mappo_logs/mappo_train.csv`. Plot mean reward over timesteps to track convergence.
 
@@ -198,6 +220,8 @@ The full final year project report (LaTeX source) is in [`docs/`](docs/).
 | [`docs/main.tex`](docs/main.tex) | Main report document |
 | [`docs/Simulation Report.tex`](docs/Simulation%20Report.tex) | Simulation analysis chapter |
 | [`docs/references.bib`](docs/references.bib) | Bibliography |
+| [`docs/figures/`](docs/figures/) | All report figures (resolved via `\graphicspath`) |
+| [`docs/presentations/`](docs/presentations/) | Slide decks (.pptx) |
 
 To compile locally: open `docs/main.tex` in [Overleaf](https://overleaf.com) (File → Upload Project → zip) or compile with `pdflatex` + `bibtex`.
 
