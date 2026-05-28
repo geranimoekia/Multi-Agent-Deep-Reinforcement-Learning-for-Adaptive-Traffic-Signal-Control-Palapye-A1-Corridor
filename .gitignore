@@ -47,3 +47,4 @@ Thumbs.db
 # SUMO output files
 *.log
 tripinfo.xml
+docs/
