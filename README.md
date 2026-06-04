@@ -408,8 +408,19 @@ To compile locally: open `docs/main.tex` in [Overleaf](https://overleaf.com) (Fi
 
 ## Tech Stack
 
-- **SUMO 1.24+** - microscopic traffic simulation
-- **TraCI** - Python API for real-time SUMO control
-- **PyTorch** - neural networks and PPO optimisation
-- **Streamlit + Plotly** - live training dashboard
-- **NumPy / Gymnasium** - environment interface and rollout buffer
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-111F68?style=for-the-badge&logo=ultralytics&logoColor=white)
+![SUMO](https://img.shields.io/badge/SUMO_Simulation-00AFBD?style=for-the-badge&logoColor=white)
+
+| Tool | Purpose |
+|---|---|
+| **SUMO 1.24+** | Microscopic traffic simulation |
+| **TraCI** | Python API for real-time SUMO control |
+| **PyTorch** | Neural networks and PPO optimisation |
+| **Streamlit + Plotly** | Live training dashboard |
+| **NumPy / Gymnasium** | Environment interface and rollout buffer |
+| **YOLOv8** | Real-world vehicle detection from video |
