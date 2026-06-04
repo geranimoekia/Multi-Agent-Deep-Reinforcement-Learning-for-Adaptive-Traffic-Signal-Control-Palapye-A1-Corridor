@@ -1,4 +1,12 @@
+![Banner](https://capsule-render.vercel.app/api?type=waving&color=0:141E30,100:243B55&height=200&section=header&text=PALMS&fontSize=50&fontColor=fff&animation=fadeIn&fontAlignY=38&desc=Multi-Agent+Traffic+Signal+Control+%C2%B7+BIUST&descAlignY=56&descAlign=50)
+
 # Multi-Agent Deep Reinforcement Learning for Adaptive Traffic Signal Control in the Palapye A1 Corridor
+
+> Three traffic lights. One cooperative neural network. MAPPO-trained agents reduce waiting times across a real-world road network in Palapye, Botswana — trained with CTDE: centralised training, decentralised execution.
+
+![Last Commit](https://img.shields.io/github/last-commit/geranimoekia/Multi-Agent-Deep-Reinforcement-Learning-for-Adaptive-Traffic-Signal-Control-Palapye-A1-Corridor?style=for-the-badge&color=0e75b6)
+![License](https://img.shields.io/github/license/geranimoekia/Multi-Agent-Deep-Reinforcement-Learning-for-Adaptive-Traffic-Signal-Control-Palapye-A1-Corridor?style=for-the-badge&color=brightgreen)
+
 ### Tsotlhe Nayang Seiphepi · Final Year Project · BIUST
 
 Three traffic lights. One cooperative policy. Trained with MAPPO to minimise waiting times across a real-world road network.
