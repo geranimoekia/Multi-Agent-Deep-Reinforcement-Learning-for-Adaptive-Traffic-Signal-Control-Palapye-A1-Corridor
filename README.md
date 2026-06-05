@@ -1,4 +1,4 @@
-![Banner](https://capsule-render.vercel.app/api?type=waving&color=0:141E30,100:243B55&height=200&section=header&text=PALMS&fontSize=50&fontColor=fff&animation=fadeIn&fontAlignY=38&desc=Multi-Agent+Traffic+Signal+Control+%C2%B7+BIUST&descAlignY=56&descAlign=50)
+![Banner](https://capsule-render.vercel.app/api?type=waving&color=0:141E30,100:243B55&height=200&text=PALMS&fontSize=50&fontColor=fff&animation=fadeIn&fontAlignY=38&desc=Multi-Agent+Traffic+Signal+Control+%C2%B7+BIUST&descAlignY=56&descAlign=50)
 
 # Multi-Agent Deep Reinforcement Learning for Adaptive Traffic Signal Control in the Palapye A1 Corridor
 
