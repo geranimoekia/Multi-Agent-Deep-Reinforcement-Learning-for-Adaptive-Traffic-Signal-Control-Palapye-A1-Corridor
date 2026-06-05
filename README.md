@@ -2,7 +2,7 @@
 
 # Multi-Agent Deep Reinforcement Learning for Adaptive Traffic Signal Control in the Palapye A1 Corridor
 
-> Three traffic lights. One cooperative neural network. MAPPO-trained agents reduce waiting times across a real-world road network in Palapye, Botswana — trained with CTDE: centralised training, decentralised execution.
+> Three traffic lights. One cooperative neural network. MAPPO-trained agents reduce waiting times across a real-world road network in Palapye, Botswana - trained with CTDE: centralised training, decentralised execution.
 
 ![Last Commit](https://img.shields.io/github/last-commit/geranimoekia/Multi-Agent-Deep-Reinforcement-Learning-for-Adaptive-Traffic-Signal-Control-Palapye-A1-Corridor?style=for-the-badge&color=0e75b6)
 ![License](https://img.shields.io/github/license/geranimoekia/Multi-Agent-Deep-Reinforcement-Learning-for-Adaptive-Traffic-Signal-Control-Palapye-A1-Corridor?style=for-the-badge&color=brightgreen)
